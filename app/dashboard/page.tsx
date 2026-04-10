@@ -113,7 +113,10 @@ export default function DashboardPage() {
       const reader = new FileReader()
       reader.onload = (e) => {
         const dataUrl = e.target?.result as string
-        if (dataUrl) setPhotos((prev) => [...prev, dataUrl])
+        // Only accept valid image data URLs to prevent XSS
+        if (dataUrl && dataUrl.startsWith('data:image/')) {
+          setPhotos((prev) => [...prev, dataUrl])
+        }
       }
       reader.readAsDataURL(file)
     })
@@ -443,7 +446,7 @@ export default function DashboardPage() {
                         </span>
                       )}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt="" className="w-full h-24 object-cover rounded-xl" />
+                      <img src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover rounded-xl" />
                       <button
                         onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
                         className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

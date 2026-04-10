@@ -38,9 +38,10 @@ export default function Gallery({ t, photos: userPhotos }: Props) {
             >
               <Image
                 src={src}
-                alt={`Gallery ${i + 1}`}
+                alt={`Gallery photo ${i + 1}`}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
+                unoptimized={src.startsWith('data:')}
               />
               <div className="absolute inset-0 bg-navy/0 group-hover:bg-navy/40 transition-all duration-300" />
             </div>

@@ -49,7 +49,10 @@ function getDynamicResponse(input: string, info: BusinessInfo): string {
     if (info.services && info.services.length > 0) {
       const list = info.services
         .filter((s) => s.name)
-        .map((s) => `${s.name}${s.price ? ` — €${s.price}` : ''}`)
+        .map((s) => {
+          const cleanPrice = s.price ? s.price.replace(/€/g, '').trim() : ''
+          return `${s.name}${cleanPrice ? ` — €${cleanPrice}` : ''}`
+        })
         .join(', ')
       return `Our services: ${list}.`
     }

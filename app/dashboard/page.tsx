@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Scissors, Plus, Trash2, Upload, ArrowRight, Check } from 'lucide-react'
 
@@ -36,6 +36,23 @@ export default function DashboardPage() {
   const [photos, setPhotos] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
+  const [copySuccess, setCopySuccess] = useState(false)
+  const generateTimeoutRef = useRef<NodeJS.Timeout>()
+
+  // Generate page URL slug
+  const pageSlug = useMemo(
+    () => (businessName || 'my-business').toLowerCase().replace(/\s+/g, '-'),
+    [businessName]
+  )
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const addService = () => setServices([...services, { name: '', price: '' }])
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
@@ -49,10 +66,22 @@ export default function DashboardPage() {
   const handleGeneratePage = () => {
     setIsGenerating(true)
     // Simulate page generation
-    setTimeout(() => {
+    generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
     }, 2000)
+  }
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`vitrine.app/${pageSlug}`)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    } catch (err) {
+      // Fallback for browsers that don't support clipboard API
+      console.error('Failed to copy:', err)
+      alert('Failed to copy link. Please copy it manually.')
+    }
   }
 
   return (
@@ -339,7 +368,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm">
-                      vitrine.app/{(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}
+                      vitrine.app/{pageSlug}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -380,7 +409,7 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      vitrine.app/{(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}
+                      vitrine.app/{pageSlug}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -392,12 +421,10 @@ export default function DashboardPage() {
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                     <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(`vitrine.app/${(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}`)
-                      }}
+                      onClick={handleCopyLink}
                       className="bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
-                      Copy Link
+                      {copySuccess ? '✓ Copied!' : 'Copy Link'}
                     </button>
                   </div>
                   <p className="text-sm text-gray-400 mt-6">

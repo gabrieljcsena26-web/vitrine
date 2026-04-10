@@ -23,12 +23,15 @@ const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
 
 // Helper function to generate URL-safe slug from business name
 function generateSlug(name: string): string {
-  return (name || 'my-business')
+  const slug = (name || 'my-business')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single
     .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+  
+  // Fallback to default if result is empty (e.g., input was all special characters)
+  return slug || 'my-business'
 }
 
 export default function DashboardPage() {

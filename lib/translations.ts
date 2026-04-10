@@ -22,6 +22,12 @@ export const translations = {
     services: {
       title: 'Os Nossos Serviços',
       subtitle: 'Cuidados de beleza premium para cada ocasião',
+      items: [
+        { name: 'Corte de Cabelo', price: '25€', description: 'Corte de precisão adaptado ao formato do seu rosto e preferências de estilo' },
+        { name: 'Coloração', price: '65€', description: 'Coloração total, mechas, balayage — tudo com produtos premium' },
+        { name: 'Tratamento', price: '45€', description: 'Tratamentos de hidratação profunda e reparação para um cabelo saudável e brilhante' },
+        { name: 'Brushing', price: '30€', description: 'Brushing profissional para volume, suavidade e estilo duradouro' },
+      ],
     },
     gallery: {
       title: 'Galeria',
@@ -88,6 +94,12 @@ export const translations = {
     services: {
       title: 'Nuestros Servicios',
       subtitle: 'Cuidados de belleza premium para cada ocasión',
+      items: [
+        { name: 'Corte de Cabello', price: '25€', description: 'Corte de precisión adaptado a la forma de tu cara y preferencias de estilo' },
+        { name: 'Coloración', price: '65€', description: 'Color completo, mechas, balayage — todo con productos premium' },
+        { name: 'Tratamiento', price: '45€', description: 'Tratamientos de acondicionamiento profundo y reparación para un cabello sano y brillante' },
+        { name: 'Brushing', price: '30€', description: 'Brushing profesional para volumen, suavidad y estilo duradero' },
+      ],
     },
     gallery: {
       title: 'Galería',
@@ -154,6 +166,12 @@ export const translations = {
     services: {
       title: 'Our Services',
       subtitle: 'Premium beauty care for every occasion',
+      items: [
+        { name: 'Haircut', price: '25€', description: 'Precision cut tailored to your face shape and style preferences' },
+        { name: 'Color', price: '65€', description: 'Full color, highlights, balayage — all with premium products' },
+        { name: 'Treatment', price: '45€', description: 'Deep conditioning and repair treatments for healthy, shiny hair' },
+        { name: 'Blowout', price: '30€', description: 'Professional blowout for volume, smoothness, and lasting style' },
+      ],
     },
     gallery: {
       title: 'Gallery',

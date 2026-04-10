@@ -176,7 +176,7 @@ export default function DashboardPage() {
 
           {step === 1 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-6">Services &amp; Opening Hours</h2>
+              <h2 className="text-2xl font-bold text-navy mb-6">Services & Opening Hours</h2>
 
               {/* Services */}
               <div className="mb-8">
@@ -283,7 +283,7 @@ export default function DashboardPage() {
                 }`}
               >
                 <Upload className="w-10 h-10 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium mb-1">Drag &amp; drop photos here</p>
+                <p className="text-gray-500 font-medium mb-1">Drag & drop photos here</p>
                 <p className="text-gray-400 text-sm">or click to browse · JPG, PNG, WEBP · Max 5MB each</p>
                 <button
                   onClick={() => setPhotos([...photos, `https://picsum.photos/seed/upload${photos.length + 1}/400/300`])}

@@ -26,7 +26,7 @@ export default function About({ t, address, email }: Props) {
             </div>
             <div className="absolute -bottom-6 -right-6 bg-navy rounded-2xl p-6 shadow-xl">
               <p className="text-gold font-bold text-3xl">10+</p>
-              <p className="text-white text-sm">Anos de experiência</p>
+              <p className="text-white text-sm">Years of experience</p>
             </div>
           </div>
 

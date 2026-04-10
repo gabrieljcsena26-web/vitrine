@@ -12,11 +12,9 @@ const config: Config = {
         navy: '#0F172A',
         gold: '#D4AF37',
       },
-      fontFamily: {
-        inter: ['var(--font-inter)', 'sans-serif'],
-      },
     },
   },
   plugins: [],
 }
 export default config
+

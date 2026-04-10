@@ -27,7 +27,7 @@ Open [http://localhost:3000](http://localhost:3000)
 - **TypeScript**
 - **Tailwind CSS**
 - **Lucide React** (icons)
-- **next/font** (Inter)
+- **next/font** (Inter — via system font stack fallback)
 - No backend — all static/mock
 
 ## ☁️ Deploy to Vercel

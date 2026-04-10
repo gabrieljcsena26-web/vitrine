@@ -34,6 +34,8 @@ export default function DashboardPage() {
   )
   const [dragging, setDragging] = useState(false)
   const [photos, setPhotos] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [isGenerated, setIsGenerated] = useState(false)
 
   const addService = () => setServices([...services, { name: '', price: '' }])
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
@@ -42,6 +44,15 @@ export default function DashboardPage() {
   }
   const toggleDay = (i: number) => {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
+  }
+
+  const handleGeneratePage = () => {
+    setIsGenerating(true)
+    // Simulate page generation
+    setTimeout(() => {
+      setIsGenerating(false)
+      setIsGenerated(true)
+    }, 2000)
   }
 
   return (
@@ -314,33 +325,86 @@ export default function DashboardPage() {
 
           {step === 3 && (
             <div className="text-center py-8">
-              <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Check className="w-10 h-10 text-gold" />
-              </div>
-              <h2 className="text-2xl font-bold text-navy mb-3">
-                {businessName || 'Your business'} is ready!
-              </h2>
-              <p className="text-gray-500 mb-8">
-                Your page is ready to preview. Click below to see how it looks.
-              </p>
-              <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
-                <p className="text-xs text-gray-400 mb-1">Your page URL</p>
-                <p className="text-navy font-mono text-sm">
-                  vitrine.app/{(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}
-                </p>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link
-                  href="/demo"
-                  className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
-                >
-                  Preview Page
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-                <button className="bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors">
-                  Generate My Page 🚀
-                </button>
-              </div>
+              {!isGenerated ? (
+                <>
+                  <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Check className="w-10 h-10 text-gold" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-navy mb-3">
+                    {businessName || 'Your business'} is ready!
+                  </h2>
+                  <p className="text-gray-500 mb-8">
+                    Your page is ready to preview. Click below to see how it looks.
+                  </p>
+                  <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
+                    <p className="text-xs text-gray-400 mb-1">Your page URL</p>
+                    <p className="text-navy font-mono text-sm">
+                      vitrine.app/{(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link
+                      href="/demo"
+                      className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
+                    >
+                      Preview Page
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <button 
+                      onClick={handleGeneratePage}
+                      disabled={isGenerating}
+                      className="bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-navy border-t-transparent rounded-full animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>Generate My Page 🚀</>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Check className="w-10 h-10 text-green-500" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-navy mb-3">
+                    🎉 Page Generated Successfully!
+                  </h2>
+                  <p className="text-gray-500 mb-6">
+                    Your page is now live and ready to share with customers.
+                  </p>
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
+                    <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
+                    <p className="text-navy font-mono text-sm break-all">
+                      vitrine.app/{(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Link
+                      href="/demo"
+                      className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
+                    >
+                      View Your Page
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`vitrine.app/${(businessName || 'my-business').toLowerCase().replace(/\s+/g, '-')}`)
+                      }}
+                      className="bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
+                    >
+                      Copy Link
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-400 mt-6">
+                    Share this link on Instagram, WhatsApp, or Google to get more customers!
+                  </p>
+                </>
+              )}
             </div>
           )}
 

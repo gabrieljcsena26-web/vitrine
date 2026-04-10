@@ -6,19 +6,22 @@ interface Props {
   t: Translations
   businessName: string
   category?: string
+  heroPhoto?: string
 }
 
-export default function Hero({ t, businessName, category }: Props) {
+export default function Hero({ t, businessName, category, heroPhoto }: Props) {
+  const bgSrc = heroPhoto || 'https://picsum.photos/seed/salon1/1920/1080'
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="https://picsum.photos/seed/salon1/1920/1080"
-          alt="Studio Elegance"
+          src={bgSrc}
+          alt={businessName}
           fill
           className="object-cover"
           priority
+          unoptimized={bgSrc.startsWith('data:')}
         />
         <div className="absolute inset-0 bg-navy/70" />
       </div>

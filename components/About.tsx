@@ -9,9 +9,11 @@ interface Props {
   email: string
   description?: string
   businessName?: string
+  aboutPhoto?: string
 }
 
-export default function About({ t, address, email, description, businessName }: Props) {
+export default function About({ t, address, email, description, businessName, aboutPhoto }: Props) {
+  const imgSrc = aboutPhoto || 'https://picsum.photos/seed/salon2/800/600'
   return (
     <section id="about" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,10 +22,11 @@ export default function About({ t, address, email, description, businessName }: 
           <div className="relative">
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="https://picsum.photos/seed/salon2/800/600"
-                alt="About Studio Elegance"
+                src={imgSrc}
+                alt={businessName || 'About'}
                 fill
                 className="object-cover"
+                unoptimized={imgSrc.startsWith('data:')}
               />
             </div>
             <div className="absolute -bottom-6 -right-6 bg-navy rounded-2xl p-6 shadow-xl">

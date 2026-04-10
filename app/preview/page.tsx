@@ -19,6 +19,7 @@ interface BusinessData {
   description: string
   address: string
   email: string
+  phone: string
   lang: string
   services: { name: string; price: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
@@ -61,19 +62,35 @@ export default function PreviewPage() {
   return (
     <main className="bg-white">
       <Navbar t={t} lang={lang} setLang={setLang} businessName={userData.businessName} />
-      <Hero t={t} businessName={userData.businessName} category={userData.category} />
+      <Hero
+        t={t}
+        businessName={userData.businessName}
+        category={userData.category}
+        heroPhoto={userData.photos?.[0]}
+      />
       <About
         t={t}
         address={userData.address}
         email={userData.email}
         description={userData.description}
         businessName={userData.businessName}
+        aboutPhoto={userData.photos?.[1]}
       />
       <Services t={t} services={userData.services} />
       <Gallery t={t} photos={userData.photos} />
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />
       <ContactForm t={t} />
-      <ChatbotWidget t={t} />
+      <ChatbotWidget
+        t={t}
+        businessInfo={{
+          name: userData.businessName,
+          address: userData.address,
+          email: userData.email,
+          phone: userData.phone,
+          hours: userData.hours,
+          services: userData.services,
+        }}
+      />
       <Footer t={t} businessName={userData.businessName} />
     </main>
   )

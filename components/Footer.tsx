@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import type { Translations } from '@/lib/translations'
 import { Scissors } from 'lucide-react'
 
@@ -34,9 +35,9 @@ export default function Footer({ t, businessName }: Props) {
             <p className="text-gray-500 text-sm">
               © {new Date().getFullYear()} {businessName}. {t.footer.rights}.
             </p>
-            <a href="/" className="text-gold/60 hover:text-gold text-xs transition-colors">
+            <Link href="/" className="text-gold/60 hover:text-gold text-xs transition-colors">
               {t.footer.poweredBy}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

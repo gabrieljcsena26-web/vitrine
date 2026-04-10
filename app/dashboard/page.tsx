@@ -398,7 +398,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/demo"
+                      href="/preview"
                       onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/demo"
+                      href="/preview"
                       onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
                     >

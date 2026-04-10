@@ -4,18 +4,21 @@ import Image from 'next/image'
 
 interface Props {
   t: Translations
+  photos?: string[]
 }
 
-const images = [
-  { seed: 'salon3', w: 800, h: 600 },
-  { seed: 'salon4', w: 800, h: 600 },
-  { seed: 'salon5', w: 800, h: 600 },
-  { seed: 'salon6', w: 800, h: 600 },
-  { seed: 'salon7', w: 800, h: 600 },
-  { seed: 'salon8', w: 800, h: 600 },
+const DEFAULT_IMAGES = [
+  'https://picsum.photos/seed/salon3/800/600',
+  'https://picsum.photos/seed/salon4/800/600',
+  'https://picsum.photos/seed/salon5/800/600',
+  'https://picsum.photos/seed/salon6/800/600',
+  'https://picsum.photos/seed/salon7/800/600',
+  'https://picsum.photos/seed/salon8/800/600',
 ]
 
-export default function Gallery({ t }: Props) {
+export default function Gallery({ t, photos: userPhotos }: Props) {
+  const displayPhotos = userPhotos && userPhotos.length > 0 ? userPhotos : DEFAULT_IMAGES
+
   return (
     <section id="gallery" className="py-24 bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,13 +31,13 @@ export default function Gallery({ t }: Props) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((img, i) => (
+          {displayPhotos.map((src, i) => (
             <div
               key={i}
               className="relative h-64 rounded-2xl overflow-hidden group cursor-pointer"
             >
               <Image
-                src={`https://picsum.photos/seed/${img.seed}/${img.w}/${img.h}`}
+                src={src}
                 alt={`Gallery ${i + 1}`}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"

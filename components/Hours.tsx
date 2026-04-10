@@ -2,20 +2,36 @@
 import type { Translations } from '@/lib/translations'
 import { Clock } from 'lucide-react'
 
-interface Props {
-  t: Translations
+interface HourEntry {
+  day: string
+  open: boolean
+  from: string
+  to: string
 }
 
-export default function Hours({ t }: Props) {
-  const schedule = [
-    { day: t.hours.days.monday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.tuesday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.wednesday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.thursday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.friday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.saturday, hours: '9:00 – 20:00', open: true },
-    { day: t.hours.days.sunday, hours: t.hours.closed, open: false },
-  ]
+interface Props {
+  t: Translations
+  hours?: HourEntry[]
+  businessName?: string
+}
+
+export default function Hours({ t, hours: userHours, businessName }: Props) {
+  const schedule =
+    userHours && userHours.length > 0
+      ? userHours.map((h) => ({
+          day: h.day,
+          hours: h.open ? `${h.from} – ${h.to}` : t.hours.closed,
+          open: h.open,
+        }))
+      : [
+          { day: t.hours.days.monday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.tuesday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.wednesday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.thursday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.friday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.saturday, hours: '9:00 – 20:00', open: true },
+          { day: t.hours.days.sunday, hours: t.hours.closed, open: false },
+        ]
 
   const today = new Date().getDay() // 0=Sun, 1=Mon, ...
   const todayIndex = today === 0 ? 6 : today - 1
@@ -33,7 +49,7 @@ export default function Hours({ t }: Props) {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="bg-navy px-6 py-4 flex items-center gap-3">
             <Clock className="w-5 h-5 text-gold" />
-            <span className="text-white font-semibold">Studio Elegance</span>
+            <span className="text-white font-semibold">{businessName || 'Studio Elegance'}</span>
           </div>
           <div className="divide-y divide-gray-100">
             {schedule.map((item, i) => (

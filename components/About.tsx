@@ -7,9 +7,11 @@ interface Props {
   t: Translations
   address: string
   email: string
+  description?: string
+  businessName?: string
 }
 
-export default function About({ t, address, email }: Props) {
+export default function About({ t, address, email, description, businessName }: Props) {
   return (
     <section id="about" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -33,13 +35,13 @@ export default function About({ t, address, email }: Props) {
           {/* Content */}
           <div>
             <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-              Studio Elegance
+              {businessName || 'Studio Elegance'}
             </span>
             <h2 className="text-4xl font-bold text-navy mt-2 mb-6">
               {t.about.title}
             </h2>
             <p className="text-gray-600 text-lg leading-relaxed mb-8">
-              {t.about.description}
+              {description || t.about.description}
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-gray-600">

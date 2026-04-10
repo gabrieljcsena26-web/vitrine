@@ -81,7 +81,13 @@ export default function DashboardPage() {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
   }
 
+  const saveBusinessData = () => {
+    const data = { businessName, category, description, address, email, lang, services, hours, photos }
+    localStorage.setItem('vitrine_business_data', JSON.stringify(data))
+  }
+
   const handleGeneratePage = () => {
+    saveBusinessData()
     setIsGenerating(true)
     // Simulate page generation (TODO: Replace with actual backend API call)
     generateTimeoutRef.current = setTimeout(() => {
@@ -393,6 +399,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
                       href="/demo"
+                      onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
                       Preview Page
@@ -434,6 +441,7 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
                       href="/demo"
+                      onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
                     >
                       View Your Page

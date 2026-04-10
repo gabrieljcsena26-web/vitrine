@@ -17,6 +17,20 @@ const CATEGORIES = [
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+// Configuration
+const GENERATION_DURATION_MS = 2000 // Simulated page generation time
+const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
+
+// Helper function to generate URL-safe slug from business name
+function generateSlug(name: string): string {
+  return (name || 'my-business')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
+}
+
 export default function DashboardPage() {
   const [step, setStep] = useState(0)
   const [businessName, setBusinessName] = useState('')
@@ -41,10 +55,7 @@ export default function DashboardPage() {
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Generate page URL slug
-  const pageSlug = useMemo(
-    () => (businessName || 'my-business').toLowerCase().replace(/\s+/g, '-'),
-    [businessName]
-  )
+  const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -73,18 +84,19 @@ export default function DashboardPage() {
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
-    }, 2000)
+    }, GENERATION_DURATION_MS)
   }
 
   const handleCopyLink = async () => {
+    const fullUrl = `https://vitrine.app/${pageSlug}`
     try {
-      await navigator.clipboard.writeText(`https://vitrine.app/${pageSlug}`)
+      await navigator.clipboard.writeText(fullUrl)
       setCopySuccess(true)
-      copySuccessTimeoutRef.current = setTimeout(() => setCopySuccess(false), 2000)
+      copySuccessTimeoutRef.current = setTimeout(() => setCopySuccess(false), COPY_SUCCESS_DURATION_MS)
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       console.error('Failed to copy:', err)
-      alert('Failed to copy link. Please copy it manually.')
+      alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
     }
   }
 

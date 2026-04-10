@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [isGenerated, setIsGenerated] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
+  const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Generate page URL slug
   const pageSlug = useMemo(
@@ -45,11 +46,14 @@ export default function DashboardPage() {
     [businessName]
   )
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current)
+      }
+      if (copySuccessTimeoutRef.current) {
+        clearTimeout(copySuccessTimeoutRef.current)
       }
     }
   }, [])
@@ -65,7 +69,7 @@ export default function DashboardPage() {
 
   const handleGeneratePage = () => {
     setIsGenerating(true)
-    // Simulate page generation
+    // Simulate page generation (TODO: Replace with actual backend API call)
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
@@ -74,9 +78,9 @@ export default function DashboardPage() {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`vitrine.app/${pageSlug}`)
+      await navigator.clipboard.writeText(`https://vitrine.app/${pageSlug}`)
       setCopySuccess(true)
-      setTimeout(() => setCopySuccess(false), 2000)
+      copySuccessTimeoutRef.current = setTimeout(() => setCopySuccess(false), 2000)
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       console.error('Failed to copy:', err)

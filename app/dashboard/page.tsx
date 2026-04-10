@@ -371,8 +371,8 @@ export default function DashboardPage() {
                   </p>
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
-                    <p className="text-navy font-mono text-sm">
-                      vitrine.app/{pageSlug}
+                    <p className="text-navy font-mono text-sm break-all">
+                      https://vitrine.app/{pageSlug}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      vitrine.app/{pageSlug}
+                      https://vitrine.app/{pageSlug}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

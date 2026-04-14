@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp, Link2 } from 'lucide-react'
+import { generateCampaignSlug } from '@/lib/utils'
 
 interface Lead {
   id: string
@@ -32,15 +33,6 @@ interface DashboardData {
   }
   viewsBySource: ViewsBySource[]
   leads: Lead[]
-}
-
-function generateCampaignSlug(name: string): string {
-  return (name || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
 }
 
 export default function OwnerDashboard({ params }: { params: Promise<{ token: string }> }) {

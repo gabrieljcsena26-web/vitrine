@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { getBaseUrl } from '@/lib/utils'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
+const FEEDBACK_AFTER_DAYS = 4
+const FEEDBACK_WINDOW_DAYS = 5
 
 // GET /api/cron/feedback-email — called by Vercel Cron daily
 // Sends a feedback email to any business created 4 days ago that hasn't received one yet.
@@ -14,9 +19,10 @@ export async function GET(req: NextRequest) {
 
   const db = createServiceClient()
 
-  // Find businesses created between 4 and 5 days ago (24-hour window to avoid duplicates)
-  const fourDaysAgo = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
-  const fiveDaysAgo = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+  // Find businesses created between FEEDBACK_AFTER_DAYS and FEEDBACK_WINDOW_DAYS ago
+  // (24-hour window to avoid re-sending)
+  const fourDaysAgo = new Date(Date.now() - FEEDBACK_AFTER_DAYS * ONE_DAY_MS).toISOString()
+  const fiveDaysAgo = new Date(Date.now() - FEEDBACK_WINDOW_DAYS * ONE_DAY_MS).toISOString()
 
   const { data: businesses } = await db
     .from('businesses')
@@ -42,8 +48,9 @@ export async function GET(req: NextRequest) {
       .eq('business_id', business.id)
 
     const tips = buildTips(business, views ?? 0, leads ?? 0)
-    const dashboardUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard/${business.secret_token}`
-    const pageUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/p/${business.slug}`
+    const baseUrl = getBaseUrl()
+    const dashboardUrl = `${baseUrl}/dashboard/${business.secret_token}`
+    const pageUrl = `${baseUrl}/p/${business.slug}`
 
     if (resend) {
       await resend.emails.send({

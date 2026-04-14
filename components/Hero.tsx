@@ -5,19 +5,23 @@ import Image from 'next/image'
 interface Props {
   t: Translations
   businessName: string
+  category?: string
+  heroPhoto?: string
 }
 
-export default function Hero({ t, businessName }: Props) {
+export default function Hero({ t, businessName, category, heroPhoto }: Props) {
+  const bgSrc = heroPhoto || 'https://picsum.photos/seed/salon1/1920/1080'
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="https://picsum.photos/seed/salon1/1920/1080"
-          alt="Studio Elegance"
+          src={bgSrc}
+          alt={businessName}
           fill
           className="object-cover"
           priority
+          unoptimized={bgSrc.startsWith('data:')}
         />
         <div className="absolute inset-0 bg-navy/70" />
       </div>
@@ -26,7 +30,7 @@ export default function Hero({ t, businessName }: Props) {
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 rounded-full px-4 py-2 mb-6">
           <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-          <span className="text-gold text-sm font-medium">Hair Salon · Madrid</span>
+          <span className="text-gold text-sm font-medium">{category || 'Hair Salon · Madrid'}</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 leading-tight">
           {businessName}

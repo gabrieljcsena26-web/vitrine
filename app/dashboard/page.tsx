@@ -41,7 +41,9 @@ export default function DashboardPage() {
   const [description, setDescription] = useState('')
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [lang, setLang] = useState('en')
+  const [nameError, setNameError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
     { name: 'Color', price: '65' },
@@ -54,8 +56,10 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [dashboardToken, setDashboardToken] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
@@ -72,6 +76,28 @@ export default function DashboardPage() {
     }
   }, [])
 
+  // Restore previously saved data
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('vitrine_business_data')
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.businessName) setBusinessName(data.businessName)
+        if (data.category) setCategory(data.category)
+        if (data.description) setDescription(data.description)
+        if (data.address) setAddress(data.address)
+        if (data.email) setEmail(data.email)
+        if (data.phone) setPhone(data.phone)
+        if (data.lang) setLang(data.lang)
+        if (Array.isArray(data.services) && data.services.length) setServices(data.services)
+        if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
+        if (Array.isArray(data.photos) && data.photos.length) setPhotos(data.photos)
+      }
+    } catch {
+      // ignore corrupt saved data
+    }
+  }, [])
+
   const addService = () => setServices([...services, { name: '', price: '' }])
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
   const updateService = (i: number, field: keyof Service, val: string) => {
@@ -81,9 +107,66 @@ export default function DashboardPage() {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
   }
 
-  const handleGeneratePage = () => {
+  const readFilesAsDataURLs = (files: FileList | null) => {
+    if (!files) return
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string
+        // Only accept valid image data URLs to prevent XSS
+        if (dataUrl && dataUrl.startsWith('data:image/')) {
+          setPhotos((prev) => [...prev, dataUrl])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const saveBusinessData = () => {
+    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
+    localStorage.setItem('vitrine_business_data', JSON.stringify(data))
+  }
+
+  const handleNext = () => {
+    if (step === 0) {
+      if (!businessName.trim()) {
+        setNameError('Business name is required.')
+        return
+      }
+      setNameError('')
+    }
+    setStep(step + 1)
+  }
+
+  const handleGeneratePage = async () => {
+    saveBusinessData()
     setIsGenerating(true)
-    // Simulate page generation (TODO: Replace with actual backend API call)
+    try {
+      const res = await fetch('/api/businesses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName,
+          slug: pageSlug,
+          category,
+          description,
+          address,
+          email,
+          phone,
+          lang,
+          services,
+          hours,
+          photos,
+        }),
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.token) setDashboardToken(json.token)
+      }
+    } catch {
+      // If the API is unavailable, still show the success state
+    }
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
@@ -162,10 +245,11 @@ export default function DashboardPage() {
                   <input
                     type="text"
                     value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. Studio Elegance"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
+                    onChange={(e) => { setBusinessName(e.target.value); if (e.target.value.trim()) setNameError('') }}
+                    placeholder="e.g. My Barbershop"
+                    className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${nameError ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
@@ -201,15 +285,25 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="contact@yourbusiness.com"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+1 555 000 0000"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="contact@yourbusiness.com"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
@@ -326,15 +420,28 @@ export default function DashboardPage() {
 
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-6">Photos</h2>
+              <h2 className="text-2xl font-bold text-navy mb-2">Photos</h2>
+              <p className="text-gray-400 text-sm mb-6">
+                The first photo will be used as your hero background. The second as your about section image.
+              </p>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => readFilesAsDataURLs(e.target.files)}
+              />
               <div
                 onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={(e) => {
                   e.preventDefault()
                   setDragging(false)
-                  setPhotos([...photos, `https://picsum.photos/seed/upload${photos.length + 1}/400/300`])
+                  readFilesAsDataURLs(e.dataTransfer.files)
                 }}
+                onClick={() => fileInputRef.current?.click()}
                 className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
                   dragging
                     ? 'border-gold bg-gold/5'
@@ -344,20 +451,27 @@ export default function DashboardPage() {
                 <Upload className="w-10 h-10 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 font-medium mb-1">Drag & drop photos here</p>
                 <p className="text-gray-400 text-sm">or click to browse · JPG, PNG, WEBP · Max 5MB each</p>
-                <button
-                  onClick={() => setPhotos([...photos, `https://picsum.photos/seed/upload${photos.length + 1}/400/300`])}
-                  className="mt-4 bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors"
-                >
-                  Add Demo Photo
-                </button>
+                <div className="mt-4 bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors inline-block">
+                  Browse Photos
+                </div>
               </div>
 
               {photos.length > 0 && (
                 <div className="mt-6 grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {photos.map((src, i) => (
                     <div key={i} className="relative group">
+                      {i === 0 && (
+                        <span className="absolute top-1 left-1 z-10 bg-gold text-navy text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          Hero
+                        </span>
+                      )}
+                      {i === 1 && (
+                        <span className="absolute top-1 left-1 z-10 bg-navy text-gold text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          About
+                        </span>
+                      )}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src} alt="" className="w-full h-24 object-cover rounded-xl" />
+                      <img src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover rounded-xl" />
                       <button
                         onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
                         className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
@@ -392,7 +506,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/demo"
+                      href="/preview"
+                      onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
                       Preview Page
@@ -433,7 +548,8 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/demo"
+                      href={`/p/${pageSlug}`}
+                      onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
                     >
                       View Your Page
@@ -446,6 +562,18 @@ export default function DashboardPage() {
                       {copySuccess ? '✓ Copied!' : 'Copy Link'}
                     </button>
                   </div>
+                  {dashboardToken && (
+                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-sm mx-auto text-left">
+                      <p className="text-xs text-blue-600 font-medium mb-2">📊 Your private dashboard:</p>
+                      <Link
+                        href={`/dashboard/${dashboardToken}`}
+                        className="text-blue-700 font-mono text-sm break-all hover:underline"
+                      >
+                        /dashboard/{dashboardToken}
+                      </Link>
+                      <p className="text-xs text-blue-500 mt-1">Save this link — it&apos;s your only way to access leads &amp; stats.</p>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-400 mt-6">
                     Share this link on Instagram, WhatsApp, or Google to get more customers!
                   </p>
@@ -465,7 +593,7 @@ export default function DashboardPage() {
             </button>
             {step < STEPS.length - 1 ? (
               <button
-                onClick={() => setStep(step + 1)}
+                onClick={handleNext}
                 className="px-6 py-2.5 bg-navy text-white rounded-xl font-medium hover:bg-navy/90 transition-colors flex items-center gap-2"
               >
                 Continue

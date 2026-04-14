@@ -8,8 +8,18 @@ interface Message {
   text: string
 }
 
+interface BusinessInfo {
+  name: string
+  address?: string
+  email?: string
+  phone?: string
+  hours?: { day: string; open: boolean; from: string; to: string }[]
+  services?: { name: string; price: string }[]
+}
+
 interface Props {
   t: Translations
+  businessInfo?: BusinessInfo
 }
 
 function getMockResponse(input: string, t: Translations): string {
@@ -26,10 +36,52 @@ function getMockResponse(input: string, t: Translations): string {
   return t.chatbot.responses.default
 }
 
-export default function ChatbotWidget({ t }: Props) {
+function getDynamicResponse(input: string, info: BusinessInfo): string {
+  const lower = input.toLowerCase()
+
+  if (lower.includes('book') || lower.includes('appointment') || lower.includes('reserv') || lower.includes('cita') || lower.includes('marcação')) {
+    const contact = info.phone ? `call us at ${info.phone}` : info.email ? `email us at ${info.email}` : 'contact us'
+    const addr = info.address ? ` or visit us at ${info.address}` : ''
+    return `To book an appointment, ${contact}${addr}.`
+  }
+
+  if (lower.includes('price') || lower.includes('cost') || lower.includes('€') || lower.includes('precio') || lower.includes('preço') || lower.includes('quanto')) {
+    if (info.services && info.services.length > 0) {
+      const list = info.services
+        .filter((s) => s.name)
+        .map((s) => {
+          const cleanPrice = s.price ? s.price.replace(/€/g, '').trim() : ''
+          return `${s.name}${cleanPrice ? ` — €${cleanPrice}` : ''}`
+        })
+        .join(', ')
+      return `Our services: ${list}.`
+    }
+    return `Please contact us for our current pricing.`
+  }
+
+  if (lower.includes('hour') || lower.includes('open') || lower.includes('horário') || lower.includes('horario') || lower.includes('when')) {
+    if (info.hours && info.hours.length > 0) {
+      const openDays = info.hours.filter((h) => h.open)
+      if (openDays.length > 0) {
+        const schedule = openDays.map((h) => `${h.day}: ${h.from}–${h.to}`).join(', ')
+        return `We are open: ${schedule}.`
+      }
+    }
+    return `Please contact us for our current hours.`
+  }
+
+  const contact = info.phone || info.email || 'our contact page'
+  return `Thank you for your message! A team member will respond shortly. For urgent inquiries, reach us at ${contact}.`
+}
+
+export default function ChatbotWidget({ t, businessInfo }: Props) {
+  const greeting = businessInfo
+    ? `Hello! Welcome to ${businessInfo.name} 👋 How can I help you today?`
+    : t.chatbot.greeting
+
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { from: 'bot', text: t.chatbot.greeting },
+    { from: 'bot', text: greeting },
   ])
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -38,21 +90,31 @@ export default function ChatbotWidget({ t }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Update greeting when language changes
+  // Update greeting when language or businessInfo changes
   useEffect(() => {
-    setMessages([{ from: 'bot', text: t.chatbot.greeting }])
-  }, [t.chatbot.greeting])
+    const newGreeting = businessInfo
+      ? `Hello! Welcome to ${businessInfo.name} 👋 How can I help you today?`
+      : t.chatbot.greeting
+    setMessages([{ from: 'bot', text: newGreeting }])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t.chatbot.greeting, businessInfo?.name])
 
   const sendMessage = () => {
     if (!input.trim()) return
     const userMsg: Message = { from: 'user', text: input.trim() }
     setMessages((prev) => [...prev, userMsg])
+    const captured = input
     setInput('')
     setTimeout(() => {
-      const botMsg: Message = { from: 'bot', text: getMockResponse(input, t) }
+      const response = businessInfo
+        ? getDynamicResponse(captured, businessInfo)
+        : getMockResponse(captured, t)
+      const botMsg: Message = { from: 'bot', text: response }
       setMessages((prev) => [...prev, botMsg])
     }, 800)
   }
+
+  const displayName = businessInfo?.name || 'Studio Elegance'
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
@@ -66,7 +128,7 @@ export default function ChatbotWidget({ t }: Props) {
                 <MessageCircle className="w-4 h-4 text-navy" />
               </div>
               <div>
-                <p className="text-white font-semibold text-sm">Studio Elegance</p>
+                <p className="text-white font-semibold text-sm">{displayName}</p>
                 <p className="text-green-400 text-xs">Online</p>
               </div>
             </div>

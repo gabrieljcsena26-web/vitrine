@@ -7,9 +7,13 @@ interface Props {
   t: Translations
   address: string
   email: string
+  description?: string
+  businessName?: string
+  aboutPhoto?: string
 }
 
-export default function About({ t, address, email }: Props) {
+export default function About({ t, address, email, description, businessName, aboutPhoto }: Props) {
+  const imgSrc = aboutPhoto || 'https://picsum.photos/seed/salon2/800/600'
   return (
     <section id="about" className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,10 +22,11 @@ export default function About({ t, address, email }: Props) {
           <div className="relative">
             <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="https://picsum.photos/seed/salon2/800/600"
-                alt="About Studio Elegance"
+                src={imgSrc}
+                alt={businessName || 'About'}
                 fill
                 className="object-cover"
+                unoptimized={imgSrc.startsWith('data:')}
               />
             </div>
             <div className="absolute -bottom-6 -right-6 bg-navy rounded-2xl p-6 shadow-xl">
@@ -33,13 +38,13 @@ export default function About({ t, address, email }: Props) {
           {/* Content */}
           <div>
             <span className="text-gold font-semibold text-sm uppercase tracking-wider">
-              Studio Elegance
+              {businessName || 'Studio Elegance'}
             </span>
             <h2 className="text-4xl font-bold text-navy mt-2 mb-6">
               {t.about.title}
             </h2>
             <p className="text-gray-600 text-lg leading-relaxed mb-8">
-              {t.about.description}
+              {description || t.about.description}
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-gray-600">

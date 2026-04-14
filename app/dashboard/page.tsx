@@ -56,6 +56,7 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [dashboardToken, setDashboardToken] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -138,10 +139,34 @@ export default function DashboardPage() {
     setStep(step + 1)
   }
 
-  const handleGeneratePage = () => {
+  const handleGeneratePage = async () => {
     saveBusinessData()
     setIsGenerating(true)
-    // Simulate page generation (TODO: Replace with actual backend API call)
+    try {
+      const res = await fetch('/api/businesses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName,
+          slug: pageSlug,
+          category,
+          description,
+          address,
+          email,
+          phone,
+          lang,
+          services,
+          hours,
+          photos,
+        }),
+      })
+      if (res.ok) {
+        const json = await res.json()
+        if (json.token) setDashboardToken(json.token)
+      }
+    } catch {
+      // If the API is unavailable, still show the success state
+    }
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
@@ -523,7 +548,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/preview"
+                      href={`/p/${pageSlug}`}
                       onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
                     >
@@ -537,6 +562,18 @@ export default function DashboardPage() {
                       {copySuccess ? '✓ Copied!' : 'Copy Link'}
                     </button>
                   </div>
+                  {dashboardToken && (
+                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-sm mx-auto text-left">
+                      <p className="text-xs text-blue-600 font-medium mb-2">📊 Your private dashboard:</p>
+                      <Link
+                        href={`/dashboard/${dashboardToken}`}
+                        className="text-blue-700 font-mono text-sm break-all hover:underline"
+                      >
+                        /dashboard/{dashboardToken}
+                      </Link>
+                      <p className="text-xs text-blue-500 mt-1">Save this link — it&apos;s your only way to access leads &amp; stats.</p>
+                    </div>
+                  )}
                   <p className="text-sm text-gray-400 mt-6">
                     Share this link on Instagram, WhatsApp, or Google to get more customers!
                   </p>

@@ -9,20 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.0",
+    "lucide-react": "^0.344.0",
     "next": "15.5.15",
     "react": "^18",
     "react-dom": "^18",
-    "lucide-react": "^0.344.0"
+    "resend": "^6.11.0"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "15.5.15",
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
-    "eslint": "^8",
-    "eslint-config-next": "15.5.15"
+    "typescript": "^5"
   }
 }

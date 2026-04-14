@@ -5,20 +5,38 @@ import { Send, CheckCircle } from 'lucide-react'
 
 interface Props {
   t: Translations
+  businessId?: string
+  via?: string
 }
 
-export default function ContactForm({ t }: Props) {
+export default function ContactForm({ t, businessId, via }: Props) {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
+    try {
+      if (businessId) {
+        await fetch('/api/submit-lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            businessId,
+            visitorName: form.name,
+            visitorEmail: form.email,
+            message: form.message,
+            via: via ?? null,
+          }),
+        })
+      }
+    } catch {
+      // fail silently — submission still shows success to the user
+    } finally {
       setLoading(false)
       setSubmitted(true)
-    }, 1200)
+    }
   }
 
   return (

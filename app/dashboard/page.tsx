@@ -88,15 +88,19 @@ export default function DashboardPage() {
   const [hours, setHours] = useState(
     DAYS.map((day) => ({ day, open: day !== 'Sunday', from: '09:00', to: '20:00' }))
   )
-  const [dragging, setDragging] = useState(false)
-  const [photos, setPhotos] = useState<string[]>([])
+  const [heroPhoto, setHeroPhoto] = useState('')
+  const [aboutPhoto, setAboutPhoto] = useState('')
+  const [galleryPhotos, setGalleryPhotos] = useState<string[]>([])
+  const [galleryDragging, setGalleryDragging] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const heroInputRef = useRef<HTMLInputElement>(null)
+  const aboutInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
@@ -128,7 +132,11 @@ export default function DashboardPage() {
         if (data.lang) setLang(data.lang)
         if (Array.isArray(data.services) && data.services.length) setServices(data.services)
         if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
-        if (Array.isArray(data.photos) && data.photos.length) setPhotos(data.photos)
+        if (Array.isArray(data.photos) && data.photos.length) {
+          setHeroPhoto((data.photos as string[])[0] || '')
+          setAboutPhoto((data.photos as string[])[1] || '')
+          setGalleryPhotos((data.photos as string[]).slice(2).filter(Boolean))
+        }
       }
     } catch {
       // ignore corrupt saved data
@@ -144,23 +152,31 @@ export default function DashboardPage() {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
   }
 
-  const readFilesAsDataURLs = (files: FileList | null) => {
+  const handleSlotFile = (file: File, setter: (v: string) => void) => {
+    if (!file.type.startsWith('image/')) return
+    compressImage(file)
+      .then((dataUrl) => {
+        if (dataUrl && dataUrl.startsWith('data:image/')) setter(dataUrl)
+      })
+      .catch(() => undefined)
+  }
+
+  const handleGalleryFiles = (files: FileList | null) => {
     if (!files) return
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return
       compressImage(file)
         .then((dataUrl) => {
           if (dataUrl && dataUrl.startsWith('data:image/')) {
-            setPhotos((prev) => [...prev, dataUrl])
+            setGalleryPhotos((prev) => [...prev, dataUrl])
           }
         })
-        .catch(() => {
-          // Fallback: skip unreadable files silently
-        })
+        .catch(() => undefined)
     })
   }
 
   const saveBusinessData = (): boolean => {
+    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
     const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
     try {
       localStorage.setItem('vitrine_business_data', JSON.stringify(data))
@@ -205,7 +221,7 @@ export default function DashboardPage() {
           lang,
           services,
           hours,
-          photos,
+          photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
         }),
       })
       if (res.ok) {
@@ -469,67 +485,161 @@ export default function DashboardPage() {
           {step === 2 && (
             <div>
               <h2 className="text-2xl font-bold text-navy mb-2">Photos</h2>
-              <p className="text-gray-400 text-sm mb-6">
-                The first photo will be used as your hero background. The second as your about section image.
+              <p className="text-gray-400 text-sm mb-8">
+                Add a photo for each section. Each slot appears in a specific place on your page.
               </p>
-              {/* Hidden file input */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => readFilesAsDataURLs(e.target.files)}
-              />
-              <div
-                onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  setDragging(false)
-                  readFilesAsDataURLs(e.dataTransfer.files)
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${
-                  dragging
-                    ? 'border-gold bg-gold/5'
-                    : 'border-gray-200 hover:border-gold/50 hover:bg-gray-50'
-                }`}
-              >
-                <Upload className="w-10 h-10 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium mb-1">Drag & drop photos here</p>
-                <p className="text-gray-400 text-sm">or click to browse · JPG, PNG, WEBP · Max 5MB each</p>
-                <div className="mt-4 bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors inline-block">
-                  Browse Photos
+
+              {/* Hidden file inputs — one per slot */}
+              <input ref={heroInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setHeroPhoto)} />
+              <input ref={aboutInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setAboutPhoto)} />
+              <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleGalleryFiles(e.target.files)} />
+
+              <div className="space-y-5">
+                {/* ── Slot 1: Hero Photo ── */}
+                <div className="border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-gold font-black text-sm">1</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <h3 className="font-bold text-navy">Hero Photo</h3>
+                        <span className="bg-gold text-navy text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Full-screen background
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-xs mb-4">
+                        First thing visitors see — fills the entire screen on arrival. Best: a wide photo of your space or best work.
+                      </p>
+                      {heroPhoto ? (
+                        <div className="relative w-full h-36 rounded-xl overflow-hidden group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={heroPhoto} alt="Hero photo" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button onClick={() => heroInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
+                              Change
+                            </button>
+                            <button onClick={() => setHeroPhoto('')} className="bg-red-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-red-600 transition-colors">
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => heroInputRef.current?.click()}
+                          className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
+                        >
+                          <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                          <span className="text-gray-400 text-sm">Click to upload hero photo</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Slot 2: About Photo ── */}
+                <div className="border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-navy/5 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-navy font-black text-sm">2</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <h3 className="font-bold text-navy">About Photo</h3>
+                        <span className="bg-navy text-gold text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          About Us section
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-xs mb-4">
+                        Shown beside your description in the &ldquo;About Us&rdquo; section. Best: a portrait, team photo, or interior shot.
+                      </p>
+                      {aboutPhoto ? (
+                        <div className="relative w-full h-36 rounded-xl overflow-hidden group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={aboutPhoto} alt="About photo" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button onClick={() => aboutInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
+                              Change
+                            </button>
+                            <button onClick={() => setAboutPhoto('')} className="bg-red-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-red-600 transition-colors">
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => aboutInputRef.current?.click()}
+                          className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
+                        >
+                          <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                          <span className="text-gray-400 text-sm">Click to upload about photo</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Slot 3+: Gallery Photos ── */}
+                <div className="border border-gray-200 rounded-2xl p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-500 font-black text-xs">3+</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center flex-wrap gap-2 mb-1">
+                        <h3 className="font-bold text-navy">Gallery Photos</h3>
+                        <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Portfolio grid
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-xs mb-4">
+                        Shown in the photo grid on your page. Add your best work photos — the more the better!
+                      </p>
+                      {galleryPhotos.length > 0 && (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
+                          {galleryPhotos.map((src, i) => (
+                            <div key={i} className="relative group">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''}
+                                alt={`Gallery ${i + 1}`}
+                                className="w-full h-20 object-cover rounded-lg"
+                              />
+                              <button
+                                onClick={() => setGalleryPhotos(galleryPhotos.filter((_, idx) => idx !== i))}
+                                className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setGalleryDragging(true) }}
+                        onDragLeave={() => setGalleryDragging(false)}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          setGalleryDragging(false)
+                          handleGalleryFiles(e.dataTransfer.files)
+                        }}
+                        onClick={() => galleryInputRef.current?.click()}
+                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                          galleryDragging
+                            ? 'border-gold bg-gold/5'
+                            : 'border-gray-200 hover:border-gold/50 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Upload className="w-6 h-6 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-400 text-sm">
+                          {galleryPhotos.length > 0 ? 'Drag & drop or click to add more' : 'Drag & drop or click to add gallery photos'}
+                        </p>
+                        <p className="text-gray-300 text-xs mt-1">JPG, PNG, WEBP</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {photos.length > 0 && (
-                <div className="mt-6 grid grid-cols-3 sm:grid-cols-4 gap-3">
-                  {photos.map((src, i) => (
-                    <div key={i} className="relative group">
-                      {i === 0 && (
-                        <span className="absolute top-1 left-1 z-10 bg-gold text-navy text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                          Hero
-                        </span>
-                      )}
-                      {i === 1 && (
-                        <span className="absolute top-1 left-1 z-10 bg-navy text-gold text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                          About
-                        </span>
-                      )}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''} alt={`Photo ${i + 1}`} className="w-full h-24 object-cover rounded-xl" />
-                      <button
-                        onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
-                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
 

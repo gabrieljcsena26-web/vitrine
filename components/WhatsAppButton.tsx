@@ -1,5 +1,6 @@
 'use client'
 import type { Translations } from '@/lib/translations'
+import { whatsAppHref } from '@/lib/utils'
 
 interface Props {
   t: Translations
@@ -8,14 +9,8 @@ interface Props {
   via?: string
 }
 
-/** Strips non-digit characters (except leading +) to build a wa.me URL */
-function buildWhatsAppUrl(number: string): string {
-  const digits = number.replace(/[^\d]/g, '')
-  return `https://wa.me/${digits}`
-}
-
 export default function WhatsAppButton({ t, whatsappNumber, businessId, via }: Props) {
-  const href = buildWhatsAppUrl(whatsappNumber)
+  const href = whatsAppHref(whatsappNumber)
 
   const handleClick = () => {
     fetch('/api/track-visit', {

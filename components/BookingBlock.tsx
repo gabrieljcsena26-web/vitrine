@@ -1,5 +1,6 @@
 'use client'
 import type { Translations } from '@/lib/translations'
+import { safeBookingHref } from '@/lib/utils'
 import { CalendarDays, ArrowRight } from 'lucide-react'
 
 interface Props {
@@ -9,16 +10,8 @@ interface Props {
   via?: string
 }
 
-/** Returns a safe href only for http/https URLs or mailto: addresses. */
-function safeHref(url: string): string | null {
-  const trimmed = url.trim()
-  if (/^https?:\/\//i.test(trimmed)) return trimmed
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return `mailto:${trimmed}`
-  return null
-}
-
 export default function BookingBlock({ t, bookingUrl, businessId, via }: Props) {
-  const href = safeHref(bookingUrl)
+  const href = safeBookingHref(bookingUrl)
   if (!href) return null
 
   const handleClick = () => {

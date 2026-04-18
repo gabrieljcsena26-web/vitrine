@@ -5,7 +5,7 @@ import {
   Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
   Link2, CalendarDays, Plus, Save, MousePointerClick, MessageCircle,
 } from 'lucide-react'
-import { generateCampaignSlug } from '@/lib/utils'
+import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
 
 interface Lead {
   id: string
@@ -376,15 +376,12 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
             />
             {data.business.bookingUrl && (() => {
-              const url = data.business.bookingUrl!
-              const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)
-              const isUrl = /^https?:\/\//i.test(url)
-              const href = isUrl ? url : isEmail ? `mailto:${url}` : null
+              const href = safeBookingHref(data.business.bookingUrl!)
               return href ? (
                 <p className="mt-1.5 text-xs text-gray-400">
                   Active:{' '}
                   <a href={href} target="_blank" rel="noopener noreferrer" className="text-gold hover:underline break-all">
-                    {url}
+                    {data.business.bookingUrl}
                   </a>
                 </p>
               ) : null

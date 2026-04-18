@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { isHttpUrl, isEmail } from '@/lib/utils'
 
 // GET /api/dashboard/[token] — return stats for the owner dashboard
 export async function GET(
@@ -125,9 +126,7 @@ export async function PATCH(
 
   // Validate bookingUrl: only allow http/https URLs or plain email addresses
   if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
-    const isUrl = /^https?:\/\//i.test(String(bookingUrl))
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bookingUrl))
-    if (!isUrl && !isEmail) {
+    if (!isHttpUrl(String(bookingUrl)) && !isEmail(String(bookingUrl))) {
       return NextResponse.json(
         { error: 'bookingUrl must be a valid http/https URL or email address' },
         { status: 400 }

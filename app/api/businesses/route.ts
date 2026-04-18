@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       hours,
       photos,
       slug,
+      bookingUrl,
     } = body
 
     if (!businessName || !slug || !email) {
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
           services,
           hours,
           photos,
+          booking_url: bookingUrl ?? null,
         },
         { onConflict: 'slug', ignoreDuplicates: false }
       )

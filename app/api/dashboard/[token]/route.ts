@@ -17,7 +17,7 @@ export async function GET(
   // Look up business by secret token
   const { data: business, error: bizError } = await db
     .from('businesses')
-    .select('id, slug, owner_name, owner_email, category, created_at')
+    .select('id, slug, owner_name, owner_email, category, created_at, booking_url')
     .eq('secret_token', token)
     .single()
 
@@ -75,8 +75,10 @@ export async function GET(
       id: business.id,
       slug: business.slug,
       ownerName: business.owner_name,
+      ownerEmail: business.owner_email,
       category: business.category,
       createdAt: business.created_at,
+      bookingUrl: business.booking_url ?? null,
     },
     stats: {
       totalViews: totalViews ?? 0,
@@ -86,4 +88,32 @@ export async function GET(
     viewsBySource,
     leads: leads ?? [],
   })
+}
+
+// PATCH /api/dashboard/[token] — update mutable fields (booking_url)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params
+
+  if (!token) {
+    return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+  }
+
+  const body = await req.json()
+  const { bookingUrl } = body
+
+  const db = createServiceClient()
+
+  const { error } = await db
+    .from('businesses')
+    .update({ booking_url: bookingUrl ?? null })
+    .eq('secret_token', token)
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
 }

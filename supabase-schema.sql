@@ -18,6 +18,7 @@ create table if not exists businesses (
   services      jsonb,
   hours         jsonb,
   photos        jsonb,
+  booking_url   text,
   created_at    timestamptz default now()
 );
 

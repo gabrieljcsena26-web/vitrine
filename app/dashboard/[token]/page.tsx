@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp, Link2 } from 'lucide-react'
+import { Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp, Link2, CalendarDays, Plus, Save } from 'lucide-react'
 import { generateCampaignSlug } from '@/lib/utils'
 
 interface Lead {
@@ -23,8 +23,10 @@ interface DashboardData {
     id: string
     slug: string
     ownerName: string
+    ownerEmail: string
     category: string
     createdAt: string
+    bookingUrl: string | null
   }
   stats: {
     totalViews: number
@@ -36,6 +38,7 @@ interface DashboardData {
 }
 
 export default function OwnerDashboard({ params }: { params: Promise<{ token: string }> }) {
+  const [token, setToken] = useState<string>('')
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -46,10 +49,17 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [copied, setCopied] = useState(false)
   const copyTimeoutRef = useRef<NodeJS.Timeout>()
 
+  // Booking URL editor
+  const [bookingInput, setBookingInput] = useState('')
+  const [bookingSaving, setBookingSaving] = useState(false)
+  const [bookingSaved, setBookingSaved] = useState(false)
+  const bookingSaveTimeoutRef = useRef<NodeJS.Timeout>()
+
   useEffect(() => {
     async function load() {
-      const { token } = await params
-      const res = await fetch(`/api/dashboard/${token}`)
+      const { token: t } = await params
+      setToken(t)
+      const res = await fetch(`/api/dashboard/${t}`)
       if (!res.ok) {
         setNotFound(true)
         setLoading(false)
@@ -57,11 +67,13 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       }
       const json = await res.json()
       setData(json)
+      setBookingInput(json.business.bookingUrl ?? '')
       setLoading(false)
     }
     load()
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      if (bookingSaveTimeoutRef.current) clearTimeout(bookingSaveTimeoutRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -85,9 +97,33 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     }
   }
 
+  const handleSaveBooking = async () => {
+    if (!token) return
+    setBookingSaving(true)
+    try {
+      await fetch(`/api/dashboard/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingUrl: bookingInput.trim() || null }),
+      })
+      setBookingSaved(true)
+      if (data) {
+        setData({
+          ...data,
+          business: { ...data.business, bookingUrl: bookingInput.trim() || null },
+        })
+      }
+      bookingSaveTimeoutRef.current = setTimeout(() => setBookingSaved(false), 2000)
+    } catch {
+      // ignore
+    } finally {
+      setBookingSaving(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -95,7 +131,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-navy mb-2">Dashboard not found</h1>
           <p className="text-gray-500 mb-6">The link may be invalid or expired.</p>
@@ -109,7 +145,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const maxViews = viewsBySource[0]?.count ?? 1
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Top bar */}
       <div className="bg-navy border-b border-white/5">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -119,15 +155,24 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             </div>
             <span className="text-white font-bold">Vitrine</span>
           </Link>
-          <a
-            href={`/p/${business.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
-          >
-            View my page
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New Page
+            </Link>
+            <a
+              href={`/p/${business.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              View my page
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -157,7 +202,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block B: Visits by source ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-bold text-navy mb-5">Visits by Source</h2>
           {viewsBySource.length === 0 ? (
             <p className="text-gray-400 text-sm">No visits yet. Share your page to get traffic!</p>
@@ -180,7 +225,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block C: Leads list ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-bold text-navy mb-5">Leads</h2>
           {leads.length === 0 ? (
             <p className="text-gray-400 text-sm">No leads yet. They&apos;ll appear here when someone contacts you.</p>
@@ -198,7 +243,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 </thead>
                 <tbody>
                   {leads.map((lead) => (
-                    <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <tr key={lead.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                       <td className="py-3 pr-4 font-medium text-navy">{lead.visitor_name}</td>
                       <td className="py-3 pr-4">
                         <a
@@ -212,7 +257,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                         {lead.message}
                       </td>
                       <td className="py-3 pr-4 hidden sm:table-cell">
-                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                        <span className="bg-slate-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
                           {lead.via ?? 'Direct'}
                         </span>
                       </td>
@@ -228,7 +273,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block D: Campaign link creator ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Link2 className="w-5 h-5 text-gold" />
             <h2 className="text-lg font-bold text-navy">Create a Campaign Link</h2>
@@ -255,7 +300,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           </div>
 
           {generatedLink && (
-            <div className="mt-4 bg-gray-50 rounded-xl p-4 flex items-center gap-3 flex-wrap">
+            <div className="mt-4 bg-slate-50 rounded-xl p-4 flex items-center gap-3 flex-wrap">
               <span className="flex-1 font-mono text-sm text-navy break-all min-w-0">
                 {generatedLink}
               </span>
@@ -276,6 +321,58 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 )}
               </button>
             </div>
+          )}
+        </div>
+
+        {/* ── Block E: Scheduling / Booking link ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="w-5 h-5 text-gold" />
+            <h2 className="text-lg font-bold text-navy">Booking &amp; Scheduling</h2>
+          </div>
+          <p className="text-gray-500 text-sm mb-5">
+            Paste your Calendly, Google Calendar, or any scheduling link here. It will appear as a prominent &ldquo;Book Now&rdquo; button on your public page.
+            You can also add your email address so clients can reach you directly.
+          </p>
+          <div className="flex gap-3 flex-col sm:flex-row">
+            <input
+              type="text"
+              value={bookingInput}
+              onChange={(e) => setBookingInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveBooking()}
+              placeholder="https://calendly.com/yourname  or  you@email.com"
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+            />
+            <button
+              onClick={handleSaveBooking}
+              disabled={bookingSaving}
+              className="bg-gold text-navy px-6 py-3 rounded-xl font-semibold hover:bg-yellow-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-sm whitespace-nowrap flex items-center gap-2"
+            >
+              {bookingSaved ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Saved!
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save
+                </>
+              )}
+            </button>
+          </div>
+          {data.business.bookingUrl && (
+            <p className="mt-3 text-xs text-gray-400">
+              Current:{' '}
+              <a
+                href={data.business.bookingUrl.startsWith('http') ? data.business.bookingUrl : `mailto:${data.business.bookingUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold hover:underline break-all"
+              >
+                {data.business.bookingUrl}
+              </a>
+            </p>
           )}
         </div>
       </div>

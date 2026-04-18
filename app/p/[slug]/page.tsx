@@ -10,6 +10,7 @@ import About from '@/components/About'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
 import Hours from '@/components/Hours'
+import BookingBlock from '@/components/BookingBlock'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
@@ -27,6 +28,7 @@ interface BusinessData {
   services: { name: string; price: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
+  booking_url: string | null
 }
 
 export default function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -108,6 +110,7 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
       <Services t={t} services={business.services ?? []} />
       <Gallery t={t} photos={business.photos ?? []} />
       <Hours t={t} hours={business.hours ?? []} businessName={business.owner_name} />
+      {business.booking_url && <BookingBlock t={t} bookingUrl={business.booking_url} />}
       <ContactForm t={t} businessId={business.id} via={via} />
       <ChatbotWidget
         t={t}

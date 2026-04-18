@@ -17,7 +17,7 @@ export async function GET(
   // Look up business by secret token
   const { data: business, error: bizError } = await db
     .from('businesses')
-    .select('id, slug, owner_name, owner_email, category, created_at, booking_url')
+    .select('id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number')
     .eq('secret_token', token)
     .single()
 
@@ -27,11 +27,26 @@ export async function GET(
 
   const businessId = business.id
 
-  // Total views
+  // Total page views
   const { count: totalViews } = await db
     .from('page_views')
     .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
+    .eq('event_type', 'visit')
+
+  // Booking button clicks
+  const { count: bookingClicks } = await db
+    .from('page_views')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .eq('event_type', 'booking_click')
+
+  // WhatsApp button clicks
+  const { count: whatsappClicks } = await db
+    .from('page_views')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+    .eq('event_type', 'whatsapp_click')
 
   // Total leads
   const { count: totalLeads } = await db
@@ -47,11 +62,12 @@ export async function GET(
     .eq('business_id', businessId)
     .gte('submitted_at', oneWeekAgo)
 
-  // Views by source
+  // Views by source (only real visits, not clicks)
   const { data: viewRows } = await db
     .from('page_views')
     .select('via')
     .eq('business_id', businessId)
+    .eq('event_type', 'visit')
 
   const sourceMap: Record<string, number> = {}
   for (const row of viewRows ?? []) {
@@ -79,9 +95,12 @@ export async function GET(
       category: business.category,
       createdAt: business.created_at,
       bookingUrl: business.booking_url ?? null,
+      whatsappNumber: business.whatsapp_number ?? null,
     },
     stats: {
       totalViews: totalViews ?? 0,
+      bookingClicks: bookingClicks ?? 0,
+      whatsappClicks: whatsappClicks ?? 0,
       totalLeads: totalLeads ?? 0,
       leadsThisWeek: leadsThisWeek ?? 0,
     },
@@ -90,7 +109,7 @@ export async function GET(
   })
 }
 
-// PATCH /api/dashboard/[token] — update mutable fields (booking_url)
+// PATCH /api/dashboard/[token] — update mutable fields (booking_url, whatsapp_number)
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
@@ -102,9 +121,9 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { bookingUrl } = body
+  const { bookingUrl, whatsappNumber } = body
 
-  // Validate: only allow http/https URLs or plain email addresses
+  // Validate bookingUrl: only allow http/https URLs or plain email addresses
   if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
     const isUrl = /^https?:\/\//i.test(String(bookingUrl))
     const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bookingUrl))
@@ -116,11 +135,25 @@ export async function PATCH(
     }
   }
 
+  // Validate whatsappNumber: digits, +, spaces, dashes only
+  if (whatsappNumber !== null && whatsappNumber !== undefined && whatsappNumber !== '') {
+    if (!/^\+?[\d\s\-().]{7,20}$/.test(String(whatsappNumber))) {
+      return NextResponse.json(
+        { error: 'whatsappNumber must be a valid phone number' },
+        { status: 400 }
+      )
+    }
+  }
+
   const db = createServiceClient()
+
+  const updates: Record<string, string | null> = {}
+  if (bookingUrl !== undefined) updates.booking_url = bookingUrl ?? null
+  if (whatsappNumber !== undefined) updates.whatsapp_number = whatsappNumber ?? null
 
   const { error } = await db
     .from('businesses')
-    .update({ booking_url: bookingUrl ?? null })
+    .update(updates)
     .eq('secret_token', token)
 
   if (error) {

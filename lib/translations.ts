@@ -67,6 +67,9 @@ export const translations = {
       subtitle: 'Escolha o melhor horário para si',
       cta: 'Agendar Agora',
     },
+    whatsapp: {
+      label: 'Fale pelo WhatsApp',
+    },
     chatbot: {
       greeting: 'Olá! Bem-vindo ao Studio Elegance 👋 Como posso ajudar?',
       placeholder: 'Escreva a sua mensagem...',
@@ -144,6 +147,9 @@ export const translations = {
       subtitle: 'Elige el mejor horario para ti',
       cta: 'Agendar Ahora',
     },
+    whatsapp: {
+      label: 'Hablar por WhatsApp',
+    },
     chatbot: {
       greeting: '¡Hola! Bienvenido a Studio Elegance 👋 ¿Cómo puedo ayudarte?',
       placeholder: 'Escribe tu mensaje...',
@@ -220,6 +226,9 @@ export const translations = {
       title: 'Schedule your appointment',
       subtitle: 'Pick the best time for you',
       cta: 'Book Now',
+    },
+    whatsapp: {
+      label: 'Chat on WhatsApp',
     },
     chatbot: {
       greeting: 'Hello! Welcome to Studio Elegance 👋 How can I help you?',

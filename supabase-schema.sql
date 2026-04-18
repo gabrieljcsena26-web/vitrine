@@ -15,20 +15,26 @@ create table if not exists businesses (
   address       text,
   phone         text,
   lang          text default 'en',
-  services      jsonb,
-  hours         jsonb,
-  photos        jsonb,
-  booking_url   text,
-  created_at    timestamptz default now()
+  services          jsonb,
+  hours             jsonb,
+  photos            jsonb,
+  booking_url       text,
+  whatsapp_number   text,
+  created_at        timestamptz default now()
 );
 
--- ─── Page views ────────────────────────────────────────────────────────────────
+-- ─── Page views / click events ─────────────────────────────────────────────────
 create table if not exists page_views (
   id            uuid primary key default gen_random_uuid(),
   business_id   uuid not null references businesses(id) on delete cascade,
   via           text,                -- campaign name, e.g. "instagram-bio" (null = direct)
+  event_type    text not null default 'visit',   -- 'visit' | 'booking_click' | 'whatsapp_click'
   visited_at    timestamptz default now()
 );
+
+-- Migration helper (run if the table already exists):
+-- alter table page_views add column if not exists event_type text not null default 'visit';
+-- alter table businesses  add column if not exists whatsapp_number text;
 
 -- ─── Leads ─────────────────────────────────────────────────────────────────────
 create table if not exists leads (

@@ -1,9 +1,12 @@
+'use client'
 import type { Translations } from '@/lib/translations'
 import { CalendarDays, ArrowRight } from 'lucide-react'
 
 interface Props {
   t: Translations
   bookingUrl: string
+  businessId?: string
+  via?: string
 }
 
 /** Returns a safe href only for http/https URLs or mailto: addresses. */
@@ -14,9 +17,18 @@ function safeHref(url: string): string | null {
   return null
 }
 
-export default function BookingBlock({ t, bookingUrl }: Props) {
+export default function BookingBlock({ t, bookingUrl, businessId, via }: Props) {
   const href = safeHref(bookingUrl)
   if (!href) return null
+
+  const handleClick = () => {
+    if (!businessId) return
+    fetch('/api/track-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId, via: via ?? null, eventType: 'booking_click' }),
+    }).catch(() => undefined)
+  }
 
   return (
     <section id="booking" className="py-20 bg-gradient-to-br from-slate-50 to-stone-100">
@@ -30,6 +42,7 @@ export default function BookingBlock({ t, bookingUrl }: Props) {
           href={href}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={handleClick}
           className="inline-flex items-center gap-2 bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-md shadow-gold/20"
         >
           {t.booking.cta}

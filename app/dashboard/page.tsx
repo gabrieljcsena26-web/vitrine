@@ -1,6 +1,7 @@
 'use client'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Scissors, Plus, Trash2, Upload, ArrowRight, Check } from 'lucide-react'
 
 interface Service {
@@ -20,6 +21,41 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 // Configuration
 const GENERATION_DURATION_MS = 2000 // Simulated page generation time
 const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
+const MAX_IMAGE_PX = 1000 // Max width/height for compressed photos
+const IMAGE_QUALITY = 0.75 // JPEG quality for compressed photos
+
+// Compress an image file to a small data URL using canvas
+function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = (e) => {
+      const img = new window.Image()
+      img.onerror = reject
+      img.onload = () => {
+        let { width, height } = img
+        if (width > MAX_IMAGE_PX || height > MAX_IMAGE_PX) {
+          if (width >= height) {
+            height = Math.round((height * MAX_IMAGE_PX) / width)
+            width = MAX_IMAGE_PX
+          } else {
+            width = Math.round((width * MAX_IMAGE_PX) / height)
+            height = MAX_IMAGE_PX
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { reject(new Error('canvas context unavailable')); return }
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY))
+      }
+      img.src = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
 
 // Helper function to generate URL-safe slug from business name
 function generateSlug(name: string): string {
@@ -35,6 +71,7 @@ function generateSlug(name: string): string {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [businessName, setBusinessName] = useState('')
   const [category, setCategory] = useState('Hair Salon')
@@ -111,21 +148,32 @@ export default function DashboardPage() {
     if (!files) return
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string
-        // Only accept valid image data URLs to prevent XSS
-        if (dataUrl && dataUrl.startsWith('data:image/')) {
-          setPhotos((prev) => [...prev, dataUrl])
-        }
-      }
-      reader.readAsDataURL(file)
+      compressImage(file)
+        .then((dataUrl) => {
+          if (dataUrl && dataUrl.startsWith('data:image/')) {
+            setPhotos((prev) => [...prev, dataUrl])
+          }
+        })
+        .catch(() => {
+          // Fallback: skip unreadable files silently
+        })
     })
   }
 
-  const saveBusinessData = () => {
+  const saveBusinessData = (): boolean => {
     const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
-    localStorage.setItem('vitrine_business_data', JSON.stringify(data))
+    try {
+      localStorage.setItem('vitrine_business_data', JSON.stringify(data))
+      return true
+    } catch {
+      // Quota exceeded — retry without photos so at least the text data is saved
+      try {
+        localStorage.setItem('vitrine_business_data', JSON.stringify({ ...data, photos: [] }))
+      } catch {
+        // localStorage unavailable — ignore
+      }
+      return false
+    }
   }
 
   const handleNext = () => {
@@ -505,14 +553,13 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Link
-                      href="/preview"
-                      onClick={saveBusinessData}
+                    <button
+                      onClick={() => { saveBusinessData(); router.push('/preview') }}
                       className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
                       Preview Page
                       <ArrowRight className="w-4 h-4" />
-                    </Link>
+                    </button>
                     <button 
                       onClick={handleGeneratePage}
                       disabled={isGenerating}

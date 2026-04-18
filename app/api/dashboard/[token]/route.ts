@@ -104,6 +104,18 @@ export async function PATCH(
   const body = await req.json()
   const { bookingUrl } = body
 
+  // Validate: only allow http/https URLs or plain email addresses
+  if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
+    const isUrl = /^https?:\/\//i.test(String(bookingUrl))
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(bookingUrl))
+    if (!isUrl && !isEmail) {
+      return NextResponse.json(
+        { error: 'bookingUrl must be a valid http/https URL or email address' },
+        { status: 400 }
+      )
+    }
+  }
+
   const db = createServiceClient()
 
   const { error } = await db

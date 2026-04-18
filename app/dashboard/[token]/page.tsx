@@ -340,7 +340,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               value={bookingInput}
               onChange={(e) => setBookingInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSaveBooking()}
-              placeholder="https://calendly.com/yourname  or  you@email.com"
+              placeholder="https://calendly.com/yourname or you@email.com"
               className="flex-1 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
             />
             <button
@@ -361,19 +361,25 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               )}
             </button>
           </div>
-          {data.business.bookingUrl && (
-            <p className="mt-3 text-xs text-gray-400">
-              Current:{' '}
-              <a
-                href={data.business.bookingUrl.startsWith('http') ? data.business.bookingUrl : `mailto:${data.business.bookingUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gold hover:underline break-all"
-              >
-                {data.business.bookingUrl}
-              </a>
-            </p>
-          )}
+          {data.business.bookingUrl && (() => {
+            const url = data.business.bookingUrl!
+            const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)
+            const isUrl = /^https?:\/\//i.test(url)
+            const href = isUrl ? url : isEmail ? `mailto:${url}` : null
+            return href ? (
+              <p className="mt-3 text-xs text-gray-400">
+                Current:{' '}
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gold hover:underline break-all"
+                >
+                  {url}
+                </a>
+              </p>
+            ) : null
+          })()}
         </div>
       </div>
     </div>

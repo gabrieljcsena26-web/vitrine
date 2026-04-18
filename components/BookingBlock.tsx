@@ -6,7 +6,18 @@ interface Props {
   bookingUrl: string
 }
 
+/** Returns a safe href only for http/https URLs or mailto: addresses. */
+function safeHref(url: string): string | null {
+  const trimmed = url.trim()
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return `mailto:${trimmed}`
+  return null
+}
+
 export default function BookingBlock({ t, bookingUrl }: Props) {
+  const href = safeHref(bookingUrl)
+  if (!href) return null
+
   return (
     <section id="booking" className="py-20 bg-gradient-to-br from-slate-50 to-stone-100">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -16,7 +27,7 @@ export default function BookingBlock({ t, bookingUrl }: Props) {
         <h2 className="text-3xl font-bold text-navy mb-3">{t.booking.title}</h2>
         <p className="text-gray-500 text-lg mb-8">{t.booking.subtitle}</p>
         <a
-          href={bookingUrl}
+          href={href}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-md shadow-gold/20"

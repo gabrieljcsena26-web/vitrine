@@ -1,8 +1,11 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp, Link2 } from 'lucide-react'
-import { generateCampaignSlug } from '@/lib/utils'
+import {
+  Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
+  Link2, CalendarDays, Plus, Save, MousePointerClick, MessageCircle,
+} from 'lucide-react'
+import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
 
 interface Lead {
   id: string
@@ -23,11 +26,16 @@ interface DashboardData {
     id: string
     slug: string
     ownerName: string
+    ownerEmail: string
     category: string
     createdAt: string
+    bookingUrl: string | null
+    whatsappNumber: string | null
   }
   stats: {
     totalViews: number
+    bookingClicks: number
+    whatsappClicks: number
     totalLeads: number
     leadsThisWeek: number
   }
@@ -36,6 +44,7 @@ interface DashboardData {
 }
 
 export default function OwnerDashboard({ params }: { params: Promise<{ token: string }> }) {
+  const [token, setToken] = useState<string>('')
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -46,10 +55,18 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [copied, setCopied] = useState(false)
   const copyTimeoutRef = useRef<NodeJS.Timeout>()
 
+  // Booking & WhatsApp editor
+  const [bookingInput, setBookingInput] = useState('')
+  const [whatsappInput, setWhatsappInput] = useState('')
+  const [contactSaving, setContactSaving] = useState(false)
+  const [contactSaved, setContactSaved] = useState(false)
+  const contactSaveTimeoutRef = useRef<NodeJS.Timeout>()
+
   useEffect(() => {
     async function load() {
-      const { token } = await params
-      const res = await fetch(`/api/dashboard/${token}`)
+      const { token: t } = await params
+      setToken(t)
+      const res = await fetch(`/api/dashboard/${t}`)
       if (!res.ok) {
         setNotFound(true)
         setLoading(false)
@@ -57,11 +74,14 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       }
       const json = await res.json()
       setData(json)
+      setBookingInput(json.business.bookingUrl ?? '')
+      setWhatsappInput(json.business.whatsappNumber ?? '')
       setLoading(false)
     }
     load()
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      if (contactSaveTimeoutRef.current) clearTimeout(contactSaveTimeoutRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -85,9 +105,40 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     }
   }
 
+  const handleSaveContact = async () => {
+    if (!token) return
+    setContactSaving(true)
+    try {
+      await fetch(`/api/dashboard/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingUrl: bookingInput.trim() || null,
+          whatsappNumber: whatsappInput.trim() || null,
+        }),
+      })
+      setContactSaved(true)
+      if (data) {
+        setData({
+          ...data,
+          business: {
+            ...data.business,
+            bookingUrl: bookingInput.trim() || null,
+            whatsappNumber: whatsappInput.trim() || null,
+          },
+        })
+      }
+      contactSaveTimeoutRef.current = setTimeout(() => setContactSaved(false), 2000)
+    } catch {
+      // ignore
+    } finally {
+      setContactSaving(false)
+    }
+  }
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-gold border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -95,7 +146,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
 
   if (notFound || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-navy mb-2">Dashboard not found</h1>
           <p className="text-gray-500 mb-6">The link may be invalid or expired.</p>
@@ -109,7 +160,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const maxViews = viewsBySource[0]?.count ?? 1
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Top bar */}
       <div className="bg-navy border-b border-white/5">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -119,15 +170,24 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             </div>
             <span className="text-white font-bold">Vitrine</span>
           </Link>
-          <a
-            href={`/p/${business.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
-          >
-            View my page
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New Page
+            </Link>
+            <a
+              href={`/p/${business.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
+            >
+              View my page
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -138,11 +198,21 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block A: Summary cards ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
           <StatCard
             icon={<Eye className="w-5 h-5 text-gold" />}
-            label="Total Visits"
+            label="Page Visits"
             value={stats.totalViews}
+          />
+          <StatCard
+            icon={<MousePointerClick className="w-5 h-5 text-gold" />}
+            label="Booking Clicks"
+            value={stats.bookingClicks}
+          />
+          <StatCard
+            icon={<MessageCircle className="w-5 h-5 text-gold" />}
+            label="WhatsApp Clicks"
+            value={stats.whatsappClicks}
           />
           <StatCard
             icon={<Users className="w-5 h-5 text-gold" />}
@@ -157,7 +227,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block B: Visits by source ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-bold text-navy mb-5">Visits by Source</h2>
           {viewsBySource.length === 0 ? (
             <p className="text-gray-400 text-sm">No visits yet. Share your page to get traffic!</p>
@@ -180,7 +250,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block C: Leads list ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <h2 className="text-lg font-bold text-navy mb-5">Leads</h2>
           {leads.length === 0 ? (
             <p className="text-gray-400 text-sm">No leads yet. They&apos;ll appear here when someone contacts you.</p>
@@ -198,7 +268,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 </thead>
                 <tbody>
                   {leads.map((lead) => (
-                    <tr key={lead.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                    <tr key={lead.id} className="border-b border-gray-50 hover:bg-slate-50 transition-colors">
                       <td className="py-3 pr-4 font-medium text-navy">{lead.visitor_name}</td>
                       <td className="py-3 pr-4">
                         <a
@@ -212,7 +282,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                         {lead.message}
                       </td>
                       <td className="py-3 pr-4 hidden sm:table-cell">
-                        <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                        <span className="bg-slate-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
                           {lead.via ?? 'Direct'}
                         </span>
                       </td>
@@ -228,7 +298,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {/* ── Block D: Campaign link creator ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
           <div className="flex items-center gap-2 mb-2">
             <Link2 className="w-5 h-5 text-gold" />
             <h2 className="text-lg font-bold text-navy">Create a Campaign Link</h2>
@@ -255,7 +325,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           </div>
 
           {generatedLink && (
-            <div className="mt-4 bg-gray-50 rounded-xl p-4 flex items-center gap-3 flex-wrap">
+            <div className="mt-4 bg-slate-50 rounded-xl p-4 flex items-center gap-3 flex-wrap">
               <span className="flex-1 font-mono text-sm text-navy break-all min-w-0">
                 {generatedLink}
               </span>
@@ -278,6 +348,87 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             </div>
           )}
         </div>
+
+        {/* ── Block E: Booking & WhatsApp contact setup ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-2">
+            <CalendarDays className="w-5 h-5 text-gold" />
+            <h2 className="text-lg font-bold text-navy">Booking &amp; WhatsApp</h2>
+          </div>
+          <p className="text-gray-500 text-sm mb-6">
+            Configure how customers can reach you and book appointments directly from your public page.
+          </p>
+
+          {/* Booking URL */}
+          <div className="mb-5">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              📅 Booking / Scheduling link
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Paste your Calendly, Google Calendar, or any scheduling URL. Customers click directly to your calendar.
+              You can also enter your email address.
+            </p>
+            <input
+              type="text"
+              value={bookingInput}
+              onChange={(e) => setBookingInput(e.target.value)}
+              placeholder="https://calendly.com/yourname or you@email.com"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+            />
+            {data.business.bookingUrl && (() => {
+              const href = safeBookingHref(data.business.bookingUrl!)
+              return href ? (
+                <p className="mt-1.5 text-xs text-gray-400">
+                  Active:{' '}
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-gold hover:underline break-all">
+                    {data.business.bookingUrl}
+                  </a>
+                </p>
+              ) : null
+            })()}
+          </div>
+
+          {/* WhatsApp number */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              💬 WhatsApp number
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              Enter your WhatsApp number in international format. A floating green button will appear on your page so customers can message you instantly.
+            </p>
+            <input
+              type="tel"
+              value={whatsappInput}
+              onChange={(e) => setWhatsappInput(e.target.value)}
+              placeholder="+55 11 99999-9999"
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+            />
+            {data.business.whatsappNumber && (
+              <p className="mt-1.5 text-xs text-gray-400">
+                Active:{' '}
+                <span className="text-[#25D366] font-medium">{data.business.whatsappNumber}</span>
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={handleSaveContact}
+            disabled={contactSaving}
+            className="bg-gold text-navy px-6 py-3 rounded-xl font-semibold hover:bg-yellow-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+          >
+            {contactSaved ? (
+              <>
+                <Check className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                Save Changes
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -293,13 +444,13 @@ function StatCard({
   value: number
 }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex items-center gap-4">
-      <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col gap-2">
+      <div className="w-9 h-9 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
       <div>
-        <p className="text-2xl font-bold text-navy">{value}</p>
-        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-navy leading-none">{value}</p>
+        <p className="text-xs text-gray-500 mt-1">{label}</p>
       </div>
     </div>
   )

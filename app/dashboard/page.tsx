@@ -96,6 +96,7 @@ export default function DashboardPage() {
   const [isGenerated, setIsGenerated] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
+  const [publicPageUrl, setPublicPageUrl] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
@@ -226,11 +227,24 @@ export default function DashboardPage() {
       })
       if (res.ok) {
         const json = await res.json()
-        if (json.token) setDashboardToken(json.token)
+        if (json.token) {
+          setDashboardToken(json.token)
+          // Persist the token to localStorage so the user can recover it
+          // from the same browser even if they lose the email.
+          try {
+            localStorage.setItem('vitrine_dashboard_token', json.token)
+            localStorage.setItem('vitrine_dashboard_slug', pageSlug)
+          } catch {
+            // localStorage unavailable — ignore
+          }
+        }
       }
     } catch {
       // If the API is unavailable, still show the success state
     }
+    // Compute the real public URL using the current origin (not a hardcoded domain).
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    setPublicPageUrl(`${origin}/p/${pageSlug}`)
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
@@ -238,7 +252,7 @@ export default function DashboardPage() {
   }
 
   const handleCopyLink = async () => {
-    const fullUrl = `https://vitrine.app/${pageSlug}`
+    const fullUrl = publicPageUrl || (typeof window !== 'undefined' ? `${window.location.origin}/p/${pageSlug}` : `/p/${pageSlug}`)
     try {
       await navigator.clipboard.writeText(fullUrl)
       setCopySuccess(true)
@@ -659,7 +673,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      /p/{pageSlug}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -700,7 +714,7 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {publicPageUrl || `/p/${pageSlug}`}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -728,7 +742,11 @@ export default function DashboardPage() {
                       >
                         /dashboard/{dashboardToken}
                       </Link>
-                      <p className="text-xs text-blue-500 mt-1">Save this link — it&apos;s your only way to access leads &amp; stats.</p>
+                      <p className="text-xs text-blue-500 mt-2">
+                        {email
+                          ? <>We&apos;ve also emailed this link to <span className="font-semibold">{email}</span> — check your inbox to save it.</>
+                          : <>Save this link — it&apos;s your only way to access leads &amp; stats.</>}
+                      </p>
                     </div>
                   )}
                   <p className="text-sm text-gray-400 mt-6">

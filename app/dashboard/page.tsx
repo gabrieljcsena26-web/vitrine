@@ -102,6 +102,11 @@ export default function DashboardPage() {
   const aboutInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
 
+  // Dashboard recovery
+  const [recoveryEmail, setRecoveryEmail] = useState('')
+  const [recoverySending, setRecoverySending] = useState(false)
+  const [recoverySent, setRecoverySent] = useState(false)
+
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
 
@@ -247,6 +252,24 @@ export default function DashboardPage() {
       // Fallback for browsers that don't support clipboard API
       console.error('Failed to copy:', err)
       alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
+    }
+  }
+
+  const handleRecovery = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!recoveryEmail.trim()) return
+    setRecoverySending(true)
+    try {
+      await fetch('/api/dashboard/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: recoveryEmail.trim() }),
+      })
+    } catch {
+      // fail silently
+    } finally {
+      setRecoverySending(false)
+      setRecoverySent(true)
     }
   }
 
@@ -758,6 +781,38 @@ export default function DashboardPage() {
               </button>
             ) : null}
           </div>
+        </div>
+
+        {/* Dashboard recovery */}
+        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 className="text-base font-bold text-navy mb-1">Already have a page?</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Enter your email and we&apos;ll send your dashboard link(s) so you can access your leads and stats.
+          </p>
+          {recoverySent ? (
+            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+              <Check className="w-4 h-4" />
+              If we found an account with that email, we sent the dashboard link(s) to your inbox.
+            </div>
+          ) : (
+            <form onSubmit={handleRecovery} className="flex gap-3 flex-col sm:flex-row">
+              <input
+                type="email"
+                required
+                value={recoveryEmail}
+                onChange={(e) => setRecoveryEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={recoverySending || !recoveryEmail.trim()}
+                className="bg-navy text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-navy/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {recoverySending ? 'Sending…' : 'Send my link'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

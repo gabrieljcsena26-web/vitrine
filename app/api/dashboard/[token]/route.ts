@@ -18,7 +18,7 @@ export async function GET(
   // Look up business by secret token
   const { data: business, error: bizError } = await db
     .from('businesses')
-    .select('id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number')
+    .select('id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, whatsapp_message')
     .eq('secret_token', token)
     .single()
 
@@ -97,6 +97,7 @@ export async function GET(
       createdAt: business.created_at,
       bookingUrl: business.booking_url ?? null,
       whatsappNumber: business.whatsapp_number ?? null,
+      whatsappMessage: business.whatsapp_message ?? null,
     },
     stats: {
       totalViews: totalViews ?? 0,
@@ -122,7 +123,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { bookingUrl, whatsappNumber } = body
+  const { bookingUrl, whatsappNumber, whatsappMessage } = body
 
   // Validate bookingUrl: only allow http/https URLs or plain email addresses
   if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
@@ -144,11 +145,22 @@ export async function PATCH(
     }
   }
 
+  // Validate whatsappMessage: free text, max 500 chars
+  if (whatsappMessage !== null && whatsappMessage !== undefined && whatsappMessage !== '') {
+    if (String(whatsappMessage).trim().length > 500) {
+      return NextResponse.json(
+        { error: 'whatsappMessage must be 500 characters or fewer' },
+        { status: 400 }
+      )
+    }
+  }
+
   const db = createServiceClient()
 
   const updates: Record<string, string | null> = {}
   if (bookingUrl !== undefined) updates.booking_url = bookingUrl ?? null
   if (whatsappNumber !== undefined) updates.whatsapp_number = whatsappNumber ?? null
+  if (whatsappMessage !== undefined) updates.whatsapp_message = whatsappMessage ?? null
 
   const { error } = await db
     .from('businesses')

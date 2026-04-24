@@ -20,6 +20,7 @@ create table if not exists businesses (
   photos            jsonb,
   booking_url       text,
   whatsapp_number   text,
+  whatsapp_message  text,
   created_at        timestamptz default now()
 );
 
@@ -35,6 +36,7 @@ create table if not exists page_views (
 -- Migration helper (run if the table already exists):
 -- alter table page_views add column if not exists event_type text not null default 'visit';
 -- alter table businesses  add column if not exists whatsapp_number text;
+-- alter table businesses  add column if not exists whatsapp_message text;
 
 -- ─── Leads ─────────────────────────────────────────────────────────────────────
 create table if not exists leads (

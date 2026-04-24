@@ -7,10 +7,12 @@ interface Props {
   whatsappNumber: string
   businessId: string
   via?: string
+  whatsappMessage?: string
 }
 
-export default function WhatsAppButton({ t, whatsappNumber, businessId, via }: Props) {
-  const href = whatsAppHref(whatsappNumber)
+export default function WhatsAppButton({ t, whatsappNumber, businessId, via, whatsappMessage }: Props) {
+  const href = whatsAppHref(whatsappNumber, whatsappMessage)
+  if (!href) return null
 
   const handleClick = () => {
     fetch('/api/track-visit', {

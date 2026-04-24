@@ -31,6 +31,7 @@ interface BusinessData {
   photos: string[]
   booking_url: string | null
   whatsapp_number: string | null
+  whatsapp_message: string | null
 }
 
 export default function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -125,11 +126,19 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
           phone: business.phone,
           hours: business.hours ?? [],
           services: business.services ?? [],
+          bookingUrl: business.booking_url ?? undefined,
+          whatsappNumber: business.whatsapp_number ?? undefined,
         }}
       />
       <Footer t={t} businessName={business.owner_name} />
       {business.whatsapp_number && (
-        <WhatsAppButton t={t} whatsappNumber={business.whatsapp_number} businessId={business.id} via={via} />
+        <WhatsAppButton
+          t={t}
+          whatsappNumber={business.whatsapp_number}
+          businessId={business.id}
+          via={via}
+          whatsappMessage={business.whatsapp_message ?? undefined}
+        />
       )}
     </main>
   )

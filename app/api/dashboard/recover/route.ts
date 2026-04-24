@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
-import { getBaseUrl } from '@/lib/utils'
+import { getBaseUrl, isEmail } from '@/lib/utils'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json()
 
-    if (!email || typeof email !== 'string' || email.trim().length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+    if (!email || typeof email !== 'string' || email.trim().length > 254 || !isEmail(email.trim())) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 })
     }
 

@@ -18,6 +18,9 @@ export default function HomePage() {
             <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
               View Demo
             </Link>
+            <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
+              Login
+            </Link>
             <Link
               href="/dashboard"
               className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors"

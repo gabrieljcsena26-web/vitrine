@@ -15,17 +15,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 })
     }
 
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!resend) {
+      return NextResponse.json(
+        { error: 'Email delivery is not configured right now. If you just created a page, use the dashboard link shown on the success screen.' },
+        { status: 503 }
+      )
+    }
+
     const db = createServiceClient()
 
     const { data: businesses } = await db
       .from('businesses')
       .select('owner_name, slug, secret_token')
-      .eq('owner_email', email.trim().toLowerCase())
+      .eq('owner_email', normalizedEmail)
       .order('created_at', { ascending: false })
       .limit(10)
 
     // Always return success to avoid email enumeration
-    if (!businesses || businesses.length === 0 || !resend) {
+    if (!businesses || businesses.length === 0) {
       return NextResponse.json({ ok: true })
     }
 
@@ -50,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     await resend.emails.send({
       from: 'Vitrine <noreply@vitrine.app>',
-      to: email.trim(),
+      to: normalizedEmail,
       subject: 'Your Vitrine dashboard link(s)',
       html: `
         <div style="font-family:sans-serif;max-width:560px;margin:0 auto">

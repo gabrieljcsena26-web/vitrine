@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [phone, setPhone] = useState('')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
     { name: 'Color', price: '65' },
@@ -94,10 +95,14 @@ export default function DashboardPage() {
   const [galleryDragging, setGalleryDragging] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
+  const [generationError, setGenerationError] = useState('')
   const [copySuccess, setCopySuccess] = useState(false)
+  const [dashboardCopySuccess, setDashboardCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
+  const [savedDashboardToken, setSavedDashboardToken] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
+  const dashboardCopySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
   const aboutInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
@@ -106,9 +111,20 @@ export default function DashboardPage() {
   const [recoveryEmail, setRecoveryEmail] = useState('')
   const [recoverySending, setRecoverySending] = useState(false)
   const [recoverySent, setRecoverySent] = useState(false)
+  const [recoveryError, setRecoveryError] = useState('')
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
+  const pagePath = `/p/${pageSlug}`
+  const dashboardPath = dashboardToken ? `/dashboard/${dashboardToken}` : ''
+  const savedDashboardPath = savedDashboardToken ? `/dashboard/${savedDashboardToken}` : ''
+
+  const getAbsoluteUrl = (path: string) => {
+    if (typeof window === 'undefined') return path
+    return `${window.location.origin}${path}`
+  }
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -118,6 +134,9 @@ export default function DashboardPage() {
       }
       if (copySuccessTimeoutRef.current) {
         clearTimeout(copySuccessTimeoutRef.current)
+      }
+      if (dashboardCopySuccessTimeoutRef.current) {
+        clearTimeout(dashboardCopySuccessTimeoutRef.current)
       }
     }
   }, [])
@@ -142,6 +161,7 @@ export default function DashboardPage() {
           setAboutPhoto((data.photos as string[])[1] || '')
           setGalleryPhotos((data.photos as string[]).slice(2).filter(Boolean))
         }
+        if (data.dashboardToken) setSavedDashboardToken(data.dashboardToken)
       }
     } catch {
       // ignore corrupt saved data
@@ -182,7 +202,7 @@ export default function DashboardPage() {
 
   const saveBusinessData = (): boolean => {
     const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
-    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
+    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos, dashboardToken: dashboardToken || savedDashboardToken }
     try {
       localStorage.setItem('vitrine_business_data', JSON.stringify(data))
       return true
@@ -199,18 +219,36 @@ export default function DashboardPage() {
 
   const handleNext = () => {
     if (step === 0) {
+      let hasError = false
       if (!businessName.trim()) {
         setNameError('Business name is required.')
-        return
+        hasError = true
+      } else {
+        setNameError('')
       }
-      setNameError('')
+      if (!email.trim()) {
+        setEmailError('Email is required so we can create and recover your dashboard.')
+        hasError = true
+      } else if (!isValidEmail(email)) {
+        setEmailError('Enter a valid email address.')
+        hasError = true
+      } else {
+        setEmailError('')
+      }
+      if (hasError) return
     }
     setStep(step + 1)
   }
 
   const handleGeneratePage = async () => {
+    if (!email.trim() || !isValidEmail(email)) {
+      setEmailError('Enter a valid email address before generating your page.')
+      setStep(0)
+      return
+    }
     saveBusinessData()
     setIsGenerating(true)
+    setGenerationError('')
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
@@ -221,7 +259,7 @@ export default function DashboardPage() {
           category,
           description,
           address,
-          email,
+          email: email.trim().toLowerCase(),
           phone,
           lang,
           services,
@@ -229,21 +267,44 @@ export default function DashboardPage() {
           photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
         }),
       })
-      if (res.ok) {
-        const json = await res.json()
-        if (json.token) setDashboardToken(json.token)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(json.error || 'Could not create your page. Please try again.')
       }
-    } catch {
-      // If the API is unavailable, still show the success state
-    }
-    generateTimeoutRef.current = setTimeout(() => {
+      if (!json.token) {
+        throw new Error('Your page was created, but no dashboard link was returned. Please try again.')
+      }
+      setDashboardToken(json.token)
+      setSavedDashboardToken(json.token)
+      try {
+        localStorage.setItem('vitrine_business_data', JSON.stringify({
+          businessName,
+          category,
+          description,
+          address,
+          email: email.trim().toLowerCase(),
+          phone,
+          lang,
+          services,
+          hours,
+          photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
+          dashboardToken: json.token,
+        }))
+      } catch {
+        // localStorage unavailable — ignore
+      }
+      generateTimeoutRef.current = setTimeout(() => {
+        setIsGenerating(false)
+        setIsGenerated(true)
+      }, GENERATION_DURATION_MS)
+    } catch (err) {
       setIsGenerating(false)
-      setIsGenerated(true)
-    }, GENERATION_DURATION_MS)
+      setGenerationError(err instanceof Error ? err.message : 'Could not create your page. Please try again.')
+    }
   }
 
   const handleCopyLink = async () => {
-    const fullUrl = `https://vitrine.app/${pageSlug}`
+    const fullUrl = getAbsoluteUrl(pagePath)
     try {
       await navigator.clipboard.writeText(fullUrl)
       setCopySuccess(true)
@@ -255,21 +316,39 @@ export default function DashboardPage() {
     }
   }
 
+  const handleCopyDashboardLink = async () => {
+    if (!dashboardPath) return
+    const fullUrl = getAbsoluteUrl(dashboardPath)
+    try {
+      await navigator.clipboard.writeText(fullUrl)
+      setDashboardCopySuccess(true)
+      dashboardCopySuccessTimeoutRef.current = setTimeout(() => setDashboardCopySuccess(false), COPY_SUCCESS_DURATION_MS)
+    } catch (err) {
+      console.error('Failed to copy dashboard link:', err)
+      alert(`Failed to copy dashboard link. Please copy manually:\n\n${fullUrl}`)
+    }
+  }
+
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!recoveryEmail.trim()) return
     setRecoverySending(true)
+    setRecoveryError('')
     try {
-      await fetch('/api/dashboard/recover', {
+      const res = await fetch('/api/dashboard/recover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: recoveryEmail.trim() }),
+        body: JSON.stringify({ email: recoveryEmail.trim().toLowerCase() }),
       })
-    } catch {
-      // fail silently
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error || 'We could not send the email right now.')
+      }
+      setRecoverySent(true)
+    } catch (err) {
+      setRecoveryError(err instanceof Error ? err.message : 'We could not send the email right now.')
     } finally {
       setRecoverySending(false)
-      setRecoverySent(true)
     }
   }
 
@@ -387,10 +466,11 @@ export default function DashboardPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (isValidEmail(e.target.value)) setEmailError('') }}
                     placeholder="contact@yourbusiness.com"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
+                    className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${emailError ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
@@ -682,7 +762,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {pagePath}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -708,6 +788,9 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                  {generationError && (
+                    <p className="text-red-500 text-sm mt-4 max-w-sm mx-auto">{generationError}</p>
+                  )}
                 </>
               ) : (
                 <>
@@ -723,12 +806,12 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {getAbsoluteUrl(pagePath)}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href={`/p/${pageSlug}`}
+                      href={pagePath}
                       onClick={saveBusinessData}
                       className="flex items-center gap-2 justify-center bg-gold text-navy px-8 py-3 rounded-full font-bold hover:bg-yellow-400 transition-colors"
                     >
@@ -743,14 +826,25 @@ export default function DashboardPage() {
                     </button>
                   </div>
                   {dashboardToken && (
-                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-sm mx-auto text-left">
+                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-md mx-auto text-left">
                       <p className="text-xs text-blue-600 font-medium mb-2">📊 Your private dashboard:</p>
-                      <Link
-                        href={`/dashboard/${dashboardToken}`}
-                        className="text-blue-700 font-mono text-sm break-all hover:underline"
-                      >
-                        /dashboard/{dashboardToken}
-                      </Link>
+                      <p className="text-navy font-mono text-sm break-all mb-3">
+                        {getAbsoluteUrl(dashboardPath)}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                       <Link
+                         href={dashboardPath}
+                         className="flex-1 text-center bg-navy text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-navy/90 transition-colors"
+                       >
+                         Open Dashboard
+                       </Link>
+                       <button
+                         onClick={handleCopyDashboardLink}
+                         className="flex-1 bg-white text-blue-700 border border-blue-200 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-50 transition-colors"
+                       >
+                         {dashboardCopySuccess ? '✓ Copied!' : 'Copy Dashboard Link'}
+                       </button>
+                      </div>
                       <p className="text-xs text-blue-500 mt-1">Save this link — it&apos;s your only way to access leads &amp; stats.</p>
                     </div>
                   )}
@@ -795,23 +889,37 @@ export default function DashboardPage() {
               If we found an account with that email, we sent the dashboard link(s) to your inbox.
             </div>
           ) : (
-            <form onSubmit={handleRecovery} className="flex gap-3 flex-col sm:flex-row">
-              <input
-                type="email"
-                required
-                value={recoveryEmail}
-                onChange={(e) => setRecoveryEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={recoverySending || !recoveryEmail.trim()}
-                className="bg-navy text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-navy/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            <>
+              <form onSubmit={handleRecovery} className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="email"
+                  required
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={recoverySending || !recoveryEmail.trim()}
+                  className="bg-navy text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-navy/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {recoverySending ? 'Sending…' : 'Send my link'}
+                </button>
+              </form>
+              {recoveryError && <p className="text-red-500 text-sm mt-3">{recoveryError}</p>}
+            </>
+          )}
+          {savedDashboardPath && (
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <p className="text-sm text-gray-500 mb-2">Dashboard saved on this device:</p>
+              <Link
+                href={savedDashboardPath}
+                className="inline-flex bg-gold text-navy px-4 py-2 rounded-xl font-semibold text-sm hover:bg-yellow-400 transition-colors"
               >
-                {recoverySending ? 'Sending…' : 'Send my link'}
-              </button>
-            </form>
+                Open saved dashboard
+              </Link>
+            </div>
           )}
         </div>
       </div>

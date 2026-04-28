@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const ownerEmail = String(email).trim().toLowerCase()
+
     const db = createServiceClient()
 
     // Upsert: if the slug already exists, update the record and return the existing token
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
         {
           slug,
           owner_name: businessName,
-          owner_email: email,
+          owner_email: ownerEmail,
           category,
           description,
           address,
@@ -64,14 +66,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Send welcome email with the dashboard link
-    if (resend && email) {
+    if (resend && ownerEmail) {
       const baseUrl = getBaseUrl()
       const dashboardUrl = `${baseUrl}/dashboard/${data.secret_token}`
       const pageUrl = `${baseUrl}/p/${data.slug}`
       const safeName = escapeHtml(businessName)
       await resend.emails.send({
         from: 'Vitrine <noreply@vitrine.app>',
-        to: email,
+        to: ownerEmail,
         subject: '🎉 Your Vitrine page is live — save your dashboard link',
         html: `
           <div style="font-family:sans-serif;max-width:560px;margin:0 auto">

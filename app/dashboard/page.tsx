@@ -124,7 +124,12 @@ export default function DashboardPage() {
     return `${window.location.origin}${path}`
   }
 
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())
+  const getSafeImageSrc = (src: string) => {
+    if (/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(src)) return src
+    if (/^https:\/\//i.test(src)) return src
+    return ''
+  }
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -617,7 +622,7 @@ export default function DashboardPage() {
                       {heroPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={heroPhoto} alt="Hero photo" className="w-full h-full object-cover" />
+                           <img src={getSafeImageSrc(heroPhoto)} alt="Hero photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => heroInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -659,7 +664,7 @@ export default function DashboardPage() {
                       {aboutPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={aboutPhoto} alt="About photo" className="w-full h-full object-cover" />
+                          <img src={getSafeImageSrc(aboutPhoto)} alt="About photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => aboutInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -704,7 +709,7 @@ export default function DashboardPage() {
                             <div key={i} className="relative group">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''}
+                                src={getSafeImageSrc(src)}
                                 alt={`Gallery ${i + 1}`}
                                 className="w-full h-20 object-cover rounded-lg"
                               />
@@ -762,7 +767,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      {pagePath}
+                      {getAbsoluteUrl(pagePath)}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     if (!resend) {
       return NextResponse.json(
-        { error: 'Email delivery is not configured right now. If you just created a page, use the dashboard link shown on the success screen.' },
+        { error: 'Email delivery is currently unavailable. Please try again later or contact support if the issue persists.' },
         { status: 503 }
       )
     }

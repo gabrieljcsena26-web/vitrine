@@ -275,6 +275,11 @@ export default function DashboardPage() {
     setStep(step + 1)
   }
 
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    if (isValidEmail(value)) setEmailError('')
+  }
+
   const handleGeneratePage = async () => {
     if (!email.trim() || !isValidEmail(email)) {
       setEmailError('Enter a valid email address before generating your page.')
@@ -492,7 +497,7 @@ export default function DashboardPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); if (isValidEmail(e.target.value)) setEmailError('') }}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="contact@yourbusiness.com"
                     className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${emailError ? 'border-red-400' : 'border-gray-200'}`}
                   />

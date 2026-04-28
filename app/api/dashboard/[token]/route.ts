@@ -2,6 +2,49 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { isHttpUrl, isEmail } from '@/lib/utils'
 
+// Demo token — when used, the API returns illustrative mock data instead of
+// hitting Supabase. This lets anyone preview the dashboard UI at
+// /dashboard/demo without having a real account.
+const DEMO_TOKEN = 'demo'
+
+function buildDemoPayload() {
+  const now = Date.now()
+  const hoursAgo = (h: number) => new Date(now - h * 60 * 60 * 1000).toISOString()
+  return {
+    business: {
+      id: 'demo-business',
+      slug: 'studio-bella',
+      ownerName: 'Maria Silva',
+      ownerEmail: 'maria@studiobella.com',
+      category: 'Salão de Beleza',
+      createdAt: hoursAgo(24 * 21),
+      bookingUrl: 'https://calendly.com/studio-bella',
+      whatsappNumber: '+5511999998888',
+      whatsappMessage: 'Olá! Vim pelo site e gostaria de agendar.',
+    },
+    stats: {
+      totalViews: 248,
+      bookingClicks: 37,
+      whatsappClicks: 52,
+      totalLeads: 18,
+      leadsThisWeek: 6,
+    },
+    viewsBySource: [
+      { source: 'instagram', count: 112 },
+      { source: 'whatsapp', count: 64 },
+      { source: 'Direct', count: 41 },
+      { source: 'google', count: 31 },
+    ],
+    leads: [
+      { id: 'demo-1', visitor_name: 'Ana Costa', visitor_email: 'ana@email.com', message: 'Quero agendar corte e escova pra sábado.', via: 'instagram', submitted_at: hoursAgo(3) },
+      { id: 'demo-2', visitor_name: 'João Pereira', visitor_email: 'joao@email.com', message: 'Vocês fazem barba também?', via: 'whatsapp', submitted_at: hoursAgo(26) },
+      { id: 'demo-3', visitor_name: 'Carla Mendes', visitor_email: 'carla@email.com', message: 'Tem horário na quinta de manhã?', via: 'instagram', submitted_at: hoursAgo(50) },
+      { id: 'demo-4', visitor_name: 'Pedro Alves', visitor_email: 'pedro@email.com', message: 'Quanto custa a escova progressiva?', via: 'google', submitted_at: hoursAgo(74) },
+      { id: 'demo-5', visitor_name: 'Beatriz Lima', visitor_email: 'bia@email.com', message: 'Atendem aos domingos?', via: 'instagram', submitted_at: hoursAgo(120) },
+    ],
+  }
+}
+
 // GET /api/dashboard/[token] — return stats for the owner dashboard
 export async function GET(
   _req: NextRequest,
@@ -11,6 +54,10 @@ export async function GET(
 
   if (!token) {
     return NextResponse.json({ error: 'Token is required' }, { status: 400 })
+  }
+
+  if (token === DEMO_TOKEN) {
+    return NextResponse.json(buildDemoPayload())
   }
 
   const db = createServiceClient()
@@ -153,6 +200,11 @@ export async function PATCH(
         { status: 400 }
       )
     }
+  }
+
+  // Demo mode: validate input but do not persist anything.
+  if (token === DEMO_TOKEN) {
+    return NextResponse.json({ ok: true, demo: true })
   }
 
   const db = createServiceClient()

@@ -124,11 +124,25 @@ export default function DashboardPage() {
     return `${window.location.origin}${path}`
   }
 
-  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim())
+  const isValidEmail = (value: string) => {
+    const trimmed = value.trim()
+    if (trimmed.length > 254 || trimmed.includes('..')) return false
+    return /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$/.test(trimmed)
+  }
+
   const getSafeImageSrc = (src: string) => {
-    if (/^data:image\/(?:jpeg|jpg|png|webp|gif);base64,/i.test(src)) return src
-    if (/^https:\/\//i.test(src)) return src
-    return ''
+    const trimmed = src.trim()
+    const allowedPrefixes = [
+      'data:image/jpeg;base64,',
+      'data:image/jpg;base64,',
+      'data:image/png;base64,',
+      'data:image/webp;base64,',
+      'data:image/gif;base64,',
+    ]
+    const prefix = allowedPrefixes.find((p) => trimmed.toLowerCase().startsWith(p))
+    if (!prefix) return ''
+    const payload = trimmed.slice(prefix.length)
+    return /^[A-Za-z0-9+/]+={0,2}$/.test(payload) ? trimmed : ''
   }
 
   // Cleanup timeouts on unmount
@@ -205,9 +219,25 @@ export default function DashboardPage() {
     })
   }
 
-  const saveBusinessData = (): boolean => {
+  const buildBusinessData = (token = dashboardToken || savedDashboardToken) => {
     const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
-    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos, dashboardToken: dashboardToken || savedDashboardToken }
+    return {
+      businessName,
+      category,
+      description,
+      address,
+      email,
+      phone,
+      lang,
+      services,
+      hours,
+      photos,
+      dashboardToken: token,
+    }
+  }
+
+  const saveBusinessData = (): boolean => {
+    const data = buildBusinessData()
     try {
       localStorage.setItem('vitrine_business_data', JSON.stringify(data))
       return true
@@ -283,17 +313,8 @@ export default function DashboardPage() {
       setSavedDashboardToken(json.token)
       try {
         localStorage.setItem('vitrine_business_data', JSON.stringify({
-          businessName,
-          category,
-          description,
-          address,
+          ...buildBusinessData(json.token),
           email: email.trim().toLowerCase(),
-          phone,
-          lang,
-          services,
-          hours,
-          photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
-          dashboardToken: json.token,
         }))
       } catch {
         // localStorage unavailable — ignore

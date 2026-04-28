@@ -142,7 +142,13 @@ export default function DashboardPage() {
     const prefix = allowedPrefixes.find((p) => trimmed.toLowerCase().startsWith(p))
     if (!prefix) return ''
     const payload = trimmed.slice(prefix.length)
-    return /^[A-Za-z0-9+/]+={0,2}$/.test(payload) ? trimmed : ''
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(payload)) return ''
+    try {
+      globalThis.atob?.(payload)
+      return trimmed
+    } catch {
+      return ''
+    }
   }
 
   // Cleanup timeouts on unmount
@@ -309,10 +315,10 @@ export default function DashboardPage() {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(json.error || 'Could not create your page. Please try again.')
+        throw new Error(json.error || 'Could not create your page. Please check your connection and try again.')
       }
       if (!json.token) {
-        throw new Error('Your page was created, but no dashboard link was returned. Please try again.')
+        throw new Error('Your page was created, but no dashboard link was returned. Please contact support with your business name to retrieve dashboard access.')
       }
       setDashboardToken(json.token)
       setSavedDashboardToken(json.token)
@@ -330,7 +336,7 @@ export default function DashboardPage() {
       }, GENERATION_DURATION_MS)
     } catch (err) {
       setIsGenerating(false)
-      setGenerationError(err instanceof Error ? err.message : 'Could not create your page. Please try again.')
+      setGenerationError(err instanceof Error ? err.message : 'Unexpected error creating your page. Please check your connection and try again.')
     }
   }
 
@@ -373,11 +379,11 @@ export default function DashboardPage() {
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        throw new Error(json.error || 'We could not send the email right now.')
+        throw new Error(json.error || 'We could not send the recovery email. Please try again in a few moments.')
       }
       setRecoverySent(true)
     } catch (err) {
-      setRecoveryError(err instanceof Error ? err.message : 'We could not send the email right now.')
+      setRecoveryError(err instanceof Error ? err.message : 'Unexpected error sending the recovery email. Please try again.')
     } finally {
       setRecoverySending(false)
     }

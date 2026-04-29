@@ -72,7 +72,7 @@ function generateSlug(name: string): string {
 
 function safeImageSrc(src: string): string {
   const trimmed = src.trim()
-  if (/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(trimmed)) return encodeURI(trimmed)
+  if (/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) return encodeURI(trimmed)
   if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed)) return encodeURI(trimmed)
   return ''
 }
@@ -123,7 +123,9 @@ export default function DashboardPage() {
   const publicPageUrl = origin ? `${origin}${pagePath}` : pagePath
 
   useEffect(() => {
-    setOrigin(window.location.origin)
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin)
+    }
 
     return () => {
       if (generateTimeoutRef.current) {
@@ -165,6 +167,10 @@ export default function DashboardPage() {
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
   const updateService = (i: number, field: keyof Service, val: string) => {
     setServices(services.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
+  }
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    if (value.trim()) setEmailError('')
   }
   const toggleDay = (i: number) => {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
@@ -419,7 +425,7 @@ export default function DashboardPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); if (e.target.value.trim()) setEmailError('') }}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="contact@yourbusiness.com"
                     className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${emailError ? 'border-red-400' : 'border-gray-200'}`}
                   />

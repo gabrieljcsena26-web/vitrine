@@ -67,6 +67,13 @@ create table if not exists channels (
   unique (business_id, slug)
 );
 
+-- ─── Developer/admin settings ─────────────────────────────────────────────────
+create table if not exists dev_settings (
+  key          text primary key,
+  value        jsonb not null,
+  updated_at   timestamptz default now()
+);
+
 -- ─── Recommended indexes for scale ────────────────────────────────────────────
 create index if not exists page_views_business_event_idx on page_views (business_id, event_type, visited_at desc);
 create index if not exists page_views_business_via_idx on page_views (business_id, via);
@@ -81,6 +88,7 @@ alter table businesses  enable row level security;
 alter table page_views  enable row level security;
 alter table leads       enable row level security;
 alter table channels    enable row level security;
+alter table dev_settings enable row level security;
 
 -- Anyone can insert a page view (tracked from the public page)
 create policy "insert page views" on page_views for insert with check (true);

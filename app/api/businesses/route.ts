@@ -8,7 +8,6 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const PLAN_LIMITS: Record<string, number> = {
   starter: 1,
   pro: 3,
-  business: 999,
 }
 
 const normalizePlan = (plan: unknown) => {
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
       if ((existingPages ?? 0) >= pageLimit) {
         return NextResponse.json(
           {
-            error: `Your ${normalizedPlan} plan allows ${pageLimit === 999 ? 'unlimited' : pageLimit} page${pageLimit === 1 ? '' : 's'}. Upgrade to create more pages.`,
+            error: `Your ${normalizedPlan} plan allows ${pageLimit} page${pageLimit === 1 ? '' : 's'}. Upgrade to Pro to create more pages.`,
             code: 'PAGE_LIMIT_REACHED',
             plan: normalizedPlan,
             pageLimit,

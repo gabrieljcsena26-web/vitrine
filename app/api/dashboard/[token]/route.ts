@@ -5,7 +5,6 @@ import { isHttpUrl, isEmail } from '@/lib/utils'
 const PLAN_LIMITS: Record<string, number> = {
   starter: 1,
   pro: 3,
-  business: 999,
 }
 
 const normalizePlan = (plan: unknown) => {
@@ -190,7 +189,7 @@ export async function GET(
       plan,
       pagesUsed: pagesUsed ?? 1,
       pageLimit,
-      canCreateMore: pageLimit === 999 || (pagesUsed ?? 1) < pageLimit,
+      canCreateMore: (pagesUsed ?? 1) < pageLimit,
     },
     stats: {
       totalViews: totalViews ?? 0,

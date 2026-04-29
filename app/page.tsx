@@ -68,7 +68,7 @@ export default function HomePage() {
             <div className="grid grid-cols-3 gap-4 mt-10 max-w-xl">
               {[
                 ['4', 'Languages'],
-                ['3', 'Page plans'],
+                ['2', 'Page plans'],
                 ['24/7', 'Public page'],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -145,6 +145,47 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Visual demo */}
+      <section className="py-20 px-4 bg-white text-navy">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-10 items-center">
+            <div>
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">Client preview</span>
+              <h2 className="text-4xl md:text-5xl font-black mt-2 mb-5">Show the owner how their page could look.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-6">
+                Use real business photos, services, opening hours, WhatsApp and booking links to create a polished presentation before launch.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  ['Hero photo', 'First impression'],
+                  ['About section', 'Trust and story'],
+                  ['Service cards', 'Clear offers'],
+                  ['Gallery', 'Proof of work'],
+                ].map(([title, desc]) => (
+                  <div key={title} className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
+                    <p className="font-bold text-navy">{title}</p>
+                    <p className="text-sm text-gray-400 mt-1">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                ['https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=900&auto=format&fit=crop', 'Salon interior'],
+                ['https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=900&auto=format&fit=crop', 'Hair styling'],
+                ['https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=900&auto=format&fit=crop', 'Beauty service'],
+                ['https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=900&auto=format&fit=crop', 'Haircut detail'],
+              ].map(([src, alt], index) => (
+                <div key={alt} className={`rounded-3xl overflow-hidden shadow-xl shadow-stone-200/70 ${index === 0 ? 'row-span-2 h-96' : 'h-44'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt={alt} className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
       <section className="py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
@@ -152,7 +193,7 @@ export default function HomePage() {
           <h2 className="text-4xl font-bold mt-2 mb-16">How it works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', title: 'Create account', desc: 'Sign up free in seconds. No credit card needed.' },
+              { step: '01', title: 'Create test page', desc: 'Use the guided setup to see exactly how the client page will look.' },
               { step: '02', title: 'Add your business', desc: 'Fill in details, upload photos, set your services and hours.' },
               { step: '03', title: 'Share your page', desc: 'Copy your link and share it on Instagram, WhatsApp, Google.' },
             ].map((item, i) => (
@@ -178,7 +219,7 @@ export default function HomePage() {
             <h2 className="text-4xl font-bold mt-2">Choose the page capacity</h2>
             <p className="text-gray-400 mt-4">Plan capacity is ready; commercial terms stay private during beta.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {[
               {
                 name: 'Starter',
@@ -195,14 +236,6 @@ export default function HomePage() {
                 features: ['Everything in Starter', '3 pages', 'Demo dashboard', 'Priority improvements'],
                 cta: 'Choose Pro',
                 highlighted: true,
-              },
-              {
-                name: 'Business',
-                pages: 'Unlimited',
-                desc: 'For agencies and multi-location brands',
-                features: ['Everything in Pro', 'Unlimited pages', 'Scale-ready setup', 'Dedicated support'],
-                cta: 'Choose Business',
-                highlighted: false,
               },
             ].map((plan, i) => (
               <div
@@ -267,13 +300,13 @@ export default function HomePage() {
             Ready to go live?
           </h2>
           <p className="text-gray-400 text-lg mb-8">
-            Join hundreds of local businesses already using Vitrine.
+            Create a professional demonstration and show clients exactly what they can launch.
           </p>
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 bg-gold text-navy px-10 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105"
           >
-            Create My Page Free
+            Create a demo page
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>

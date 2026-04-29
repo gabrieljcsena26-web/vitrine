@@ -21,7 +21,6 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
 const PLANS = [
   { id: 'starter', name: 'Starter', pages: '1 page', description: 'Best for one business page' },
   { id: 'pro', name: 'Pro', pages: '3 pages', description: 'For multiple services or locations' },
-  { id: 'business', name: 'Business', pages: 'Unlimited pages', description: 'For agencies and multi-location brands' },
 ]
 
 // Configuration

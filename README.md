@@ -10,6 +10,7 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 - **Live Demo:** `/demo` — Studio Elegance hair salon page  
 - **Dashboard:** `/dashboard` — onboarding form for business owners
 - **Test Login:** `/login` — creates/opens a demo dashboard with analytics
+- **Developer Console:** `/admin` — private launch/testing controls
 
 ## 💻 Run Locally
 
@@ -42,13 +43,24 @@ SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=
 NEXT_PUBLIC_BASE_URL=
 SUPABASE_STORAGE_BUCKET=business-photos
+VITRINE_DEV_PASSWORD=
+VITRINE_DEV_SESSION_SECRET=
 ```
+
+Local development uses `dev` as the developer password if `VITRINE_DEV_PASSWORD` is not set. Always set a strong password in Vercel.
 
 ## 🗄 Supabase Setup
 
 1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
 2. Create a public Storage bucket named `business-photos`.
-3. Confirm the `businesses`, `page_views`, `leads`, and `channels` tables exist.
+3. Confirm the `businesses`, `page_views`, `leads`, `channels`, and `dev_settings` tables exist.
+
+## 📦 Plans
+
+- **Starter:** 1 public page per owner email.
+- **Pro:** 3 public pages per owner email.
+
+Pricing stays private during beta; the public site demonstrates capacity only.
 
 ## ☁️ Deploy to Vercel
 

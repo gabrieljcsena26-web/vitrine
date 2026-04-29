@@ -42,7 +42,11 @@ SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
 SUPABASE_STORAGE_BUCKET=business-photos
+VITRINE_DEV_PASSWORD=
+VITRINE_DEV_SESSION_SECRET=
 ```
+
+Use a strong `VITRINE_DEV_PASSWORD` for `/admin`. `VITRINE_DEV_SESSION_SECRET` signs the private developer cookie.
 
 After adding/changing variables:
 1. Go to **Settings** → **Environment Variables**
@@ -60,7 +64,9 @@ Before deploying public traffic:
    - `page_views`
    - `leads`
    - `channels`
+   - `dev_settings`
 4. Confirm the recommended indexes were created for scale.
+5. Open `/admin` after deploy and save the launch control settings once, so the `dev_settings` row is created.
 
 ### 4. Verify Git Branch
 
@@ -126,5 +132,6 @@ After deploying, test all these URLs:
 - Homepage: `/`
 - Demo: `/demo`
 - Dashboard: `/dashboard`
+- Developer console: `/admin`
 
 All should return status **200 OK** and display the correct page.

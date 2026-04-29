@@ -173,7 +173,7 @@ export default function LoginPage() {
                   <p className="text-sm text-slate-500">
                     Don&apos;t have a page yet?{' '}
                     <Link href="/dashboard" className="text-gold font-semibold hover:underline">
-                      Create one for free →
+                      Create a demo page →
                     </Link>
                   </p>
                 </div>

@@ -366,7 +366,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const createdDate = new Date(business.createdAt)
   const daysLive = Math.max(1, Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)))
   const planName = pageUsage.plan.charAt(0).toUpperCase() + pageUsage.plan.slice(1)
-  const pageLimitLabel = pageUsage.pageLimit === 999 ? 'Unlimited' : pageUsage.pageLimit
+  const pageLimitLabel = pageUsage.pageLimit
   const newPageHref = `/dashboard?new=1&ownerEmail=${encodeURIComponent(business.ownerEmail)}&plan=${encodeURIComponent(pageUsage.plan)}`
   const now = new Date()
   const weekdayLabel = now.toLocaleDateString(undefined, { weekday: 'long' })
@@ -540,7 +540,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           ) : (
             <div className="text-sm text-gray-200 max-w-md">
               <p className="font-semibold text-white">Page limit reached.</p>
-              <p className="text-gray-300">Upgrade to Pro or Business to create more pages for this email.</p>
+              <p className="text-gray-300">Upgrade to Pro to create up to 3 pages for this email.</p>
             </div>
           )}
         </div>

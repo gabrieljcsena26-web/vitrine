@@ -36,7 +36,7 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-4 py-2 mb-8">
             <Zap className="w-4 h-4 text-gold" />
-            <span className="text-gold text-sm font-medium">No code needed</span>
+            <span className="text-gold text-sm font-medium">¡Hola! No code needed</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
             Generate your business page{' '}

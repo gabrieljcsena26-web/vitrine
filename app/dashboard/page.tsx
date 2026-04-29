@@ -23,6 +23,7 @@ const GENERATION_DURATION_MS = 2000 // Simulated page generation time
 const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
 const MAX_IMAGE_PX = 1000 // Max width/height for compressed photos
 const IMAGE_QUALITY = 0.75 // JPEG quality for compressed photos
+const MAX_IMAGE_DATA_URL_LENGTH = 2_000_000 // Guard against oversized restored photo previews
 
 // Compress an image file to a small data URL using canvas
 function compressImage(file: File): Promise<string> {
@@ -70,6 +71,21 @@ function generateSlug(name: string): string {
   return slug || 'my-business'
 }
 
+function safeImageSrc(src: string): string {
+  const trimmed = src.trim()
+  if (
+    trimmed.length <= MAX_IMAGE_DATA_URL_LENGTH &&
+    /^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)
+  ) {
+    return encodeURI(trimmed)
+  }
+  return ''
+}
+
+function isValidEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -81,6 +97,7 @@ export default function DashboardPage() {
   const [phone, setPhone] = useState('')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
     { name: 'Color', price: '65' },
@@ -94,8 +111,10 @@ export default function DashboardPage() {
   const [galleryDragging, setGalleryDragging] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
+  const [generationError, setGenerationError] = useState('')
   const [copySuccess, setCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
+  const [origin, setOrigin] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
@@ -109,9 +128,14 @@ export default function DashboardPage() {
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
+  const pagePath = `/p/${pageSlug}`
+  const publicPageUrl = origin ? `${origin}${pagePath}` : pagePath
 
-  // Cleanup timeouts on unmount
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin)
+    }
+
     return () => {
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current)
@@ -152,6 +176,10 @@ export default function DashboardPage() {
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
   const updateService = (i: number, field: keyof Service, val: string) => {
     setServices(services.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
+  }
+  const handleEmailChange = (value: string) => {
+    setEmail(value)
+    if (value.trim()) setEmailError('')
   }
   const toggleDay = (i: number) => {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
@@ -199,18 +227,39 @@ export default function DashboardPage() {
 
   const handleNext = () => {
     if (step === 0) {
-      if (!businessName.trim()) {
-        setNameError('Business name is required.')
-        return
-      }
-      setNameError('')
+      if (!validateBusinessInfo()) return
     }
     setStep(step + 1)
   }
 
+  const validateBusinessInfo = () => {
+    const missingName = !businessName.trim()
+    const missingEmail = !email.trim()
+    const invalidEmail = !missingEmail && !isValidEmailAddress(email.trim())
+
+    setNameError(missingName ? 'Business name is required.' : '')
+    setEmailError(
+      missingEmail
+        ? 'Email is required to publish your page and send your dashboard link.'
+        : invalidEmail
+          ? 'Enter a valid email address.'
+          : ''
+    )
+
+    return !missingName && !missingEmail && !invalidEmail
+  }
+
   const handleGeneratePage = async () => {
+    if (!validateBusinessInfo()) {
+      setStep(0)
+      return
+    }
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current)
+    }
     saveBusinessData()
     setIsGenerating(true)
+    setGenerationError('')
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
@@ -229,29 +278,34 @@ export default function DashboardPage() {
           photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
         }),
       })
-      if (res.ok) {
-        const json = await res.json()
-        if (json.token) setDashboardToken(json.token)
+      if (!res.ok) {
+        throw new Error('Failed to publish your page. Please try again or contact support if the problem persists.')
       }
-    } catch {
-      // If the API is unavailable, still show the success state
-    }
-    generateTimeoutRef.current = setTimeout(() => {
+      const json = await res.json()
+      if (json.token) setDashboardToken(json.token)
+      generateTimeoutRef.current = setTimeout(() => {
+        setIsGenerating(false)
+        setIsGenerated(true)
+      }, GENERATION_DURATION_MS)
+    } catch (err) {
       setIsGenerating(false)
-      setIsGenerated(true)
-    }, GENERATION_DURATION_MS)
+      setGenerationError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to publish your page. Please try again or contact support if the problem persists.'
+      )
+    }
   }
 
   const handleCopyLink = async () => {
-    const fullUrl = `https://vitrine.app/${pageSlug}`
     try {
-      await navigator.clipboard.writeText(fullUrl)
+      await navigator.clipboard.writeText(publicPageUrl)
       setCopySuccess(true)
       copySuccessTimeoutRef.current = setTimeout(() => setCopySuccess(false), COPY_SUCCESS_DURATION_MS)
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       console.error('Failed to copy:', err)
-      alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
+      alert(`Failed to copy link. Please copy manually:\n\n${publicPageUrl}`)
     }
   }
 
@@ -383,14 +437,15 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     placeholder="contact@yourbusiness.com"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
+                    className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${emailError ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
@@ -537,7 +592,7 @@ export default function DashboardPage() {
                       {heroPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={heroPhoto} alt="Hero photo" className="w-full h-full object-cover" />
+                          <img src={safeImageSrc(heroPhoto)} alt="Hero photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => heroInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -579,7 +634,7 @@ export default function DashboardPage() {
                       {aboutPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={aboutPhoto} alt="About photo" className="w-full h-full object-cover" />
+                          <img src={safeImageSrc(aboutPhoto)} alt="About photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => aboutInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -624,7 +679,7 @@ export default function DashboardPage() {
                             <div key={i} className="relative group">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''}
+                                src={safeImageSrc(src)}
                                 alt={`Gallery ${i + 1}`}
                                 className="w-full h-20 object-cover rounded-lg"
                               />
@@ -682,7 +737,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {publicPageUrl}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -708,6 +763,11 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                  {generationError && (
+                    <p className="mt-4 text-sm text-red-500 max-w-sm mx-auto">
+                      {generationError}
+                    </p>
+                  )}
                 </>
               ) : (
                 <>
@@ -723,7 +783,7 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {publicPageUrl}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

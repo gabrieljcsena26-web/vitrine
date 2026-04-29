@@ -13,7 +13,7 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 
 ## ✅ Launch Readiness
 
-Current score: **82/100**. Core launch paths are ready: landing page, onboarding, generated public pages, lead capture, tracking, and private dashboard access. Before a full production launch, prioritize payments, custom domains, production monitoring, and a configured test dashboard token.
+Current score: **82/100**. Core launch paths are ready: landing page, onboarding, generated public pages, lead capture, tracking, and private dashboard access. Before a full production launch, prioritize payments, custom domains, production monitoring, and token lifecycle operations.
 
 ## 💻 Run Locally
 
@@ -26,11 +26,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
-To enable the test dashboard button on `/login`, set:
-
-```bash
-NEXT_PUBLIC_TEST_DASHBOARD_TOKEN=your-test-dashboard-token
-```
+For dashboard test access, create a page through `/dashboard`, then use the token shown on the success screen or stored in the same browser on `/login`. Do not publish real dashboard tokens in client-side environment variables.
 
 ## 🛠 Tech Stack
 

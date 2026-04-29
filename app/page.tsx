@@ -99,7 +99,7 @@ export default function HomePage() {
                 <span className="text-gray-400 font-bold mb-2">/100</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
-                82/100 means the core customer flow is ready; the remaining points are for payments, domains, monitoring, and launch operations.
+                Core launch paths are ready; the remaining work is payments, domains, monitoring, and launch operations.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

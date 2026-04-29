@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, CheckCircle, LogIn, Scissors } from 'lucide-react'
 
-const TEST_DASHBOARD_TOKEN = process.env.NEXT_PUBLIC_TEST_DASHBOARD_TOKEN ?? ''
-
 export default function LoginPage() {
   const router = useRouter()
   const [token, setToken] = useState('')
@@ -104,18 +102,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {TEST_DASHBOARD_TOKEN && (
-            <button
-              type="button"
-              onClick={() => openDashboard(TEST_DASHBOARD_TOKEN)}
-              className="w-full mt-3 border border-stone-200 text-navy px-6 py-3 rounded-2xl font-semibold hover:border-gold hover:bg-gold/5 transition-colors"
-            >
-              Use configured test dashboard
-            </button>
-          )}
-
           <p className="text-xs text-gray-400 leading-relaxed mt-6">
-            Dashboard access is token-based. Tokens are long-lived in this version, so keep the private link safe; anyone with it can view the owner dashboard.
+            Dashboard access is token-based. Tokens are long-lived and there is no self-service revocation yet, so keep the private link safe; anyone with it can view the owner dashboard.
           </p>
         </div>
       </main>

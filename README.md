@@ -13,7 +13,7 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 
 ## ✅ Launch Readiness
 
-Current checkout: **82/100**. Core launch paths are ready: landing page, onboarding, generated public pages, lead capture, tracking, and private dashboard access. Before a full production launch, prioritize payments, custom domains, production monitoring, and a configured test dashboard token.
+Current score: **82/100**. Core launch paths are ready: landing page, onboarding, generated public pages, lead capture, tracking, and private dashboard access. Before a full production launch, prioritize payments, custom domains, production monitoring, and a configured test dashboard token.
 
 ## 💻 Run Locally
 

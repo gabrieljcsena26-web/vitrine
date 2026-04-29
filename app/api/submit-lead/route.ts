@@ -8,7 +8,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // Body: { businessId, visitorName, visitorEmail, message, via? }
 export async function POST(req: NextRequest) {
   try {
-    const { businessId, visitorName, visitorEmail, message, via } = await req.json()
+    const { businessId, visitorName, visitorEmail, message, via, interest } = await req.json()
 
     if (!businessId || !visitorName || !visitorEmail || !message) {
       return NextResponse.json(
@@ -18,15 +18,31 @@ export async function POST(req: NextRequest) {
     }
 
     const db = createServiceClient()
+    const leadInterest = String(interest || extractInterest(message)).slice(0, 120)
+    const temperature = classifyTemperature(`${message} ${leadInterest}`)
 
     // Save the lead
-    const { error: insertError } = await db.from('leads').insert({
+    let { error: insertError } = await db.from('leads').insert({
       business_id: businessId,
       visitor_name: visitorName,
       visitor_email: visitorEmail,
       message,
       via: via || null,
+      status: 'new',
+      interest: leadInterest,
+      temperature,
     })
+
+    if (insertError && (insertError.message?.includes('status') || insertError.message?.includes('interest') || insertError.message?.includes('temperature'))) {
+      const fallback = await db.from('leads').insert({
+        business_id: businessId,
+        visitor_name: visitorName,
+        visitor_email: visitorEmail,
+        message,
+        via: via || null,
+      })
+      insertError = fallback.error
+    }
 
     if (insertError) {
       console.error('submit-lead insert error:', insertError)
@@ -64,6 +80,17 @@ export async function POST(req: NextRequest) {
     console.error('POST /api/submit-lead error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
+
+function extractInterest(message: string): string {
+  return String(message).match(/Interest:\s*([^.]*)/i)?.[1]?.trim() || 'General information'
+}
+
+function classifyTemperature(value: string): string {
+  const lower = String(value).toLowerCase()
+  if (lower.includes('book') || lower.includes('appointment') || lower.includes('availability') || lower.includes('agendar')) return 'hot'
+  if (lower.includes('price') || lower.includes('service') || lower.includes('information')) return 'warm'
+  return 'new'
 }
 
 function escapeHtml(str: string): string {

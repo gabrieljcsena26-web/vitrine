@@ -33,10 +33,34 @@ Often, redeploying fixes issues:
 
 ### 3. Check Environment Variables
 
-If you added any environment variables:
+Set these variables in **Settings → Environment Variables** for Production and Preview:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+SUPABASE_STORAGE_BUCKET=business-photos
+```
+
+After adding/changing variables:
 1. Go to **Settings** → **Environment Variables**
 2. Make sure all required variables are set for **Production**
 3. Redeploy after adding/changing variables
+
+### 3.1 Supabase Checklist
+
+Before deploying public traffic:
+
+1. Run `supabase-schema.sql` in Supabase SQL Editor.
+2. Create a public Storage bucket named `business-photos`.
+3. Confirm these tables exist:
+   - `businesses`
+   - `page_views`
+   - `leads`
+   - `channels`
+4. Confirm the recommended indexes were created for scale.
 
 ### 4. Verify Git Branch
 
@@ -77,9 +101,9 @@ If nothing works, create a fresh deployment:
 ## 📝 Important Notes
 
 - **Next.js 15** is fully supported by Vercel
-- Your app uses **static generation** (all pages are pre-rendered)
-- No server-side rendering or API routes are used
-- All routes should work immediately after deployment
+- The app uses static pages plus dynamic API routes
+- Supabase environment variables are required for dashboard/data routes
+- All public routes should work immediately after deployment
 
 ## 🐛 Still Getting 404?
 

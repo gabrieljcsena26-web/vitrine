@@ -10,10 +10,9 @@ import About from '@/components/About'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
 import Hours from '@/components/Hours'
-import BookingBlock from '@/components/BookingBlock'
+import ContactActions from '@/components/ContactActions'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
-import WhatsAppButton from '@/components/WhatsAppButton'
 import Footer from '@/components/Footer'
 
 interface BusinessData {
@@ -31,6 +30,7 @@ interface BusinessData {
   photos: string[]
   booking_url: string | null
   whatsapp_number: string | null
+  whatsapp_message: string | null
 }
 
 export default function PublicPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -59,7 +59,7 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
       }
 
       setBusiness(data as BusinessData)
-      if (data.lang && ['pt', 'es', 'en'].includes(data.lang)) {
+      if (data.lang && ['pt', 'es', 'en', 'fr'].includes(data.lang)) {
         setLang(data.lang as Language)
       }
       setLoading(false)
@@ -94,12 +94,27 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
 
   return (
     <main className="bg-white">
-      <Navbar t={t} lang={lang} setLang={setLang} businessName={business.owner_name} />
+      <Navbar
+        t={t}
+        lang={lang}
+        setLang={setLang}
+        businessName={business.owner_name}
+        bookingUrl={business.booking_url}
+        whatsappNumber={business.whatsapp_number}
+        whatsappMessage={business.whatsapp_message}
+        businessId={business.id}
+        via={via}
+      />
       <Hero
         t={t}
         businessName={business.owner_name}
         category={business.category}
         heroPhoto={business.photos?.[0]}
+        businessId={business.id}
+        via={via}
+        bookingUrl={business.booking_url}
+        whatsappNumber={business.whatsapp_number}
+        whatsappMessage={business.whatsapp_message}
       />
       <About
         t={t}
@@ -112,25 +127,34 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
       <Services t={t} services={business.services ?? []} />
       <Gallery t={t} photos={business.photos ?? []} />
       <Hours t={t} hours={business.hours ?? []} businessName={business.owner_name} />
-      {business.booking_url && (
-        <BookingBlock t={t} bookingUrl={business.booking_url} businessId={business.id} via={via} />
+      {business.booking_url || business.whatsapp_number ? (
+        <ContactActions
+          t={t}
+          bookingUrl={business.booking_url}
+          whatsappNumber={business.whatsapp_number}
+          whatsappMessage={business.whatsapp_message}
+          businessId={business.id}
+          via={via}
+        />
+      ) : (
+        <ContactForm t={t} businessId={business.id} via={via} />
       )}
-      <ContactForm t={t} businessId={business.id} via={via} />
       <ChatbotWidget
         t={t}
         businessInfo={{
           name: business.owner_name,
+          category: business.category,
+          description: business.description,
           address: business.address,
           email: business.owner_email,
           phone: business.phone,
           hours: business.hours ?? [],
           services: business.services ?? [],
+          bookingUrl: business.booking_url ?? undefined,
+          whatsappNumber: business.whatsapp_number ?? undefined,
         }}
       />
       <Footer t={t} businessName={business.owner_name} />
-      {business.whatsapp_number && (
-        <WhatsAppButton t={t} whatsappNumber={business.whatsapp_number} businessId={business.id} via={via} />
-      )}
     </main>
   )
 }

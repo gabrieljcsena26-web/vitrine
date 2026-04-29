@@ -37,9 +37,11 @@ export function safeBookingHref(url: string): string | null {
  * Converts a phone number string (e.g. "+55 11 99999-9999") into a wa.me URL.
  * wa.me expects only digits — no +, spaces, or dashes.
  */
-export function whatsAppHref(number: string): string {
+export function whatsAppHref(number: string, message?: string): string | null {
   const digits = number.replace(/\D/g, '')
-  return `https://wa.me/${digits}`
+  if (!digits) return null
+  const text = message ? `?text=${encodeURIComponent(message)}` : ''
+  return `https://wa.me/${digits}${text}`
 }
 
 /** Returns true if the string is a valid http/https URL. */

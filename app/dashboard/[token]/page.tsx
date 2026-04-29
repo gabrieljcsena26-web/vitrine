@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
-  Link2, CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles,
+  CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download,
 } from 'lucide-react'
+import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
 
 interface Lead {
@@ -13,12 +14,32 @@ interface Lead {
   visitor_email: string
   message: string
   via: string | null
+  status?: string | null
+  interest?: string | null
+  temperature?: string | null
   submitted_at: string
 }
 
 interface ViewsBySource {
   source: string
   count: number
+  bookingClicks?: number
+  whatsappClicks?: number
+}
+
+interface RecentEvent {
+  id: string
+  source: string
+  eventType: 'visit' | 'booking_click' | 'whatsapp_click' | string
+  visitedAt: string
+}
+
+interface SavedChannel {
+  id: string
+  name: string
+  slug: string
+  url: string
+  createdAt: string
 }
 
 interface DashboardData {
@@ -31,6 +52,14 @@ interface DashboardData {
     createdAt: string
     bookingUrl: string | null
     whatsappNumber: string | null
+    whatsappMessage: string | null
+    plan: string
+  }
+  pageUsage: {
+    plan: string
+    pagesUsed: number
+    pageLimit: number
+    canCreateMore: boolean
   }
   stats: {
     totalViews: number
@@ -40,7 +69,77 @@ interface DashboardData {
     leadsThisWeek: number
   }
   viewsBySource: ViewsBySource[]
+  recentEvents: RecentEvent[]
   leads: Lead[]
+}
+
+const demoViewsBySource: ViewsBySource[] = [
+  { source: 'instagram-bio', count: 4 },
+  { source: 'google-profile', count: 3 },
+  { source: 'whatsapp-status', count: 3 },
+  { source: 'flyer-qr', count: 2 },
+  { source: 'Direct', count: 3 },
+]
+
+const demoRecentEvents: RecentEvent[] = [
+  { id: 'demo-activity-1', source: 'instagram-bio', eventType: 'whatsapp_click', visitedAt: new Date(Date.now() - 7 * 60 * 1000).toISOString() },
+  { id: 'demo-activity-2', source: 'google-profile', eventType: 'booking_click', visitedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() },
+  { id: 'demo-activity-3', source: 'whatsapp-status', eventType: 'visit', visitedAt: new Date(Date.now() - 38 * 60 * 1000).toISOString() },
+  { id: 'demo-activity-4', source: 'flyer-qr', eventType: 'booking_click', visitedAt: new Date(Date.now() - 76 * 60 * 1000).toISOString() },
+]
+
+const demoLeads: Lead[] = [
+  {
+    id: 'demo-lead-1',
+    visitor_name: 'Maria Silva',
+    visitor_email: 'maria@example.com',
+    message: 'Hi! I saw your page on Instagram and would like to book a consultation this week.',
+    via: 'instagram-bio',
+    submitted_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'demo-lead-2',
+    visitor_name: 'João Pereira',
+    visitor_email: 'joao@example.com',
+    message: 'I came from Google and want to know available times for Saturday.',
+    via: 'google-profile',
+    submitted_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'demo-lead-3',
+    visitor_name: 'Ana Costa',
+    visitor_email: 'ana@example.com',
+    message: 'Can you send me more information about the premium service?',
+    via: 'whatsapp-status',
+    submitted_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(),
+  },
+]
+
+const SOURCE_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  'instagram-bio': 'Instagram Bio',
+  'instagram-story': 'Instagram Stories',
+  whatsapp: 'WhatsApp',
+  google: 'Google',
+  'qr-code': 'QR Code',
+  'google-profile': 'Google Business',
+  'google-business': 'Google Business',
+  'whatsapp-status': 'WhatsApp Status',
+  'flyer-qr': 'Flyer / QR Code',
+  'partner-link': 'Partner Link',
+  'paid-ads': 'Paid Ads',
+  direct: 'Direct',
+  Direct: 'Direct',
+}
+
+const formatSourceLabel = (source?: string | null) => {
+  if (!source) return 'Direct'
+  if (SOURCE_LABELS[source]) return SOURCE_LABELS[source]
+  return source
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
 }
 
 export default function OwnerDashboard({ params }: { params: Promise<{ token: string }> }) {
@@ -48,11 +147,15 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [range, setRange] = useState('30d')
 
   // Campaign link creator
   const [campaignName, setCampaignName] = useState('')
   const [generatedLink, setGeneratedLink] = useState('')
   const [copied, setCopied] = useState(false)
+  const [copiedChannelId, setCopiedChannelId] = useState('')
+  const [savedChannels, setSavedChannels] = useState<SavedChannel[]>([])
+  const [showChannelForm, setShowChannelForm] = useState(false)
   const copyTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Public page URL copy
@@ -62,6 +165,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   // Booking & WhatsApp editor
   const [bookingInput, setBookingInput] = useState('')
   const [whatsappInput, setWhatsappInput] = useState('')
+  const [whatsappMessageInput, setWhatsappMessageInput] = useState('')
   const [contactSaving, setContactSaving] = useState(false)
   const [contactSaved, setContactSaved] = useState(false)
   const contactSaveTimeoutRef = useRef<NodeJS.Timeout>()
@@ -70,7 +174,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     async function load() {
       const { token: t } = await params
       setToken(t)
-      const res = await fetch(`/api/dashboard/${t}`)
+      const res = await fetch(`/api/dashboard/${t}?range=${range}`)
       if (!res.ok) {
         setNotFound(true)
         setLoading(false)
@@ -78,8 +182,14 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       }
       const json = await res.json()
       setData(json)
+      const channelsRes = await fetch(`/api/dashboard/${t}/channels`)
+      if (channelsRes.ok) {
+        const channelsJson = await channelsRes.json()
+        setSavedChannels(channelsJson.channels ?? [])
+      }
       setBookingInput(json.business.bookingUrl ?? '')
       setWhatsappInput(json.business.whatsappNumber ?? '')
+      setWhatsappMessageInput(json.business.whatsappMessage ?? '')
       setLoading(false)
     }
     load()
@@ -89,14 +199,26 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       if (pageUrlCopyTimeoutRef.current) clearTimeout(pageUrlCopyTimeoutRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [params, range])
 
-  const handleGenerateLink = () => {
+  const handleGenerateLink = async () => {
     if (!data) return
-    const slug = generateCampaignSlug(campaignName)
-    if (!slug) return
-    const base = typeof window !== 'undefined' ? window.location.origin : ''
-    setGeneratedLink(`${base}/p/${data.business.slug}?via=${slug}`)
+    if (!generateCampaignSlug(campaignName)) return
+    const res = await fetch(`/api/dashboard/${token}/channels`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: campaignName.trim() }),
+    })
+    if (!res.ok) {
+      alert('Could not save this channel. Make sure the channels migration is applied in Supabase.')
+      return
+    }
+    const json = await res.json()
+    const channel = json.channel as SavedChannel
+    const nextChannels = [channel, ...savedChannels.filter((item) => item.slug !== channel.slug)]
+    setSavedChannels(nextChannels)
+    setGeneratedLink(channel.url)
+    setShowChannelForm(false)
   }
 
   const handleCopy = async () => {
@@ -107,6 +229,50 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000)
     } catch {
       alert(`Copy this link manually:\n\n${generatedLink}`)
+    }
+  }
+
+  const handleCopyChannel = async (url: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedChannelId(id)
+      copyTimeoutRef.current = setTimeout(() => setCopiedChannelId(''), 2000)
+    } catch {
+      alert(`Copy this link manually:\n\n${url}`)
+    }
+  }
+
+  const handleLeadStatus = async (leadId: string, status: string) => {
+    if (!token || !data) return
+    setData({
+      ...data,
+      leads: data.leads.map((lead) => (lead.id === leadId ? { ...lead, status } : lead)),
+    })
+    await fetch(`/api/dashboard/${token}/leads/${leadId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).catch(() => undefined)
+  }
+
+  const handleDownloadQr = async () => {
+    try {
+      const dataUrl = await QRCode.toDataURL(pageUrl, {
+        width: 1200,
+        margin: 2,
+        color: {
+          dark: '#0F172A',
+          light: '#FFFFFF',
+        },
+      })
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `vitrine-${business.slug}-qr.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch {
+      alert('Could not generate the QR code. Please try again.')
     }
   }
 
@@ -134,6 +300,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         body: JSON.stringify({
           bookingUrl: bookingInput.trim() || null,
           whatsappNumber: whatsappInput.trim() || null,
+          whatsappMessage: whatsappMessageInput.trim() || null,
         }),
       })
       setContactSaved(true)
@@ -144,6 +311,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             ...data.business,
             bookingUrl: bookingInput.trim() || null,
             whatsappNumber: whatsappInput.trim() || null,
+            whatsappMessage: whatsappMessageInput.trim() || null,
           },
         })
       }
@@ -182,7 +350,11 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     )
   }
 
-  const { business, stats, viewsBySource, leads } = data
+  const { business, pageUsage, stats } = data
+  const isDemoDashboard = business.ownerEmail === 'test@vitrine.local'
+  const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : isDemoDashboard ? demoViewsBySource : []
+  const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : isDemoDashboard ? demoRecentEvents : []
+  const leads = data.leads.length > 0 ? data.leads : isDemoDashboard ? demoLeads : []
   const maxViews = viewsBySource[0]?.count ?? 1
   const totalClicks = stats.bookingClicks + stats.whatsappClicks
   const conversionRate = stats.totalViews > 0
@@ -193,6 +365,57 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     : `/p/${business.slug}`
   const createdDate = new Date(business.createdAt)
   const daysLive = Math.max(1, Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)))
+  const planName = pageUsage.plan.charAt(0).toUpperCase() + pageUsage.plan.slice(1)
+  const pageLimitLabel = pageUsage.pageLimit === 999 ? 'Unlimited' : pageUsage.pageLimit
+  const newPageHref = `/dashboard?new=1&ownerEmail=${encodeURIComponent(business.ownerEmail)}&plan=${encodeURIComponent(pageUsage.plan)}`
+  const now = new Date()
+  const weekdayLabel = now.toLocaleDateString(undefined, { weekday: 'long' })
+  const lastUpdatedLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const sourceTotal = viewsBySource.reduce((sum, item) => sum + item.count, 0)
+  const topSource = viewsBySource[0]
+  const sourceInsights = viewsBySource.map((sourceItem) => {
+    const sourceEvents = recentEvents.filter((event) => event.source === sourceItem.source)
+    const bookingCount = sourceItem.bookingClicks ?? sourceEvents.filter((event) => event.eventType === 'booking_click').length
+    const whatsappCount = sourceItem.whatsappClicks ?? sourceEvents.filter((event) => event.eventType === 'whatsapp_click').length
+    return {
+      ...sourceItem,
+      bookingCount,
+      whatsappCount,
+      intentCount: bookingCount + whatsappCount,
+    }
+  }).sort((a, b) => (b.intentCount - a.intentCount) || (b.count - a.count))
+  const channelRows = savedChannels.map((channel) => {
+    const sourceItem = sourceInsights.find((item) => item.source === channel.slug)
+    return {
+      id: channel.slug,
+      name: channel.name,
+      slug: channel.slug,
+      url: channel.url,
+      createdAt: channel.createdAt,
+      visits: sourceItem?.count ?? 0,
+      bookingCount: sourceItem?.bookingCount ?? 0,
+      whatsappCount: sourceItem?.whatsappCount ?? 0,
+      intentCount: sourceItem?.intentCount ?? 0,
+      isTracked: true,
+    }
+  })
+
+  const getLeadInterest = (message: string) => {
+    const capturedInterest = message.match(/Interest:\s*([^.]*)/i)?.[1]?.trim()
+    if (capturedInterest) return capturedInterest
+    const lower = message.toLowerCase()
+    if (lower.includes('book') || lower.includes('appointment') || lower.includes('agendar')) return 'Book an appointment'
+    if (lower.includes('available') || lower.includes('availability') || lower.includes('horário')) return 'Check availability'
+    if (lower.includes('price') || lower.includes('cost') || lower.includes('preço')) return 'Ask about prices'
+    return 'General information'
+  }
+
+  const getLeadTemperature = (message: string) => {
+    const lower = message.toLowerCase()
+    if (lower.includes('book') || lower.includes('appointment') || lower.includes('availability') || lower.includes('agendar')) return 'Hot'
+    if (lower.includes('price') || lower.includes('service') || lower.includes('information')) return 'Warm'
+    return 'New'
+  }
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -206,13 +429,22 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             <span className="text-white font-bold">Vitrine</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              New Page
-            </Link>
+            {pageUsage.canCreateMore ? (
+              <Link
+                href={newPageHref}
+                className="flex items-center gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Page
+              </Link>
+            ) : (
+              <Link
+                href={newPageHref}
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-gray-300 text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
+              >
+                Upgrade plan
+              </Link>
+            )}
             <a
               href={`/p/${business.slug}`}
               target="_blank"
@@ -259,6 +491,58 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             <p className="text-xs text-gray-400 mb-1">Your public URL</p>
             <p className="text-navy/70 font-mono text-sm break-all">{pageUrl}</p>
           </div>
+        </div>
+
+        {/* ── Date range filter ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-3 mb-6 flex items-center justify-between gap-3 flex-wrap">
+          <div className="px-2">
+            <p className="text-sm font-bold text-navy">Dashboard period</p>
+            <p className="text-xs text-gray-400">{weekdayLabel} · updated {lastUpdatedLabel}</p>
+          </div>
+          <div className="flex gap-2 bg-stone-50 rounded-xl p-1 border border-stone-100">
+            {[
+              { id: '7d', label: '7 days' },
+              { id: '30d', label: '30 days' },
+              { id: '90d', label: '90 days' },
+              { id: 'all', label: 'All' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setRange(item.id)}
+                className={`px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
+                  range === item.id ? 'bg-navy text-white shadow-sm' : 'text-gray-500 hover:text-navy'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Plan usage ── */}
+        <div className="bg-navy rounded-2xl shadow-sm border border-white/10 p-5 mb-6 text-white flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-semibold text-gold uppercase tracking-wider mb-1">Current plan</p>
+            <h2 className="text-xl font-bold">{planName}</h2>
+            <p className="text-sm text-gray-300 mt-1">
+              {pageUsage.pagesUsed}/{pageLimitLabel} {pageUsage.pagesUsed === 1 ? 'page used' : 'pages used'}
+            </p>
+          </div>
+          {pageUsage.canCreateMore ? (
+            <Link
+              href={newPageHref}
+              className="inline-flex items-center gap-2 bg-gold text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-yellow-400 transition-colors text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Create another page
+            </Link>
+          ) : (
+            <div className="text-sm text-gray-200 max-w-md">
+              <p className="font-semibold text-white">Page limit reached.</p>
+              <p className="text-gray-300">Upgrade to Pro or Business to create more pages for this email.</p>
+            </div>
+          )}
         </div>
 
         {/* ── Block A: Summary cards ── */}
@@ -317,40 +601,171 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           </div>
         )}
 
-        {/* ── Block B: Visits by source ── */}
+        {/* ── Dashboard guide ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
-          <h2 className="text-lg font-bold text-navy mb-5">Visits by Source</h2>
-          {viewsBySource.length === 0 ? (
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-gold" />
+            <h2 className="text-lg font-bold text-navy">How to read this dashboard</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="rounded-xl bg-stone-50 p-4">
+              <p className="font-bold text-navy mb-1">Traffic</p>
+              <p className="text-gray-500">Shows how many people visited the public page and which source brought them in.</p>
+            </div>
+            <div className="rounded-xl bg-stone-50 p-4">
+              <p className="font-bold text-navy mb-1">Intent</p>
+              <p className="text-gray-500">Booking and WhatsApp clicks show who is interested enough to take action.</p>
+            </div>
+            <div className="rounded-xl bg-stone-50 p-4">
+              <p className="font-bold text-navy mb-1">Leads</p>
+              <p className="text-gray-500">Names, emails and messages from customers who contacted the business through the page.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Block B: Traffic & intent by source ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
+          <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
+            <div>
+              <h2 className="text-lg font-bold text-navy">Tracking Channels</h2>
+              <p className="text-sm text-gray-400 mt-1">Add only the platforms your client will use, then track visits and intent by channel.</p>
+            </div>
+            <div className="flex gap-2 flex-wrap items-center">
+              {topSource && (
+                <div className="bg-gold/10 border border-gold/20 rounded-xl px-3 py-2 text-right hidden sm:block">
+                  <p className="text-[10px] uppercase tracking-wider text-gold font-bold">Top source</p>
+                  <p className="text-sm font-bold text-navy">{formatSourceLabel(topSource.source)}</p>
+                </div>
+              )}
+              <div className="bg-navy text-white rounded-xl px-3 py-2 text-right hidden sm:block">
+                <p className="text-[10px] uppercase tracking-wider text-gray-300 font-bold">Total intent</p>
+                <p className="text-sm font-bold">{totalClicks} actions</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChannelForm((value) => !value)}
+                className="inline-flex items-center gap-2 bg-gold text-navy px-4 py-2.5 rounded-xl font-bold hover:bg-yellow-400 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add channel
+              </button>
+            </div>
+          </div>
+
+          {showChannelForm && (
+            <div className="rounded-3xl border border-gold/30 bg-gradient-to-br from-gold/10 to-white p-5 mb-5">
+              <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+                <div>
+                  <p className="font-bold text-navy">Create a tracking link</p>
+                  <p className="text-sm text-gray-500">Type the platform or campaign name your client will use. We create one tracked link for that channel.</p>
+                </div>
+                {generatedLink && (
+                  <span className="bg-green-50 text-green-700 border border-green-100 px-3 py-1 rounded-full text-xs font-bold">Link ready</span>
+                )}
+              </div>
+              <div className="flex gap-3 flex-col sm:flex-row">
+                <input
+                  type="text"
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleGenerateLink()}
+                  placeholder="e.g. Instagram, WhatsApp, Google, Influencer Maria"
+                  className="flex-1 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm bg-white"
+                />
+                <button
+                  onClick={handleGenerateLink}
+                  disabled={!campaignName.trim()}
+                  className="bg-navy text-white px-6 py-3 rounded-xl font-semibold hover:bg-navy/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm whitespace-nowrap"
+                >
+                  Create link
+                </button>
+              </div>
+              {generatedLink && (
+                <div className="mt-4 bg-white rounded-2xl border border-stone-100 p-3 flex items-center gap-3 flex-wrap">
+                  <span className="flex-1 font-mono text-xs text-navy break-all min-w-0">{generatedLink}</span>
+                  <button
+                    onClick={handleCopy}
+                    className="inline-flex items-center gap-1.5 bg-gold text-navy px-3 py-2 rounded-lg text-xs font-bold hover:bg-yellow-400 transition-colors flex-shrink-0"
+                  >
+                    {copied ? <><Check className="w-3.5 h-3.5" />Copied</> : <><Copy className="w-3.5 h-3.5" />Copy</>}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {channelRows.length === 0 ? (
             <div className="text-center py-6">
               <div className="w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Eye className="w-5 h-5 text-stone-400" />
               </div>
-              <p className="text-gray-400 text-sm">No visits yet. Share your page to see which channels bring the most traffic.</p>
+              <p className="text-gray-400 text-sm">No channels yet. Add the first platform your client will use to share this page.</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {viewsBySource.map(({ source, count }) => (
-                <div key={source} className="flex items-center gap-3">
-                  <span className="w-32 text-sm text-gray-600 truncate flex-shrink-0">{source}</span>
-                  <div className="flex-1 h-2.5 bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-gold to-yellow-400 rounded-full transition-all"
-                      style={{ width: `${(count / maxViews) * 100}%` }}
-                    />
+                {channelRows.map((channel) => (
+                  <div key={channel.id} className="rounded-3xl border border-stone-100 bg-stone-50/50 p-4 hover:border-gold/30 transition-colors">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="text-lg font-black text-navy truncate">{channel.name}</p>
+                          <span className="bg-green-50 text-green-700 border border-green-100 px-2 py-0.5 rounded-full text-[10px] font-bold">Tracked link</span>
+                        </div>
+                        <p className="text-xs text-gray-400 break-all">{channel.url}</p>
+                        <div className="h-2 bg-white rounded-full overflow-hidden mt-3 border border-stone-100">
+                          <div className="h-full bg-gradient-to-r from-gold to-yellow-400 rounded-full" style={{ width: `${maxViews ? (channel.visits / maxViews) * 100 : 0}%` }} />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleCopyChannel(channel.url!, channel.id)}
+                        className="inline-flex items-center gap-1.5 bg-navy text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-navy/90 transition-colors"
+                      >
+                        {copiedChannelId === channel.id ? <><Check className="w-3.5 h-3.5" />Copied</> : <><Copy className="w-3.5 h-3.5" />Copy link</>}
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 mt-4">
+                      <div className="rounded-2xl bg-white border border-stone-100 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Visits</p>
+                        <p className="text-2xl font-black text-navy mt-1">{channel.visits}</p>
+                        <p className="text-[11px] text-gray-400">{sourceTotal ? Math.round((channel.visits / sourceTotal) * 100) : 0}% of total</p>
+                      </div>
+                      <div className="rounded-2xl bg-white border border-stone-100 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Booking</p>
+                        <p className="text-2xl font-black text-blue-700 mt-1">{channel.bookingCount}</p>
+                      </div>
+                      <div className="rounded-2xl bg-white border border-stone-100 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">WhatsApp</p>
+                        <p className="text-2xl font-black text-green-700 mt-1">{channel.whatsappCount}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="w-10 text-right text-sm font-semibold text-navy flex-shrink-0">{count}</span>
-                </div>
-              ))}
+                ))}
             </div>
           )}
+          <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-stone-100 bg-white p-4 flex-wrap">
+            <div>
+              <p className="font-bold text-navy">Store QR Code</p>
+              <p className="text-sm text-gray-400">Download one QR Code for the main public page.</p>
+            </div>
+            <button
+              onClick={handleDownloadQr}
+              className="inline-flex items-center gap-2 bg-gold/10 text-navy border border-gold/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gold/20 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download QR
+            </button>
+          </div>
         </div>
 
         {/* ── Block C: Leads list ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-bold text-navy">Leads</h2>
+            <div>
+              <h2 className="text-lg font-bold text-navy">Leads</h2>
+              <p className="text-sm text-gray-400 mt-1">People who left contact details, summarized by interest and source.</p>
+            </div>
             {leads.length > 0 && (
-              <span className="text-xs text-gray-400">{leads.length} total</span>
+              <span className="bg-stone-100 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold">{leads.length} total</span>
             )}
           </div>
           {leads.length === 0 ? (
@@ -361,96 +776,51 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               <p className="text-gray-400 text-sm">No leads yet. They&apos;ll appear here the moment someone contacts you through your page.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-stone-100">
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium">Name</th>
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium">Email</th>
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium hidden md:table-cell">Message</th>
-                    <th className="text-left py-2 pr-4 text-gray-400 font-medium hidden sm:table-cell">Source</th>
-                    <th className="text-left py-2 text-gray-400 font-medium">Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((lead) => (
-                    <tr key={lead.id} className="border-b border-stone-50 hover:bg-stone-50/60 transition-colors">
-                      <td className="py-3 pr-4 font-medium text-navy">{lead.visitor_name}</td>
-                      <td className="py-3 pr-4">
-                        <a
-                          href={`mailto:${lead.visitor_email}`}
-                          className="text-gold hover:underline"
+            <div className="max-h-[390px] overflow-y-auto pr-2 space-y-3">
+              {leads.map((lead) => {
+                const temperature = lead.temperature ?? getLeadTemperature(lead.message)
+                const tempClass = temperature === 'Hot'
+                  ? 'bg-red-50 text-red-600 border-red-100'
+                  : temperature === 'hot'
+                  ? 'bg-red-50 text-red-600 border-red-100'
+                  : temperature === 'Warm' || temperature === 'warm'
+                  ? 'bg-amber-50 text-amber-700 border-amber-100'
+                  : 'bg-stone-50 text-gray-600 border-stone-100'
+                const displayTemperature = temperature.charAt(0).toUpperCase() + temperature.slice(1)
+                return (
+                  <div key={lead.id} className="rounded-2xl border border-stone-100 p-4 hover:border-gold/30 hover:bg-stone-50/50 transition-colors">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="min-w-0">
+                        <p className="font-bold text-navy truncate">{lead.visitor_name}</p>
+                        <a href={`mailto:${lead.visitor_email}`} className="text-sm text-gold hover:underline break-all">{lead.visitor_email}</a>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`border px-2.5 py-1 rounded-full text-xs font-bold ${tempClass}`}>{displayTemperature}</span>
+                        <span className="bg-stone-100 text-gray-600 px-2.5 py-1 rounded-full text-xs font-semibold">{formatSourceLabel(lead.via)}</span>
+                        <select
+                          value={lead.status ?? 'new'}
+                          onChange={(e) => handleLeadStatus(lead.id, e.target.value)}
+                          className="bg-white border border-stone-200 text-gray-600 rounded-full px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-gold"
                         >
-                          {lead.visitor_email}
-                        </a>
-                      </td>
-                      <td className="py-3 pr-4 text-gray-500 max-w-xs truncate hidden md:table-cell">
-                        {lead.message}
-                      </td>
-                      <td className="py-3 pr-4 hidden sm:table-cell">
-                        <span className="bg-stone-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
-                          {lead.via ?? 'Direct'}
-                        </span>
-                      </td>
-                      <td className="py-3 text-gray-400 text-xs whitespace-nowrap">
-                        {new Date(lead.submitted_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* ── Block D: Campaign link creator ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Link2 className="w-5 h-5 text-gold" />
-            <h2 className="text-lg font-bold text-navy">Create a Campaign Link</h2>
-          </div>
-          <p className="text-gray-500 text-sm mb-5">
-            Generate a unique link for each channel (Instagram, WhatsApp, a specific person…) to see exactly where your customers come from.
-          </p>
-          <div className="flex gap-3 flex-col sm:flex-row">
-            <input
-              type="text"
-              value={campaignName}
-              onChange={(e) => setCampaignName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleGenerateLink()}
-              placeholder="e.g. Instagram Bio, Maria Influencer"
-              className="flex-1 border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
-            />
-            <button
-              onClick={handleGenerateLink}
-              disabled={!campaignName.trim()}
-              className="bg-gold text-navy px-6 py-3 rounded-xl font-semibold hover:bg-yellow-400 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm whitespace-nowrap"
-            >
-              Generate Link
-            </button>
-          </div>
-
-          {generatedLink && (
-            <div className="mt-4 bg-stone-50 rounded-xl p-4 flex items-center gap-3 flex-wrap">
-              <span className="flex-1 font-mono text-sm text-navy break-all min-w-0">
-                {generatedLink}
-              </span>
-              <button
-                onClick={handleCopy}
-                className="flex items-center gap-1.5 bg-navy text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-navy/90 transition-colors flex-shrink-0"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy
-                  </>
-                )}
-              </button>
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="won">Won</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 items-end">
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-gray-400 font-bold mb-1">Interest</p>
+                        <p className="text-sm text-navy font-semibold">{lead.interest ?? getLeadInterest(lead.message)}</p>
+                      </div>
+                      <p className="text-xs text-gray-400 md:text-right whitespace-nowrap">
+                        {new Date(lead.submitted_at).toLocaleDateString()} · {new Date(lead.submitted_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -495,12 +865,12 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           </div>
 
           {/* WhatsApp number */}
-          <div className="mb-6">
+          <div className="mb-5">
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
               💬 WhatsApp number
             </label>
             <p className="text-xs text-gray-400 mb-2">
-              Enter your WhatsApp number in international format. A floating green button will appear on your page so customers can message you instantly.
+              Enter your WhatsApp number in international format. Customers will see it in the hero and final contact block.
             </p>
             <input
               type="tel"
@@ -515,6 +885,25 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 <span className="text-[#25D366] font-medium">{data.business.whatsappNumber}</span>
               </p>
             )}
+          </div>
+
+          {/* WhatsApp pre-filled message */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              ✏️ Pre-filled WhatsApp message
+            </label>
+            <p className="text-xs text-gray-400 mb-2">
+              This message will be pre-typed when a customer taps the WhatsApp button. Max 500 characters.
+            </p>
+            <textarea
+              rows={3}
+              maxLength={500}
+              value={whatsappMessageInput}
+              onChange={(e) => setWhatsappMessageInput(e.target.value)}
+              placeholder="Olá! Vim pela sua página e gostaria de mais informações."
+              className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm resize-none"
+            />
+            <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessageInput.length}/500</p>
           </div>
 
           <button

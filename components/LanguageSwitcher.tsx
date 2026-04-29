@@ -7,7 +7,7 @@ interface Props {
 }
 
 export default function LanguageSwitcher({ lang, setLang }: Props) {
-  const langs: Language[] = ['pt', 'es', 'en']
+  const langs: Language[] = ['pt', 'es', 'en', 'fr']
   return (
     <div className="flex gap-1">
       {langs.map((l) => (

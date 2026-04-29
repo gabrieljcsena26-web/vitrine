@@ -5,6 +5,17 @@ import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
+const PLAN_LIMITS: Record<string, number> = {
+  starter: 1,
+  pro: 3,
+  business: 999,
+}
+
+const normalizePlan = (plan: unknown) => {
+  const value = String(plan || 'starter').toLowerCase()
+  return value in PLAN_LIMITS ? value : 'starter'
+}
+
 // POST /api/businesses — create a new business record and return the secret token
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +34,8 @@ export async function POST(req: NextRequest) {
       slug,
       bookingUrl,
       whatsappNumber,
+      whatsappMessage,
+      plan,
     } = body
 
     if (!businessName || !slug || !email) {
@@ -33,6 +46,9 @@ export async function POST(req: NextRequest) {
     }
 
     const db = createServiceClient()
+    const normalizedEmail = String(email).trim().toLowerCase()
+    const normalizedPlan = normalizePlan(plan)
+    const pageLimit = PLAN_LIMITS[normalizedPlan]
 
     // Detect whether this slug already exists so we can send the welcome
     // email only on the first creation (not on subsequent edits).
@@ -43,33 +59,68 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     const isNew = !existing
 
+    if (isNew) {
+      const { count: existingPages } = await db
+        .from('businesses')
+        .select('id', { count: 'exact', head: true })
+        .eq('owner_email', normalizedEmail)
+
+      if ((existingPages ?? 0) >= pageLimit) {
+        return NextResponse.json(
+          {
+            error: `Your ${normalizedPlan} plan allows ${pageLimit === 999 ? 'unlimited' : pageLimit} page${pageLimit === 1 ? '' : 's'}. Upgrade to create more pages.`,
+            code: 'PAGE_LIMIT_REACHED',
+            plan: normalizedPlan,
+            pageLimit,
+            pagesUsed: existingPages ?? 0,
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     // Upsert: if the slug already exists, update the record and return the existing token
-    const { data, error } = await db
+    const businessPayload = {
+      slug,
+      owner_name: businessName,
+      owner_email: normalizedEmail,
+      plan: normalizedPlan,
+      category,
+      description,
+      address,
+      phone,
+      lang,
+      services,
+      hours,
+      photos,
+      booking_url: bookingUrl ?? null,
+      whatsapp_number: whatsappNumber ?? null,
+      whatsapp_message: whatsappMessage ? String(whatsappMessage).trim().slice(0, 500) : null,
+    }
+
+    let { data, error } = await db
       .from('businesses')
-      .upsert(
-        {
-          slug,
-          owner_name: businessName,
-          owner_email: email,
-          category,
-          description,
-          address,
-          phone,
-          lang,
-          services,
-          hours,
-          photos,
-          booking_url: bookingUrl ?? null,
-          whatsapp_number: whatsappNumber ?? null,
-        },
-        { onConflict: 'slug', ignoreDuplicates: false }
-      )
+      .upsert(businessPayload, { onConflict: 'slug', ignoreDuplicates: false })
       .select('id, slug, secret_token')
       .single()
 
-    if (error) {
+    if (error && (error.message?.includes('whatsapp_message') || error.message?.includes('plan'))) {
+      const fallbackPayload: Record<string, unknown> = { ...businessPayload }
+      if (error.message?.includes('whatsapp_message')) delete fallbackPayload.whatsapp_message
+      if (error.message?.includes('plan')) delete fallbackPayload.plan
+      const fallback = await db
+        .from('businesses')
+        .upsert(fallbackPayload, { onConflict: 'slug', ignoreDuplicates: false })
+        .select('id, slug, secret_token')
+        .single()
+
+      data = fallback.data
+      error = fallback.error
+    }
+
+    if (error || !data) {
       console.error('Supabase upsert error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: error?.message ?? 'Could not save business' }, { status: 500 })
     }
 
     // Fire-and-forget welcome email with the dashboard link (first creation only).
@@ -82,7 +133,7 @@ export async function POST(req: NextRequest) {
       resend.emails
         .send({
           from: 'Vitrine <noreply@vitrine.app>',
-          to: email,
+          to: normalizedEmail,
           subject: `Your Vitrine page is live — save your dashboard link`,
           html: `
             <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#0F172A;max-width:520px;margin:0 auto">
@@ -109,7 +160,7 @@ export async function POST(req: NextRequest) {
         .catch((err) => console.error('Welcome email error:', err))
     }
 
-    return NextResponse.json({ id: data.id, slug: data.slug, token: data.secret_token })
+    return NextResponse.json({ id: data.id, slug: data.slug, token: data.secret_token, plan: normalizedPlan })
   } catch (err) {
     console.error('POST /api/businesses error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

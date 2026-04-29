@@ -10,11 +10,15 @@ interface Message {
 
 interface BusinessInfo {
   name: string
+  category?: string
+  description?: string
   address?: string
   email?: string
   phone?: string
   hours?: { day: string; open: boolean; from: string; to: string }[]
   services?: { name: string; price: string }[]
+  bookingUrl?: string
+  whatsappNumber?: string
 }
 
 interface Props {
@@ -39,10 +43,19 @@ function getMockResponse(input: string, t: Translations): string {
 function getDynamicResponse(input: string, info: BusinessInfo): string {
   const lower = input.toLowerCase()
 
-  if (lower.includes('book') || lower.includes('appointment') || lower.includes('reserv') || lower.includes('cita') || lower.includes('marcação')) {
-    const contact = info.phone ? `call us at ${info.phone}` : info.email ? `email us at ${info.email}` : 'contact us'
-    const addr = info.address ? ` or visit us at ${info.address}` : ''
-    return `To book an appointment, ${contact}${addr}.`
+  if (/^(hi|hello|hey|oi|olá|ola|hola|bom dia|boa tarde|boa noite|good morning|good afternoon|good evening)\b/.test(lower)) {
+    return `Hello! 👋 Welcome to ${info.name}. I can help with services, prices, opening hours, location, WhatsApp contact, or booking.`
+  }
+
+  if (lower.includes('book') || lower.includes('appointment') || lower.includes('reserv') || lower.includes('cita') || lower.includes('marcação') || lower.includes('agendar')) {
+    if (info.bookingUrl) {
+      return `You can book directly here: ${info.bookingUrl} 📅`
+    }
+    if (info.whatsappNumber) {
+      return `To book an appointment, message us on WhatsApp: ${info.whatsappNumber} 💬`
+    }
+    const contact = info.phone ? `call us at ${info.phone}` : info.email ? `email us at ${info.email}` : 'use the contact options on this page'
+    return `To book an appointment, ${contact}.`
   }
 
   if (lower.includes('price') || lower.includes('cost') || lower.includes('€') || lower.includes('precio') || lower.includes('preço') || lower.includes('quanto')) {
@@ -59,6 +72,17 @@ function getDynamicResponse(input: string, info: BusinessInfo): string {
     return `Please contact us for our current pricing.`
   }
 
+  if (lower.includes('service') || lower.includes('serviço') || lower.includes('servicio') || lower.includes('offer') || lower.includes('fazem')) {
+    if (info.services && info.services.length > 0) {
+      const list = info.services
+        .filter((s) => s.name)
+        .map((s) => `• ${s.name}${s.price ? ` — ${s.price}` : ''}`)
+        .join('\n')
+      return `Here are the available services:\n${list}`
+    }
+    return `Please ask us directly for the current service list.`
+  }
+
   if (lower.includes('hour') || lower.includes('open') || lower.includes('horário') || lower.includes('horario') || lower.includes('when')) {
     if (info.hours && info.hours.length > 0) {
       const openDays = info.hours.filter((h) => h.open)
@@ -70,13 +94,33 @@ function getDynamicResponse(input: string, info: BusinessInfo): string {
     return `Please contact us for our current hours.`
   }
 
-  const contact = info.phone || info.email || 'our contact page'
-  return `Thank you for your message! A team member will respond shortly. For urgent inquiries, reach us at ${contact}.`
+  if (lower.includes('where') || lower.includes('location') || lower.includes('address') || lower.includes('endereço') || lower.includes('onde') || lower.includes('dirección')) {
+    return info.address
+      ? `You can find us at: ${info.address} 📍`
+      : `Please contact us for directions.`
+  }
+
+  if (lower.includes('whatsapp') || lower.includes('contact') || lower.includes('phone') || lower.includes('telefone') || lower.includes('ligar')) {
+    const parts: string[] = []
+    if (info.whatsappNumber) parts.push(`WhatsApp: ${info.whatsappNumber}`)
+    if (info.phone) parts.push(`Phone: ${info.phone}`)
+    if (info.email) parts.push(`Email: ${info.email}`)
+    return parts.length > 0 ? `You can contact us here:\n${parts.join('\n')}` : `Use the contact options on this page.`
+  }
+
+  if (lower.includes('about') || lower.includes('sobre') || lower.includes('quem') || lower.includes('what is') || lower.includes('who are')) {
+    const category = info.category ? `${info.category}. ` : ''
+    const description = info.description ? `${info.description}` : `We are ${info.name}.`
+    return `${category}${description}`
+  }
+
+  const contact = info.whatsappNumber || info.phone || info.email || 'the contact options on this page'
+  return `Thanks for your message! I can help with services, prices, hours, location, WhatsApp, or booking. For quick help, reach us at ${contact}.`
 }
 
 export default function ChatbotWidget({ t, businessInfo }: Props) {
   const greeting = businessInfo
-    ? `Hello! Welcome to ${businessInfo.name} 👋 How can I help you today?`
+    ? `Hello! Welcome to ${businessInfo.name} 👋 Ask me about services, prices, hours, location, WhatsApp, or booking.`
     : t.chatbot.greeting
 
   const [open, setOpen] = useState(false)
@@ -93,7 +137,7 @@ export default function ChatbotWidget({ t, businessInfo }: Props) {
   // Update greeting when language or businessInfo changes
   useEffect(() => {
     const newGreeting = businessInfo
-      ? `Hello! Welcome to ${businessInfo.name} 👋 How can I help you today?`
+      ? `Hello! Welcome to ${businessInfo.name} 👋 Ask me about services, prices, hours, location, WhatsApp, or booking.`
       : t.chatbot.greeting
     setMessages([{ from: 'bot', text: newGreeting }])
   // eslint-disable-next-line react-hooks/exhaustive-deps

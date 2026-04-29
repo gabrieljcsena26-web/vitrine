@@ -18,6 +18,12 @@ const CATEGORIES = [
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
+const PLANS = [
+  { id: 'starter', name: 'Starter', pages: '1 page', description: 'Best for one business page' },
+  { id: 'pro', name: 'Pro', pages: '3 pages', description: 'For multiple services or locations' },
+  { id: 'business', name: 'Business', pages: 'Unlimited pages', description: 'For agencies and multi-location brands' },
+]
+
 // Configuration
 const GENERATION_DURATION_MS = 2000 // Simulated page generation time
 const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
@@ -57,6 +63,20 @@ function compressImage(file: File): Promise<string> {
   })
 }
 
+async function uploadCompressedImage(dataUrl: string, filename = 'photo.jpg'): Promise<string> {
+  try {
+    const blob = await fetch(dataUrl).then((res) => res.blob())
+    const formData = new FormData()
+    formData.append('file', new File([blob], filename, { type: blob.type || 'image/jpeg' }))
+    const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
+    if (!res.ok) return dataUrl
+    const json = await res.json()
+    return json.url || dataUrl
+  } catch {
+    return dataUrl
+  }
+}
+
 // Helper function to generate URL-safe slug from business name
 function generateSlug(name: string): string {
   const slug = (name || 'my-business')
@@ -79,8 +99,13 @@ export default function DashboardPage() {
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [bookingUrl, setBookingUrl] = useState('')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [whatsappMessage, setWhatsappMessage] = useState('')
+  const [plan, setPlan] = useState('starter')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
+  const [generateError, setGenerateError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
     { name: 'Color', price: '65' },
@@ -121,7 +146,12 @@ export default function DashboardPage() {
   // Restore previously saved data
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('vitrine_business_data')
+      const params = new URLSearchParams(window.location.search)
+      const startBlank = params.get('new') === '1'
+      const saved = startBlank ? null : localStorage.getItem('vitrine_business_data')
+      if (startBlank) {
+        localStorage.removeItem('vitrine_business_data')
+      }
       if (saved) {
         const data = JSON.parse(saved)
         if (data.businessName) setBusinessName(data.businessName)
@@ -130,6 +160,10 @@ export default function DashboardPage() {
         if (data.address) setAddress(data.address)
         if (data.email) setEmail(data.email)
         if (data.phone) setPhone(data.phone)
+        if (data.bookingUrl) setBookingUrl(data.bookingUrl)
+        if (data.whatsappNumber) setWhatsappNumber(data.whatsappNumber)
+        if (data.whatsappMessage) setWhatsappMessage(data.whatsappMessage)
+        if (data.plan) setPlan(data.plan)
         if (data.lang) setLang(data.lang)
         if (Array.isArray(data.services) && data.services.length) setServices(data.services)
         if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
@@ -139,6 +173,11 @@ export default function DashboardPage() {
           setGalleryPhotos((data.photos as string[]).slice(2).filter(Boolean))
         }
       }
+
+      const ownerEmail = params.get('ownerEmail')
+      const requestedPlan = params.get('plan')
+      if (ownerEmail) setEmail(ownerEmail)
+      if (requestedPlan && PLANS.some((p) => p.id === requestedPlan)) setPlan(requestedPlan)
     } catch {
       // ignore corrupt saved data
     }
@@ -156,8 +195,10 @@ export default function DashboardPage() {
   const handleSlotFile = (file: File, setter: (v: string) => void) => {
     if (!file.type.startsWith('image/')) return
     compressImage(file)
+      .then((dataUrl) => uploadCompressedImage(dataUrl, file.name))
       .then((dataUrl) => {
         if (dataUrl && dataUrl.startsWith('data:image/')) setter(dataUrl)
+        else if (dataUrl && dataUrl.startsWith('http')) setter(dataUrl)
       })
       .catch(() => undefined)
   }
@@ -167,8 +208,11 @@ export default function DashboardPage() {
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return
       compressImage(file)
+        .then((dataUrl) => uploadCompressedImage(dataUrl, file.name))
         .then((dataUrl) => {
           if (dataUrl && dataUrl.startsWith('data:image/')) {
+            setGalleryPhotos((prev) => [...prev, dataUrl])
+          } else if (dataUrl && dataUrl.startsWith('http')) {
             setGalleryPhotos((prev) => [...prev, dataUrl])
           }
         })
@@ -178,7 +222,22 @@ export default function DashboardPage() {
 
   const saveBusinessData = (): boolean => {
     const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
-    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
+    const data = {
+      businessName,
+      category,
+      description,
+      address,
+      email,
+      phone,
+      bookingUrl,
+      whatsappNumber,
+      whatsappMessage,
+      plan,
+      lang,
+      services,
+      hours,
+      photos,
+    }
     try {
       localStorage.setItem('vitrine_business_data', JSON.stringify(data))
       return true
@@ -207,6 +266,7 @@ export default function DashboardPage() {
   const handleGeneratePage = async () => {
     saveBusinessData()
     setIsGenerating(true)
+    setGenerateError('')
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
@@ -219,6 +279,10 @@ export default function DashboardPage() {
           address,
           email,
           phone,
+          bookingUrl: bookingUrl.trim() || null,
+          whatsappNumber: whatsappNumber.trim() || null,
+          whatsappMessage: whatsappMessage.trim() || null,
+          plan,
           lang,
           services,
           hours,
@@ -238,9 +302,16 @@ export default function DashboardPage() {
             // localStorage unavailable — ignore
           }
         }
+      } else {
+        const json = await res.json().catch(() => null)
+        setGenerateError(json?.error ?? 'Could not create this page. Please check your details and try again.')
+        setIsGenerating(false)
+        return
       }
     } catch {
-      // If the API is unavailable, still show the success state
+      setGenerateError('Could not reach the server. Please try again in a moment.')
+      setIsGenerating(false)
+      return
     }
     // Compute the real public URL using the current origin (not a hardcoded domain).
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
@@ -383,10 +454,50 @@ export default function DashboardPage() {
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
                   />
                 </div>
+                <div className="rounded-2xl border border-gold/30 bg-gold/5 p-5">
+                  <h3 className="font-bold text-navy mb-2">Customer action buttons</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Add the WhatsApp number and booking platform link now. These become strong call-to-action buttons at the top of the client&apos;s landing page.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp number</label>
+                      <input
+                        type="tel"
+                        value={whatsappNumber}
+                        onChange={(e) => setWhatsappNumber(e.target.value)}
+                        placeholder="+55 11 99999-9999"
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Booking / calendar URL</label>
+                      <input
+                        type="text"
+                        value={bookingUrl}
+                        onChange={(e) => setBookingUrl(e.target.value)}
+                        placeholder="https://calendly.com/yourname"
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Pre-filled WhatsApp message</label>
+                    <textarea
+                      rows={2}
+                      maxLength={500}
+                      value={whatsappMessage}
+                      onChange={(e) => setWhatsappMessage(e.target.value)}
+                      placeholder="Olá! Vim pela sua página e gostaria de agendar um horário."
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white resize-none"
+                    />
+                    <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessage.length}/500</p>
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
                   <div className="flex gap-2">
-                    {['pt', 'es', 'en'].map((l) => (
+                    {['pt', 'es', 'en', 'fr'].map((l) => (
                       <button
                         key={l}
                         onClick={() => setLang(l)}
@@ -397,6 +508,27 @@ export default function DashboardPage() {
                         }`}
                       >
                         {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {PLANS.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPlan(p.id)}
+                        className={`text-left rounded-2xl border p-4 transition-all ${
+                          plan === p.id
+                            ? 'border-gold bg-gold/10 ring-2 ring-gold/20'
+                            : 'border-gray-200 hover:border-gold/40'
+                        }`}
+                      >
+                        <p className="font-bold text-navy">{p.name}</p>
+                        <p className="text-sm font-semibold text-gold mt-1">{p.pages}</p>
+                        <p className="text-xs text-gray-400 mt-1">{p.description}</p>
                       </button>
                     ))}
                   </div>
@@ -670,6 +802,11 @@ export default function DashboardPage() {
                   <p className="text-gray-500 mb-8">
                     Your page is ready to preview. Click below to see how it looks.
                   </p>
+                  {generateError && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 mb-6 text-sm max-w-md mx-auto">
+                      {generateError}
+                    </div>
+                  )}
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">

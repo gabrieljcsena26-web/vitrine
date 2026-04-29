@@ -6,9 +6,10 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 
 ## 🚀 Demo
 
-- **Homepage:** `/` — product landing with pricing
+- **Homepage:** `/` — product introduction
 - **Live Demo:** `/demo` — Studio Elegance hair salon page  
 - **Dashboard:** `/dashboard` — onboarding form for business owners
+- **Test Login:** `/login` — creates/opens a demo dashboard with analytics
 
 ## 💻 Run Locally
 
@@ -23,12 +24,31 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## 🛠 Tech Stack
 
-- **Next.js 14** (App Router)
+- **Next.js 15** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
 - **Lucide React** (icons)
-- **next/font** (Inter — via system font stack fallback)
-- No backend — all static/mock
+- **Supabase** (database + storage)
+- **Resend** (transactional email)
+
+## 🔐 Environment Variables
+
+Set these in `.env.local` and Vercel:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+NEXT_PUBLIC_BASE_URL=
+SUPABASE_STORAGE_BUCKET=business-photos
+```
+
+## 🗄 Supabase Setup
+
+1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
+2. Create a public Storage bucket named `business-photos`.
+3. Confirm the `businesses`, `page_views`, `leads`, and `channels` tables exist.
 
 ## ☁️ Deploy to Vercel
 
@@ -40,12 +60,13 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ## 🗺 Roadmap
 
-- [ ] **Supabase** — database + auth for business accounts
-- [ ] **OpenAI** — AI-powered chatbot responses
-- [ ] **Resend** — transactional emails for contact form
+- [x] **Supabase** — database + storage foundation
+- [x] **Resend** — transactional emails for leads and recovery
+- [x] **Analytics dashboard** — visits, intent, channels, leads
+- [ ] **Supabase Auth** — real owner accounts
 - [ ] **Stripe** — payment processing for subscriptions
 - [ ] Custom domains per business
-- [ ] Analytics dashboard
+- [ ] Daily analytics aggregation for large scale
 
 ## 📄 License
 

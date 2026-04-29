@@ -9,6 +9,7 @@ import About from '@/components/About'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
 import Hours from '@/components/Hours'
+import ContactActions from '@/components/ContactActions'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
@@ -20,6 +21,9 @@ interface BusinessData {
   address: string
   email: string
   phone: string
+  bookingUrl?: string
+  whatsappNumber?: string
+  whatsappMessage?: string
   lang: string
   services: { name: string; price: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
@@ -45,7 +49,7 @@ export default function PreviewPage() {
         return
       }
       setUserData(data)
-      if (data.lang && ['pt', 'es', 'en'].includes(data.lang)) {
+      if (data.lang && ['pt', 'es', 'en', 'fr'].includes(data.lang)) {
         setLang(data.lang as Language)
       }
     } catch {
@@ -61,12 +65,23 @@ export default function PreviewPage() {
 
   return (
     <main className="bg-white">
-      <Navbar t={t} lang={lang} setLang={setLang} businessName={userData.businessName} />
+      <Navbar
+        t={t}
+        lang={lang}
+        setLang={setLang}
+        businessName={userData.businessName}
+        bookingUrl={userData.bookingUrl}
+        whatsappNumber={userData.whatsappNumber}
+        whatsappMessage={userData.whatsappMessage}
+      />
       <Hero
         t={t}
         businessName={userData.businessName}
         category={userData.category}
         heroPhoto={userData.photos?.[0]}
+        bookingUrl={userData.bookingUrl}
+        whatsappNumber={userData.whatsappNumber}
+        whatsappMessage={userData.whatsappMessage}
       />
       <About
         t={t}
@@ -79,16 +94,29 @@ export default function PreviewPage() {
       <Services t={t} services={userData.services} />
       <Gallery t={t} photos={userData.photos} />
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />
-      <ContactForm t={t} />
+      {userData.bookingUrl || userData.whatsappNumber ? (
+        <ContactActions
+          t={t}
+          bookingUrl={userData.bookingUrl}
+          whatsappNumber={userData.whatsappNumber}
+          whatsappMessage={userData.whatsappMessage}
+        />
+      ) : (
+        <ContactForm t={t} />
+      )}
       <ChatbotWidget
         t={t}
         businessInfo={{
           name: userData.businessName,
+          category: userData.category,
+          description: userData.description,
           address: userData.address,
           email: userData.email,
           phone: userData.phone,
           hours: userData.hours,
           services: userData.services,
+          bookingUrl: userData.bookingUrl,
+          whatsappNumber: userData.whatsappNumber,
         }}
       />
       <Footer t={t} businessName={userData.businessName} />

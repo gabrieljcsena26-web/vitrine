@@ -6,6 +6,7 @@ import type { Language } from '@/lib/translations'
 import { getSupabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
+import QuickActions from '@/components/QuickActions'
 import About from '@/components/About'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
@@ -94,12 +95,29 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
 
   return (
     <main className="bg-white">
-      <Navbar t={t} lang={lang} setLang={setLang} businessName={business.owner_name} />
+      <Navbar
+        t={t}
+        lang={lang}
+        setLang={setLang}
+        businessName={business.owner_name}
+        bookingUrl={business.booking_url}
+        businessId={business.id}
+        via={via}
+      />
       <Hero
         t={t}
         businessName={business.owner_name}
         category={business.category}
         heroPhoto={business.photos?.[0]}
+        bookingUrl={business.booking_url}
+        businessId={business.id}
+        via={via}
+      />
+      <QuickActions
+        bookingUrl={business.booking_url}
+        whatsappNumber={business.whatsapp_number}
+        businessId={business.id}
+        via={via}
       />
       <About
         t={t}
@@ -115,7 +133,13 @@ export default function PublicPage({ params }: { params: Promise<{ slug: string 
       {business.booking_url && (
         <BookingBlock t={t} bookingUrl={business.booking_url} businessId={business.id} via={via} />
       )}
-      <ContactForm t={t} businessId={business.id} via={via} />
+      <ContactForm
+        t={t}
+        businessId={business.id}
+        via={via}
+        bookingUrl={business.booking_url}
+        whatsappNumber={business.whatsapp_number}
+      />
       <ChatbotWidget
         t={t}
         businessInfo={{

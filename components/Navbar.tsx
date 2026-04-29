@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Menu, X, Scissors } from 'lucide-react'
+import { safeBookingHref } from '@/lib/utils'
 import LanguageSwitcher from './LanguageSwitcher'
 import type { Language, Translations } from '@/lib/translations'
 
@@ -9,11 +10,24 @@ interface Props {
   lang: Language
   setLang: (lang: Language) => void
   businessName: string
+  bookingUrl?: string | null
+  businessId?: string
+  via?: string
 }
 
-export default function Navbar({ t, lang, setLang, businessName }: Props) {
+export default function Navbar({ t, lang, setLang, businessName, bookingUrl, businessId, via }: Props) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
+
+  const handleBookingClick = () => {
+    if (!businessId || !bookingHref) return
+    fetch('/api/track-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId, via: via ?? null, eventType: 'booking_click' }),
+    }).catch(() => undefined)
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -62,7 +76,10 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
           <div className="hidden md:flex items-center gap-4">
             <LanguageSwitcher lang={lang} setLang={setLang} />
             <a
-              href="#contact"
+              href={bookingHref ?? '#contact'}
+              target={bookingHref ? '_blank' : undefined}
+              rel={bookingHref ? 'noopener noreferrer' : undefined}
+              onClick={handleBookingClick}
               className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors"
             >
               {t.nav.bookNow}
@@ -96,9 +113,11 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
             <div className="pt-2 flex items-center justify-between">
               <LanguageSwitcher lang={lang} setLang={setLang} />
               <a
-                href="#contact"
+                href={bookingHref ?? '#contact'}
+                target={bookingHref ? '_blank' : undefined}
+                rel={bookingHref ? 'noopener noreferrer' : undefined}
                 className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold"
-                onClick={() => setOpen(false)}
+                onClick={() => { handleBookingClick(); setOpen(false) }}
               >
                 {t.nav.bookNow}
               </a>

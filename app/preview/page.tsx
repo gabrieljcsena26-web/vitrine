@@ -5,10 +5,12 @@ import { translations } from '@/lib/translations'
 import type { Language } from '@/lib/translations'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
+import QuickActions from '@/components/QuickActions'
 import About from '@/components/About'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
 import Hours from '@/components/Hours'
+import BookingBlock from '@/components/BookingBlock'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
@@ -20,6 +22,8 @@ interface BusinessData {
   address: string
   email: string
   phone: string
+  bookingUrl?: string
+  whatsappNumber?: string
   lang: string
   services: { name: string; price: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
@@ -61,12 +65,23 @@ export default function PreviewPage() {
 
   return (
     <main className="bg-white">
-      <Navbar t={t} lang={lang} setLang={setLang} businessName={userData.businessName} />
+      <Navbar
+        t={t}
+        lang={lang}
+        setLang={setLang}
+        businessName={userData.businessName}
+        bookingUrl={userData.bookingUrl}
+      />
       <Hero
         t={t}
         businessName={userData.businessName}
         category={userData.category}
         heroPhoto={userData.photos?.[0]}
+        bookingUrl={userData.bookingUrl}
+      />
+      <QuickActions
+        bookingUrl={userData.bookingUrl}
+        whatsappNumber={userData.whatsappNumber}
       />
       <About
         t={t}
@@ -79,7 +94,12 @@ export default function PreviewPage() {
       <Services t={t} services={userData.services} />
       <Gallery t={t} photos={userData.photos} />
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />
-      <ContactForm t={t} />
+      {userData.bookingUrl && <BookingBlock t={t} bookingUrl={userData.bookingUrl} />}
+      <ContactForm
+        t={t}
+        bookingUrl={userData.bookingUrl}
+        whatsappNumber={userData.whatsappNumber}
+      />
       <ChatbotWidget
         t={t}
         businessInfo={{

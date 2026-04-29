@@ -1,5 +1,6 @@
 'use client'
 import type { Translations } from '@/lib/translations'
+import { safeBookingHref } from '@/lib/utils'
 import Image from 'next/image'
 
 interface Props {
@@ -7,10 +8,24 @@ interface Props {
   businessName: string
   category?: string
   heroPhoto?: string
+  bookingUrl?: string | null
+  businessId?: string
+  via?: string
 }
 
-export default function Hero({ t, businessName, category, heroPhoto }: Props) {
+export default function Hero({ t, businessName, category, heroPhoto, bookingUrl, businessId, via }: Props) {
   const bgSrc = heroPhoto || 'https://picsum.photos/seed/salon1/1920/1080'
+  const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
+
+  const handleBookingClick = () => {
+    if (!businessId || !bookingHref) return
+    fetch('/api/track-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId, via: via ?? null, eventType: 'booking_click' }),
+    }).catch(() => undefined)
+  }
+
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background image */}
@@ -40,7 +55,10 @@ export default function Hero({ t, businessName, category, heroPhoto }: Props) {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href="#contact"
+            href={bookingHref ?? '#contact'}
+            target={bookingHref ? '_blank' : undefined}
+            rel={bookingHref ? 'noopener noreferrer' : undefined}
+            onClick={handleBookingClick}
             className="bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/30"
           >
             {t.hero.bookNow}

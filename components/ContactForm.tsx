@@ -1,18 +1,34 @@
 'use client'
 import { useState } from 'react'
 import type { Translations } from '@/lib/translations'
-import { Send, CheckCircle } from 'lucide-react'
+import { safeBookingHref, whatsAppHref } from '@/lib/utils'
+import { Send, CheckCircle, CalendarDays, MessageCircle } from 'lucide-react'
 
 interface Props {
   t: Translations
   businessId?: string
   via?: string
+  bookingUrl?: string | null
+  whatsappNumber?: string | null
 }
 
-export default function ContactForm({ t, businessId, via }: Props) {
+export default function ContactForm({ t, businessId, via, bookingUrl, whatsappNumber }: Props) {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
+  const whatsappHref = whatsappNumber
+    ? whatsAppHref(whatsappNumber, 'Hi, I found your page and would like to book an appointment.')
+    : null
+
+  const trackClick = (eventType: 'booking_click' | 'whatsapp_click') => {
+    if (!businessId) return
+    fetch('/api/track-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ businessId, via: via ?? null, eventType }),
+    }).catch(() => undefined)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +67,38 @@ export default function ContactForm({ t, businessId, via }: Props) {
           </h2>
           <p className="text-gray-400 text-lg">{t.contact.subtitle}</p>
         </div>
+
+        {(bookingHref || whatsappHref) && (
+          <div className="grid gap-3 sm:grid-cols-2 mb-8">
+            {bookingHref && (
+              <a
+                href={bookingHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackClick('booking_click')}
+                className="flex items-center justify-center gap-2 bg-gold text-navy px-5 py-4 rounded-xl font-bold hover:bg-yellow-400 transition-all text-center"
+              >
+                <CalendarDays className="w-5 h-5" />
+                Book appointment
+              </a>
+            )}
+            {whatsappHref && (
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackClick('whatsapp_click')}
+                className="flex items-center justify-center gap-3 bg-[#25D366] text-white px-5 py-4 rounded-xl font-bold hover:bg-[#1ebe5d] transition-all text-center"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="flex flex-col leading-tight">
+                  <span>Chat on WhatsApp</span>
+                  <span className="text-xs font-semibold text-white/85">{whatsappNumber}</span>
+                </span>
+              </a>
+            )}
+          </div>
+        )}
 
         {submitted ? (
           <div className="text-center py-12">

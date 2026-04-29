@@ -79,6 +79,8 @@ export default function DashboardPage() {
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [bookingUrl, setBookingUrl] = useState('')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
   const [services, setServices] = useState<Service[]>([
@@ -130,6 +132,8 @@ export default function DashboardPage() {
         if (data.address) setAddress(data.address)
         if (data.email) setEmail(data.email)
         if (data.phone) setPhone(data.phone)
+        if (data.bookingUrl) setBookingUrl(data.bookingUrl)
+        if (data.whatsappNumber) setWhatsappNumber(data.whatsappNumber)
         if (data.lang) setLang(data.lang)
         if (Array.isArray(data.services) && data.services.length) setServices(data.services)
         if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
@@ -177,8 +181,8 @@ export default function DashboardPage() {
   }
 
   const saveBusinessData = (): boolean => {
-    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
-    const data = { businessName, category, description, address, email, phone, lang, services, hours, photos }
+    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean)
+    const data = { businessName, category, description, address, email, phone, bookingUrl, whatsappNumber, lang, services, hours, photos }
     try {
       localStorage.setItem('vitrine_business_data', JSON.stringify(data))
       return true
@@ -219,10 +223,12 @@ export default function DashboardPage() {
           address,
           email,
           phone,
+          bookingUrl: bookingUrl.trim() || null,
+          whatsappNumber: whatsappNumber.trim() || null,
           lang,
           services,
           hours,
-          photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
+          photos: [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean),
         }),
       })
       if (res.ok) {
@@ -491,6 +497,42 @@ export default function DashboardPage() {
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Booking & WhatsApp */}
+              <div className="mt-8 pt-8 border-t border-gray-100">
+                <h3 className="font-semibold text-gray-800 mb-2">Booking & WhatsApp</h3>
+                <p className="text-sm text-gray-400 mb-5">
+                  These links become the main action buttons on your public landing page. Customers can book directly or start a WhatsApp conversation instantly.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Booking / calendar URL
+                    </label>
+                    <input
+                      type="text"
+                      value={bookingUrl}
+                      onChange={(e) => setBookingUrl(e.target.value)}
+                      placeholder="https://calendly.com/your-business"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Calendly, Google Calendar, Fresha, Treatwell, Booksy, or any booking link.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      WhatsApp number
+                    </label>
+                    <input
+                      type="tel"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      placeholder="+55 11 99999-9999"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">The public page will show a WhatsApp button with a ready-to-send first message.</p>
+                  </div>
                 </div>
               </div>
             </div>

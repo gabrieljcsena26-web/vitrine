@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function WhatsAppButton({ t, whatsappNumber, businessId, via }: Props) {
-  const href = whatsAppHref(whatsappNumber)
+  const href = whatsAppHref(whatsappNumber, 'Hi, I found your page and would like to book an appointment.')
 
   const handleClick = () => {
     fetch('/api/track-visit', {

@@ -81,6 +81,7 @@ export default function DashboardPage() {
   const [phone, setPhone] = useState('')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
     { name: 'Color', price: '65' },
@@ -94,8 +95,10 @@ export default function DashboardPage() {
   const [galleryDragging, setGalleryDragging] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGenerated, setIsGenerated] = useState(false)
+  const [generationError, setGenerationError] = useState('')
   const [copySuccess, setCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
+  const [origin, setOrigin] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
@@ -109,6 +112,8 @@ export default function DashboardPage() {
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
+  const pagePath = `/p/${pageSlug}`
+  const publicPageUrl = origin ? `${origin}${pagePath}` : pagePath
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -120,6 +125,10 @@ export default function DashboardPage() {
         clearTimeout(copySuccessTimeoutRef.current)
       }
     }
+  }, [])
+
+  useEffect(() => {
+    setOrigin(window.location.origin)
   }, [])
 
   // Restore previously saved data
@@ -199,18 +208,36 @@ export default function DashboardPage() {
 
   const handleNext = () => {
     if (step === 0) {
+      let hasError = false
       if (!businessName.trim()) {
         setNameError('Business name is required.')
-        return
+        hasError = true
       }
+      if (!email.trim()) {
+        setEmailError('Email is required to publish your page and send your dashboard link.')
+        hasError = true
+      }
+      if (hasError) return
       setNameError('')
+      setEmailError('')
     }
     setStep(step + 1)
   }
 
   const handleGeneratePage = async () => {
+    if (!businessName.trim() || !email.trim()) {
+      setStep(0)
+      setGenerationError('')
+      if (!businessName.trim()) setNameError('Business name is required.')
+      if (!email.trim()) setEmailError('Email is required to publish your page and send your dashboard link.')
+      return
+    }
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current)
+    }
     saveBusinessData()
     setIsGenerating(true)
+    setGenerationError('')
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
@@ -229,21 +256,24 @@ export default function DashboardPage() {
           photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
         }),
       })
-      if (res.ok) {
-        const json = await res.json()
-        if (json.token) setDashboardToken(json.token)
+      if (!res.ok) {
+        const json = await res.json().catch(() => null)
+        throw new Error(json?.error || 'Failed to publish page')
       }
+      const json = await res.json()
+      if (json.token) setDashboardToken(json.token)
+      generateTimeoutRef.current = setTimeout(() => {
+        setIsGenerating(false)
+        setIsGenerated(true)
+      }, GENERATION_DURATION_MS)
     } catch {
-      // If the API is unavailable, still show the success state
-    }
-    generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
-      setIsGenerated(true)
-    }, GENERATION_DURATION_MS)
+      setGenerationError('We could not publish your page. Please check the required fields and try again.')
+    }
   }
 
   const handleCopyLink = async () => {
-    const fullUrl = `https://vitrine.app/${pageSlug}`
+    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${pagePath}` : publicPageUrl
     try {
       await navigator.clipboard.writeText(fullUrl)
       setCopySuccess(true)
@@ -383,14 +413,15 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); if (e.target.value.trim()) setEmailError('') }}
                     placeholder="contact@yourbusiness.com"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
+                    className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${emailError ? 'border-red-400' : 'border-gray-200'}`}
                   />
+                  {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
@@ -682,7 +713,7 @@ export default function DashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">Your page URL</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {publicPageUrl}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -708,6 +739,11 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                  {generationError && (
+                    <p className="mt-4 text-sm text-red-500 max-w-sm mx-auto">
+                      {generationError}
+                    </p>
+                  )}
                 </>
               ) : (
                 <>
@@ -723,7 +759,7 @@ export default function DashboardPage() {
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-green-600 font-medium mb-2">✓ Your page is live at:</p>
                     <p className="text-navy font-mono text-sm break-all">
-                      https://vitrine.app/{pageSlug}
+                      {publicPageUrl}
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">

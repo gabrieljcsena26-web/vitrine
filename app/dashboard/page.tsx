@@ -72,8 +72,8 @@ function generateSlug(name: string): string {
 
 function safeImageSrc(src: string): string {
   const trimmed = src.trim()
-  if (/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(trimmed)) return trimmed
-  if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed)) return trimmed
+  if (/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(trimmed)) return encodeURI(trimmed)
+  if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed)) return encodeURI(trimmed)
   return ''
 }
 
@@ -212,27 +212,24 @@ export default function DashboardPage() {
 
   const handleNext = () => {
     if (step === 0) {
-      let hasError = false
-      if (!businessName.trim()) {
-        setNameError('Business name is required.')
-        hasError = true
-      }
-      if (!email.trim()) {
-        setEmailError('Email is required to publish your page and send your dashboard link.')
-        hasError = true
-      }
-      if (hasError) return
-      setNameError('')
-      setEmailError('')
+      if (!validateBusinessInfo()) return
     }
     setStep(step + 1)
   }
 
+  const validateBusinessInfo = () => {
+    const missingName = !businessName.trim()
+    const missingEmail = !email.trim()
+
+    setNameError(missingName ? 'Business name is required.' : '')
+    setEmailError(missingEmail ? 'Email is required to publish your page and send your dashboard link.' : '')
+
+    return !missingName && !missingEmail
+  }
+
   const handleGeneratePage = async () => {
-    if (!businessName.trim() || !email.trim()) {
+    if (!validateBusinessInfo()) {
       setStep(0)
-      if (!businessName.trim()) setNameError('Business name is required.')
-      if (!email.trim()) setEmailError('Email is required to publish your page and send your dashboard link.')
       return
     }
     if (generateTimeoutRef.current) {
@@ -260,8 +257,7 @@ export default function DashboardPage() {
         }),
       })
       if (!res.ok) {
-        const json = await res.json().catch(() => null)
-        throw new Error(json?.error || 'Failed to publish page')
+        throw new Error('Failed to publish your page. Please try again or contact support if the problem persists.')
       }
       const json = await res.json()
       if (json.token) setDashboardToken(json.token)
@@ -269,9 +265,13 @@ export default function DashboardPage() {
         setIsGenerating(false)
         setIsGenerated(true)
       }, GENERATION_DURATION_MS)
-    } catch {
+    } catch (err) {
       setIsGenerating(false)
-      setGenerationError('We could not publish your page. Please check the required fields and try again.')
+      setGenerationError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to publish your page. Please try again or contact support if the problem persists.'
+      )
     }
   }
 

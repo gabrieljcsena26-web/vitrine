@@ -93,13 +93,13 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
           <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-center">
             <div className="text-center lg:text-left">
-              <p className="text-gold font-semibold text-sm uppercase tracking-wider mb-3">Launch checkout</p>
+              <p className="text-gold font-semibold text-sm uppercase tracking-wider mb-3">Launch Readiness</p>
               <div className="inline-flex items-end gap-1 mb-3">
                 <span className="text-6xl font-black text-white leading-none">82</span>
                 <span className="text-gray-400 font-bold mb-2">/100</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Vitrine is close to launch: the landing flow, public page, demo, lead capture, and private dashboard are in place.
+                82/100 means the core customer flow is ready; the remaining points are for payments, domains, monitoring, and launch operations.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

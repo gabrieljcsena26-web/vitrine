@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { Scissors, Upload, FileText, Zap, Check, ArrowRight, Star } from 'lucide-react'
+import { Scissors, Upload, FileText, Zap, Check, ArrowRight, Star, LogIn } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -17,6 +17,9 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
               View Demo
+            </Link>
+            <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
+              Login
             </Link>
             <Link
               href="/dashboard"
@@ -81,6 +84,46 @@ export default function HomePage() {
                 <p className="text-gray-400 text-sm leading-relaxed">{card.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Launch readiness */}
+      <section className="py-16 px-4">
+        <div className="max-w-5xl mx-auto bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-center">
+            <div className="text-center lg:text-left">
+              <p className="text-gold font-semibold text-sm uppercase tracking-wider mb-3">Launch checkout</p>
+              <div className="inline-flex items-end gap-1 mb-3">
+                <span className="text-6xl font-black text-white leading-none">82</span>
+                <span className="text-gray-400 font-bold mb-2">/100</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                Vitrine is close to launch: the landing flow, public page, demo, lead capture, and private dashboard are in place.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                'Homepage, demo page, and onboarding are ready',
+                'Public business pages support multilingual content',
+                'Leads, visits, booking clicks, and WhatsApp clicks are tracked',
+                'Private dashboard is accessible by token link',
+                'Test login route is available for dashboard access',
+                'Before full launch: add payments, custom domains, and production monitoring',
+              ].map((item) => (
+                <div key={item} className="flex gap-3 rounded-2xl bg-navy/40 border border-white/10 p-4">
+                  <Check className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                  <p className="text-gray-300 text-sm leading-relaxed">{item}</p>
+                </div>
+              ))}
+              <Link
+                href="/login"
+                className="sm:col-span-2 inline-flex items-center justify-center gap-2 bg-white/10 border border-white/20 text-white px-5 py-3 rounded-2xl font-semibold hover:bg-white/20 transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Test dashboard login
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -235,7 +278,7 @@ export default function HomePage() {
           <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Vitrine. All rights reserved.</p>
           <div className="flex gap-4">
             <Link href="/demo" className="text-gray-500 hover:text-gold text-sm transition-colors">Demo</Link>
-            <Link href="/dashboard" className="text-gray-500 hover:text-gold text-sm transition-colors">Dashboard</Link>
+            <Link href="/login" className="text-gray-500 hover:text-gold text-sm transition-colors">Login</Link>
           </div>
         </div>
       </footer>

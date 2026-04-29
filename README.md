@@ -9,6 +9,11 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 - **Homepage:** `/` — product landing with pricing
 - **Live Demo:** `/demo` — Studio Elegance hair salon page  
 - **Dashboard:** `/dashboard` — onboarding form for business owners
+- **Login:** `/login` — token-based access for the private owner dashboard
+
+## ✅ Launch Readiness
+
+Current checkout: **82/100**. Core launch paths are ready: landing page, onboarding, generated public pages, lead capture, tracking, and private dashboard access. Before a full production launch, prioritize payments, custom domains, production monitoring, and a configured test dashboard token.
 
 ## 💻 Run Locally
 
@@ -21,14 +26,21 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+To enable the test dashboard button on `/login`, set:
+
+```bash
+NEXT_PUBLIC_TEST_DASHBOARD_TOKEN=your-test-dashboard-token
+```
+
 ## 🛠 Tech Stack
 
-- **Next.js 14** (App Router)
+- **Next.js 15** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
 - **Lucide React** (icons)
 - **next/font** (Inter — via system font stack fallback)
-- No backend — all static/mock
+- **Supabase** (businesses, visits, leads, dashboard data)
+- **Resend** (welcome and feedback emails)
 
 ## ☁️ Deploy to Vercel
 

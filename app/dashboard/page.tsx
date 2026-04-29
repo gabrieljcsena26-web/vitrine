@@ -70,6 +70,13 @@ function generateSlug(name: string): string {
   return slug || 'my-business'
 }
 
+function safeImageSrc(src: string): string {
+  const trimmed = src.trim()
+  if (/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(trimmed)) return trimmed
+  if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed)) return trimmed
+  return ''
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
@@ -115,8 +122,9 @@ export default function DashboardPage() {
   const pagePath = `/p/${pageSlug}`
   const publicPageUrl = origin ? `${origin}${pagePath}` : pagePath
 
-  // Cleanup timeouts on unmount
   useEffect(() => {
+    setOrigin(window.location.origin)
+
     return () => {
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current)
@@ -125,10 +133,6 @@ export default function DashboardPage() {
         clearTimeout(copySuccessTimeoutRef.current)
       }
     }
-  }, [])
-
-  useEffect(() => {
-    setOrigin(window.location.origin)
   }, [])
 
   // Restore previously saved data
@@ -227,7 +231,6 @@ export default function DashboardPage() {
   const handleGeneratePage = async () => {
     if (!businessName.trim() || !email.trim()) {
       setStep(0)
-      setGenerationError('')
       if (!businessName.trim()) setNameError('Business name is required.')
       if (!email.trim()) setEmailError('Email is required to publish your page and send your dashboard link.')
       return
@@ -273,15 +276,14 @@ export default function DashboardPage() {
   }
 
   const handleCopyLink = async () => {
-    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${pagePath}` : publicPageUrl
     try {
-      await navigator.clipboard.writeText(fullUrl)
+      await navigator.clipboard.writeText(publicPageUrl)
       setCopySuccess(true)
       copySuccessTimeoutRef.current = setTimeout(() => setCopySuccess(false), COPY_SUCCESS_DURATION_MS)
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       console.error('Failed to copy:', err)
-      alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
+      alert(`Failed to copy link. Please copy manually:\n\n${publicPageUrl}`)
     }
   }
 
@@ -568,7 +570,7 @@ export default function DashboardPage() {
                       {heroPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={heroPhoto} alt="Hero photo" className="w-full h-full object-cover" />
+                          <img src={safeImageSrc(heroPhoto)} alt="Hero photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => heroInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -610,7 +612,7 @@ export default function DashboardPage() {
                       {aboutPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={aboutPhoto} alt="About photo" className="w-full h-full object-cover" />
+                          <img src={safeImageSrc(aboutPhoto)} alt="About photo" className="w-full h-full object-cover" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                             <button onClick={() => aboutInputRef.current?.click()} className="bg-white text-navy text-xs font-semibold px-3 py-1.5 rounded-full hover:bg-gold transition-colors">
                               Change
@@ -655,7 +657,7 @@ export default function DashboardPage() {
                             <div key={i} className="relative group">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={src.startsWith('data:image/') || src.startsWith('https://') ? src : ''}
+                                src={safeImageSrc(src)}
                                 alt={`Gallery ${i + 1}`}
                                 className="w-full h-20 object-cover rounded-lg"
                               />

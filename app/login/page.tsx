@@ -61,7 +61,7 @@ export default function LoginPage() {
 
           <h1 className="text-3xl font-black text-navy mb-3">Dashboard login</h1>
           <p className="text-gray-500 leading-relaxed mb-8">
-            Use the private token from your welcome email or the test token configured for this environment to access the owner dashboard.
+            After creating a page, use the private token shown on the success screen or sent in the welcome email to access the owner dashboard.
           </p>
 
           {savedSlug && (
@@ -115,7 +115,7 @@ export default function LoginPage() {
           )}
 
           <p className="text-xs text-gray-400 leading-relaxed mt-6">
-            Dashboard access is token-based. Keep the private link safe; anyone with the token can view the owner dashboard.
+            Dashboard access is token-based. Tokens are long-lived in this version, so keep the private link safe; anyone with it can view the owner dashboard.
           </p>
         </div>
       </main>

@@ -23,6 +23,7 @@ const GENERATION_DURATION_MS = 2000 // Simulated page generation time
 const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
 const MAX_IMAGE_PX = 1000 // Max width/height for compressed photos
 const IMAGE_QUALITY = 0.75 // JPEG quality for compressed photos
+const MAX_IMAGE_DATA_URL_LENGTH = 2_000_000 // Guard against oversized restored photo previews
 
 // Compress an image file to a small data URL using canvas
 function compressImage(file: File): Promise<string> {
@@ -72,9 +73,17 @@ function generateSlug(name: string): string {
 
 function safeImageSrc(src: string): string {
   const trimmed = src.trim()
-  if (/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)) return encodeURI(trimmed)
-  if (/^https:\/\/[^\s"'<>]+$/i.test(trimmed)) return encodeURI(trimmed)
+  if (
+    trimmed.length <= MAX_IMAGE_DATA_URL_LENGTH &&
+    /^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/i.test(trimmed)
+  ) {
+    return encodeURI(trimmed)
+  }
   return ''
+}
+
+function isValidEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 export default function DashboardPage() {
@@ -226,11 +235,18 @@ export default function DashboardPage() {
   const validateBusinessInfo = () => {
     const missingName = !businessName.trim()
     const missingEmail = !email.trim()
+    const invalidEmail = !missingEmail && !isValidEmailAddress(email.trim())
 
     setNameError(missingName ? 'Business name is required.' : '')
-    setEmailError(missingEmail ? 'Email is required to publish your page and send your dashboard link.' : '')
+    setEmailError(
+      missingEmail
+        ? 'Email is required to publish your page and send your dashboard link.'
+        : invalidEmail
+          ? 'Enter a valid email address.'
+          : ''
+    )
 
-    return !missingName && !missingEmail
+    return !missingName && !missingEmail && !invalidEmail
   }
 
   const handleGeneratePage = async () => {

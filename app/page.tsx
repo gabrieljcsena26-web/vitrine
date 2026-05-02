@@ -125,20 +125,27 @@ export default function HomePage() {
       </section>
 
       {/* Feature Cards */}
-      <section className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-20 px-4 bg-white text-navy">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-gold font-semibold text-sm uppercase tracking-wider">What is included</span>
+            <h2 className="text-4xl md:text-5xl font-black mt-2">Everything needed to launch one beautiful page.</h2>
+            <p className="text-gray-500 text-lg mt-4 max-w-2xl mx-auto">
+              A clean setup flow, professional sections and a dashboard simple enough for any local business owner.
+            </p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { icon: <Upload className="w-6 h-6" />, title: 'Upload your photos', desc: 'Drag and drop your best business photos. We handle the rest.' },
               { icon: <FileText className="w-6 h-6" />, title: 'Fill your info', desc: 'Add your business name, services, hours, and contact details.' },
               { icon: <Zap className="w-6 h-6" />, title: 'Go live instantly', desc: 'Your professional landing page is live and ready to share in seconds.' },
             ].map((card, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-gold/30 transition-all">
+              <div key={i} className="bg-stone-50 border border-stone-100 rounded-3xl p-7 hover:border-gold/40 hover:-translate-y-1 transition-all shadow-sm">
                 <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center text-gold mb-4">
                   {card.icon}
                 </div>
-                <h3 className="text-white font-bold text-lg mb-2">{card.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{card.desc}</p>
+                <h3 className="text-navy font-black text-lg mb-2">{card.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{card.desc}</p>
               </div>
             ))}
           </div>
@@ -146,7 +153,7 @@ export default function HomePage() {
       </section>
 
       {/* Light value section */}
-      <section className="py-20 px-4 bg-white text-navy">
+      <section className="py-20 px-4 bg-stone-50 text-navy border-y border-stone-100">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
             <div>
@@ -169,7 +176,7 @@ export default function HomePage() {
                 { icon: <Globe2 className="w-5 h-5" />, title: 'Local SEO base', desc: 'Dynamic metadata, sitemap, and local business structure.' },
                 { icon: <BarChart3 className="w-5 h-5" />, title: 'Easy dashboard', desc: 'Simple numbers, recent leads and recommended next action.' },
               ].map((item) => (
-                <div key={item.title} className="rounded-3xl border border-stone-100 bg-stone-50 p-5 hover:border-gold/40 hover:-translate-y-1 transition-all">
+                <div key={item.title} className="rounded-3xl border border-stone-100 bg-white p-5 hover:border-gold/40 hover:-translate-y-1 transition-all shadow-sm">
                   <div className="w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
                     {item.icon}
                   </div>
@@ -224,7 +231,7 @@ export default function HomePage() {
       </section>
 
       {/* How it works */}
-      <section className="py-24 px-4">
+      <section className="py-24 px-4 bg-white text-navy">
         <div className="max-w-4xl mx-auto text-center">
           <span className="text-gold font-semibold text-sm uppercase tracking-wider">Simple process</span>
           <h2 className="text-4xl font-bold mt-2 mb-16">How it works</h2>
@@ -234,13 +241,13 @@ export default function HomePage() {
               { step: '02', title: 'Add your business', desc: 'Fill in details, upload photos, set your services and hours.' },
               { step: '03', title: 'Share your page', desc: 'Copy your link and share it on Instagram, WhatsApp, Google.' },
             ].map((item, i) => (
-              <div key={i} className="relative">
-                <div className="text-gold/20 font-black text-7xl absolute -top-4 left-1/2 -translate-x-1/2 select-none">
+              <div key={i} className="relative rounded-3xl bg-stone-50 border border-stone-100 p-8 shadow-sm">
+                <div className="text-gold/25 font-black text-7xl absolute -top-5 left-1/2 -translate-x-1/2 select-none">
                   {item.step}
                 </div>
                 <div className="relative pt-8">
-                  <h3 className="text-white font-bold text-xl mb-3">{item.title}</h3>
-                  <p className="text-gray-400">{item.desc}</p>
+                  <h3 className="text-navy font-black text-xl mb-3">{item.title}</h3>
+                  <p className="text-gray-500">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -249,12 +256,12 @@ export default function HomePage() {
       </section>
 
       {/* Plan limits */}
-      <section className="py-24 px-4">
+      <section className="py-24 px-4 bg-stone-50 text-navy border-y border-stone-100">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <span className="text-gold font-semibold text-sm uppercase tracking-wider">Plans</span>
             <h2 className="text-4xl font-bold mt-2">Choose the page capacity</h2>
-            <p className="text-gray-400 mt-4">Plan capacity is ready; commercial terms stay private during beta.</p>
+            <p className="text-gray-500 mt-4">Plan capacity is ready; commercial terms stay private during beta.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {[
@@ -280,7 +287,7 @@ export default function HomePage() {
                 className={`relative rounded-2xl p-8 border transition-all hover:-translate-y-1 ${
                   plan.highlighted
                     ? 'bg-gold border-gold text-navy'
-                    : 'bg-white/5 border-white/10 hover:border-gold/30'
+                    : 'bg-white border-stone-100 text-navy hover:border-gold/30 shadow-sm'
                 }`}
               >
                 {plan.highlighted && (
@@ -289,14 +296,14 @@ export default function HomePage() {
                   </div>
                 )}
                 <div className="mb-6">
-                  <h3 className={`font-bold text-xl mb-1 ${plan.highlighted ? 'text-navy' : 'text-white'}`}>
+                  <h3 className="font-bold text-xl mb-1 text-navy">
                     {plan.name}
                   </h3>
-                  <p className={`text-sm mb-4 ${plan.highlighted ? 'text-navy/70' : 'text-gray-400'}`}>
+                  <p className={`text-sm mb-4 ${plan.highlighted ? 'text-navy/70' : 'text-gray-500'}`}>
                     {plan.desc}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <span className={`text-4xl font-black ${plan.highlighted ? 'text-navy' : 'text-white'}`}>
+                    <span className="text-4xl font-black text-navy">
                       {plan.pages}
                     </span>
                   </div>
@@ -305,7 +312,7 @@ export default function HomePage() {
                   {plan.features.map((feat, j) => (
                     <li key={j} className="flex items-center gap-2">
                       <Check className={`w-4 h-4 flex-shrink-0 ${plan.highlighted ? 'text-navy' : 'text-gold'}`} />
-                      <span className={`text-sm ${plan.highlighted ? 'text-navy' : 'text-gray-300'}`}>{feat}</span>
+                      <span className={`text-sm ${plan.highlighted ? 'text-navy' : 'text-gray-600'}`}>{feat}</span>
                     </li>
                   ))}
                 </ul>
@@ -326,8 +333,8 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 px-4 text-center">
-        <div className="max-w-2xl mx-auto">
+      <section className="py-24 px-4 text-center bg-white text-navy">
+        <div className="max-w-2xl mx-auto rounded-[2rem] bg-gradient-to-br from-stone-50 to-white border border-stone-100 p-10 shadow-sm">
           <div className="flex justify-center gap-2 mb-5 flex-wrap">
             {['Ready demos', 'WhatsApp leads', 'SEO foundation'].map((label) => (
               <span key={label} className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-gold text-xs font-bold">

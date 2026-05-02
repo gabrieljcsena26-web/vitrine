@@ -145,6 +145,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Light value section */}
+      <section className="py-20 px-4 bg-white text-navy">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
+            <div>
+              <span className="text-gold font-semibold text-sm uppercase tracking-wider">Built for selling</span>
+              <h2 className="text-4xl md:text-5xl font-black mt-2 mb-5">
+                Simple pages that make local clients look professional fast.
+              </h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-6">
+                Instead of a complex website, Vitrine gives each business one focused page with WhatsApp, booking, photos, reviews, location and a clean dashboard.
+              </p>
+              <Link href="/demo" className="inline-flex items-center gap-2 bg-navy text-white px-6 py-3 rounded-full font-bold hover:bg-navy/90 transition-colors">
+                View commercial demos
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { icon: <MessageCircle className="w-5 h-5" />, title: 'WhatsApp first', desc: 'Turn visitors into conversations with one clear action.' },
+                { icon: <CalendarDays className="w-5 h-5" />, title: 'Booking ready', desc: 'Send customers to the scheduling platform the business already uses.' },
+                { icon: <Globe2 className="w-5 h-5" />, title: 'Local SEO base', desc: 'Dynamic metadata, sitemap, and local business structure.' },
+                { icon: <BarChart3 className="w-5 h-5" />, title: 'Easy dashboard', desc: 'Simple numbers, recent leads and recommended next action.' },
+              ].map((item) => (
+                <div key={item.title} className="rounded-3xl border border-stone-100 bg-stone-50 p-5 hover:border-gold/40 hover:-translate-y-1 transition-all">
+                  <div className="w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
+                    {item.icon}
+                  </div>
+                  <p className="font-black text-navy text-lg mb-1">{item.title}</p>
+                  <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Visual demo */}
       <section className="py-20 px-4 bg-gradient-to-b from-navy via-slate-950 to-navy text-white border-y border-white/10">
         <div className="max-w-6xl mx-auto">

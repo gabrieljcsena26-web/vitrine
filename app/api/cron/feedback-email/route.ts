@@ -47,7 +47,13 @@ export async function GET(req: NextRequest) {
       .select('id', { count: 'exact', head: true })
       .eq('business_id', business.id)
 
-    const tips = buildTips(business, views ?? 0, leads ?? 0)
+    const { count: qrViews } = await db
+      .from('page_views')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', business.id)
+      .ilike('via', '%qr%')
+
+    const tips = buildTips(business, views ?? 0, leads ?? 0, qrViews ?? 0)
     const baseUrl = getBaseUrl()
     const dashboardUrl = `${baseUrl}/dashboard/${business.secret_token}`
     const pageUrl = `${baseUrl}/p/${business.slug}`
@@ -56,8 +62,8 @@ export async function GET(req: NextRequest) {
       await resend.emails.send({
         from: 'Vitrine <noreply@vitrine.app>',
         to: business.owner_email,
-        subject: `Your Vitrine page — 4-day check-in 📊`,
-        html: buildEmailHtml(business.owner_name, views ?? 0, leads ?? 0, tips, dashboardUrl, pageUrl),
+        subject: 'Your Vitrine page — 4-day check-in',
+        html: buildEmailHtml(business.owner_name, views ?? 0, leads ?? 0, qrViews ?? 0, tips, dashboardUrl, pageUrl),
       })
       sent++
     }
@@ -78,7 +84,8 @@ interface BusinessRecord {
 function buildTips(
   business: BusinessRecord,
   views: number,
-  leads: number
+  leads: number,
+  qrViews: number
 ): string[] {
   const tips: string[] = []
 
@@ -87,6 +94,9 @@ function buildTips(
   }
   if (views === 0) {
     tips.push("Your page hasn't received any visits yet. Share the link on Instagram, WhatsApp, or Google to start getting traffic.")
+  }
+  if (qrViews === 0 && views > 0) {
+    tips.push('Try the tracked QR Code from your dashboard. Place it in your store, reception, business cards or flyers to bring walk-in customers to your page.')
   }
   if (!business.description) {
     tips.push('Your page has no description — adding a short bio increases trust and helps customers understand what you offer.')
@@ -110,6 +120,7 @@ function buildEmailHtml(
   ownerName: string,
   views: number,
   leads: number,
+  qrViews: number,
   tips: string[],
   dashboardUrl: string,
   pageUrl: string
@@ -120,7 +131,7 @@ function buildEmailHtml(
 
   return `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-      <h2 style="color:#1a1a2e">Hi ${ownerName}, here's your 4-day report 📊</h2>
+      <h2 style="color:#1a1a2e">Hi ${ownerName}, here's your 4-day report</h2>
       <p>Your Vitrine page has been live for 4 days. Here's how it's doing:</p>
 
       <table style="border-collapse:collapse;width:100%;margin:16px 0">
@@ -134,10 +145,15 @@ function buildEmailHtml(
             <div style="font-size:32px;font-weight:bold;color:#1a1a2e">${leads}</div>
             <div style="color:#888;font-size:14px">Leads Received</div>
           </td>
+          <td style="width:16px"></td>
+          <td style="padding:16px;background:#f9fafb;border-radius:8px;text-align:center">
+            <div style="font-size:32px;font-weight:bold;color:#1a1a2e">${qrViews}</div>
+            <div style="color:#888;font-size:14px">QR Visits</div>
+          </td>
         </tr>
       </table>
 
-      <h3 style="color:#1a1a2e">💡 Suggestions to improve your page</h3>
+      <h3 style="color:#1a1a2e">Suggestions to improve your page</h3>
       <ul style="padding-left:20px;color:#444;line-height:1.6">
         ${tipsHtml}
       </ul>

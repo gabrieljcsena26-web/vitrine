@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   ThumbsUp, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
-  CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download,
+  CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download, QrCode,
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
@@ -20,6 +20,7 @@ const dashboardCopy = {
     recommended: 'Ação recomendada', next: 'O que fazer agora', recentLeads: 'Leads recentes', recentLeadsHint: 'Últimas pessoas que deixaram contato.', viewAll: 'Ver todos', noLeads: 'Nenhum lead ainda. Compartilhe sua página e eles aparecerão aqui.',
     topChannels: 'Top canais', topChannelsHint: 'Melhores fontes por visitas e intenção.', manage: 'Gerenciar', noChannelData: 'Ainda não há dados de canais. Crie um link rastreável para começar.',
     settingsTitle: 'Agendamento e WhatsApp', settingsHint: 'Configure como os clientes podem falar com você e agendar diretamente pela página pública.', saveChanges: 'Salvar alterações', saved: 'Salvo!',
+    qrTitle: 'QR Code rastreável', qrHint: 'Crie um QR Code da sua landing page para colocar na loja, cartões, flyers ou recepção. Cada leitura entra no dashboard como canal rastreado.', qrCreate: 'Criar QR Code rastreável', qrCreating: 'Criando...', qrReady: 'QR Code pronto', qrDownload: 'Baixar QR Code', qrCopy: 'Copiar link rastreado', qrCopied: 'Link copiado', qrStats: 'As visitas deste QR aparecem em Canais e também entram no relatório por email.',
   },
   en: {
     newPage: 'New page', upgrade: 'Upgrade plan', viewPage: 'View my page', copyPage: 'Copy page link', copied: 'Copied!', openPage: 'Open page', publicUrl: 'Your public URL',
@@ -28,14 +29,17 @@ const dashboardCopy = {
     tabs: { overview: 'Overview', leads: 'Leads', channels: 'Channels', settings: 'Settings' }, visits: 'Visits', intent: 'Intent actions', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'No visits yet',
     recommended: 'Recommended action', next: 'What to do next', recentLeads: 'Recent leads', recentLeadsHint: 'Latest people who left contact details.', viewAll: 'View all', noLeads: 'No leads yet. Share your page and they will appear here.',
     topChannels: 'Top channels', topChannelsHint: 'Best sources by visits and intent.', manage: 'Manage', noChannelData: 'No channel data yet. Create one tracked link to start.', settingsTitle: 'Booking & WhatsApp', settingsHint: 'Configure how customers can reach you and book appointments directly from your public page.', saveChanges: 'Save Changes', saved: 'Saved!',
+    qrTitle: 'Tracked QR Code', qrHint: 'Create a QR Code for your landing page to place in your shop, cards, flyers or reception. Every scan appears in the dashboard as a tracked channel.', qrCreate: 'Create tracked QR Code', qrCreating: 'Creating...', qrReady: 'QR Code ready', qrDownload: 'Download QR Code', qrCopy: 'Copy tracked link', qrCopied: 'Link copied', qrStats: 'Visits from this QR appear in Channels and are included in the email report.',
   },
   es: {
-    newPage: 'Nueva página', upgrade: 'Mejorar plan', viewPage: 'Ver mi página', copyPage: 'Copiar enlace', copied: '¡Copiado!', openPage: 'Abrir página', publicUrl: 'Tu URL pública', liveFor: 'Online hace', day: 'día', days: 'días', since: 'desde', period: 'Período del dashboard', updated: 'actualizado', ranges: { '7d': '7 días', '30d': '30 días', '90d': '90 días', all: 'Todo' }, currentPlan: 'Plan actual', pageUsed: 'página usada', pagesUsed: 'páginas usadas', createAnother: 'Crear otra página', limitReached: 'Límite de páginas alcanzado.', upgradeHint: 'Mejora a Pro para crear hasta 3 páginas con este email.', tabs: { overview: 'Resumen', leads: 'Leads', channels: 'Canales', settings: 'Ajustes' }, visits: 'Visitas', intent: 'Acciones de intención', leadsLabel: 'Leads', conversion: 'Conversión', noVisits: 'Sin visitas todavía', recommended: 'Acción recomendada', next: 'Qué hacer ahora', recentLeads: 'Leads recientes', recentLeadsHint: 'Últimas personas que dejaron contacto.', viewAll: 'Ver todos', noLeads: 'Sin leads todavía. Comparte tu página y aparecerán aquí.', topChannels: 'Top canales', topChannelsHint: 'Mejores fuentes por visitas e intención.', manage: 'Gestionar', noChannelData: 'Aún no hay datos de canales. Crea un enlace rastreable para empezar.', settingsTitle: 'Reservas y WhatsApp', settingsHint: 'Configura cómo los clientes pueden contactarte y reservar directamente desde la página pública.', saveChanges: 'Guardar cambios', saved: '¡Guardado!',
+    newPage: 'Nueva página', upgrade: 'Mejorar plan', viewPage: 'Ver mi página', copyPage: 'Copiar enlace', copied: '¡Copiado!', openPage: 'Abrir página', publicUrl: 'Tu URL pública', liveFor: 'Online hace', day: 'día', days: 'días', since: 'desde', period: 'Período del dashboard', updated: 'actualizado', ranges: { '7d': '7 días', '30d': '30 días', '90d': '90 días', all: 'Todo' }, currentPlan: 'Plan actual', pageUsed: 'página usada', pagesUsed: 'páginas usadas', createAnother: 'Crear otra página', limitReached: 'Límite de páginas alcanzado.', upgradeHint: 'Mejora a Pro para crear hasta 3 páginas con este email.', tabs: { overview: 'Resumen', leads: 'Leads', channels: 'Canales', settings: 'Ajustes' }, visits: 'Visitas', intent: 'Acciones de intención', leadsLabel: 'Leads', conversion: 'Conversión', noVisits: 'Sin visitas todavía', recommended: 'Acción recomendada', next: 'Qué hacer ahora', recentLeads: 'Leads recientes', recentLeadsHint: 'Últimas personas que dejaron contacto.', viewAll: 'Ver todos', noLeads: 'Sin leads todavía. Comparte tu página y aparecerán aquí.', topChannels: 'Top canales', topChannelsHint: 'Mejores fuentes por visitas e intención.', manage: 'Gestionar', noChannelData: 'Aún no hay datos de canales. Crea un enlace rastreable para empezar.', settingsTitle: 'Reservas y WhatsApp', settingsHint: 'Configura cómo los clientes pueden contactarte y reservar directamente desde la página pública.', saveChanges: 'Guardar cambios', saved: '¡Guardado!', qrTitle: 'QR Code rastreable', qrHint: 'Crea un QR Code de tu landing page para poner en la tienda, tarjetas, flyers o recepción. Cada lectura aparece en el dashboard como canal rastreado.', qrCreate: 'Crear QR Code rastreable', qrCreating: 'Creando...', qrReady: 'QR Code listo', qrDownload: 'Descargar QR Code', qrCopy: 'Copiar enlace rastreado', qrCopied: 'Enlace copiado', qrStats: 'Las visitas de este QR aparecen en Canales y entran en el reporte por email.',
   },
   fr: {
-    newPage: 'Nouvelle page', upgrade: 'Améliorer le plan', viewPage: 'Voir ma page', copyPage: 'Copier le lien', copied: 'Copié !', openPage: 'Ouvrir la page', publicUrl: 'Votre URL publique', liveFor: 'En ligne depuis', day: 'jour', days: 'jours', since: 'depuis', period: 'Période du dashboard', updated: 'mis à jour', ranges: { '7d': '7 jours', '30d': '30 jours', '90d': '90 jours', all: 'Tout' }, currentPlan: 'Plan actuel', pageUsed: 'page utilisée', pagesUsed: 'pages utilisées', createAnother: 'Créer une autre page', limitReached: 'Limite de pages atteinte.', upgradeHint: 'Passez au Pro pour créer jusqu’à 3 pages avec cet email.', tabs: { overview: 'Vue générale', leads: 'Leads', channels: 'Canaux', settings: 'Réglages' }, visits: 'Visites', intent: 'Actions d’intention', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'Aucune visite pour le moment', recommended: 'Action recommandée', next: 'Que faire maintenant', recentLeads: 'Leads récents', recentLeadsHint: 'Dernières personnes ayant laissé leurs coordonnées.', viewAll: 'Voir tout', noLeads: 'Aucun lead pour le moment. Partagez votre page et ils apparaîtront ici.', topChannels: 'Top canaux', topChannelsHint: 'Meilleures sources par visites et intention.', manage: 'Gérer', noChannelData: 'Aucune donnée de canal pour le moment. Créez un lien suivi pour commencer.', settingsTitle: 'Réservation et WhatsApp', settingsHint: 'Configurez comment les clients peuvent vous contacter et réserver depuis votre page publique.', saveChanges: 'Enregistrer', saved: 'Enregistré !',
+    newPage: 'Nouvelle page', upgrade: 'Améliorer le plan', viewPage: 'Voir ma page', copyPage: 'Copier le lien', copied: 'Copié !', openPage: 'Ouvrir la page', publicUrl: 'Votre URL publique', liveFor: 'En ligne depuis', day: 'jour', days: 'jours', since: 'depuis', period: 'Période du dashboard', updated: 'mis à jour', ranges: { '7d': '7 jours', '30d': '30 jours', '90d': '90 jours', all: 'Tout' }, currentPlan: 'Plan actuel', pageUsed: 'page utilisée', pagesUsed: 'pages utilisées', createAnother: 'Créer une autre page', limitReached: 'Limite de pages atteinte.', upgradeHint: 'Passez au Pro pour créer jusqu’à 3 pages avec cet email.', tabs: { overview: 'Vue générale', leads: 'Leads', channels: 'Canaux', settings: 'Réglages' }, visits: 'Visites', intent: 'Actions d’intention', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'Aucune visite pour le moment', recommended: 'Action recommandée', next: 'Que faire maintenant', recentLeads: 'Leads récents', recentLeadsHint: 'Dernières personnes ayant laissé leurs coordonnées.', viewAll: 'Voir tout', noLeads: 'Aucun lead pour le moment. Partagez votre page et ils apparaîtront ici.', topChannels: 'Top canaux', topChannelsHint: 'Meilleures sources par visites et intention.', manage: 'Gérer', noChannelData: 'Aucune donnée de canal pour le moment. Créez un lien suivi pour commencer.', settingsTitle: 'Réservation et WhatsApp', settingsHint: 'Configurez comment les clients peuvent vous contacter et réserver depuis votre page publique.', saveChanges: 'Enregistrer', saved: 'Enregistré !', qrTitle: 'QR Code suivi', qrHint: 'Créez un QR Code pour votre landing page à placer en boutique, sur cartes, flyers ou à l’accueil. Chaque scan apparaît dans le dashboard comme canal suivi.', qrCreate: 'Créer un QR Code suivi', qrCreating: 'Création...', qrReady: 'QR Code prêt', qrDownload: 'Télécharger le QR Code', qrCopy: 'Copier le lien suivi', qrCopied: 'Lien copié', qrStats: 'Les visites de ce QR apparaissent dans Canaux et sont incluses dans le rapport email.',
   },
 } as const
+
+const QR_CHANNEL_NAME = 'Store QR Code'
 
 interface Lead {
   id: string
@@ -187,6 +191,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [copiedChannelId, setCopiedChannelId] = useState('')
   const [savedChannels, setSavedChannels] = useState<SavedChannel[]>([])
   const [showChannelForm, setShowChannelForm] = useState(false)
+  const [qrCreating, setQrCreating] = useState(false)
+  const [qrPreviewUrl, setQrPreviewUrl] = useState('')
+  const [qrTrackedLink, setQrTrackedLink] = useState('')
+  const [qrCopied, setQrCopied] = useState(false)
   const copyTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Public page URL copy
@@ -303,24 +311,64 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     }).catch(() => undefined)
   }
 
-  const handleDownloadQr = async () => {
+  const buildQrDataUrl = async (url: string) => QRCode.toDataURL(url, {
+    width: 1200,
+    margin: 2,
+    color: {
+      dark: '#0F172A',
+      light: '#FFFFFF',
+    },
+  })
+
+  const downloadQrDataUrl = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a')
+    link.href = dataUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const handleCreateTrackedQr = async () => {
+    if (!token || !data) return
+    setQrCreating(true)
     try {
-      const dataUrl = await QRCode.toDataURL(pageUrl, {
-        width: 1200,
-        margin: 2,
-        color: {
-          dark: '#0F172A',
-          light: '#FFFFFF',
-        },
-      })
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = `vitrine-${business.slug}-qr.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const qrSlug = generateCampaignSlug(QR_CHANNEL_NAME)
+      let channel = savedChannels.find((item) => item.slug === qrSlug)
+
+      if (!channel) {
+        const res = await fetch(`/api/dashboard/${token}/channels`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: QR_CHANNEL_NAME }),
+        })
+        if (!res.ok) {
+          alert('Could not create the QR tracking channel. Make sure the channels migration is applied in Supabase.')
+          return
+        }
+        const json = await res.json()
+        channel = json.channel as SavedChannel
+        setSavedChannels((items) => [channel!, ...items.filter((item) => item.slug !== channel!.slug)])
+      }
+
+      const dataUrl = await buildQrDataUrl(channel.url)
+      setQrTrackedLink(channel.url)
+      setQrPreviewUrl(dataUrl)
     } catch {
-      alert('Could not generate the QR code. Please try again.')
+      alert('Could not create the QR Code. Please try again.')
+    } finally {
+      setQrCreating(false)
+    }
+  }
+
+  const handleCopyQrLink = async () => {
+    if (!qrTrackedLink) return
+    try {
+      await navigator.clipboard.writeText(qrTrackedLink)
+      setQrCopied(true)
+      copyTimeoutRef.current = setTimeout(() => setQrCopied(false), 2000)
+    } catch {
+      alert(`Copy this link manually:\n\n${qrTrackedLink}`)
     }
   }
 
@@ -845,18 +893,56 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 ))}
             </div>
           )}
-          <div className="mt-5 flex items-center justify-between gap-4 rounded-2xl border border-stone-100 bg-white p-4 flex-wrap">
-            <div>
-              <p className="font-bold text-navy">Store QR Code</p>
-              <p className="text-sm text-gray-400">Download one QR Code for the main public page.</p>
+          <div className="mt-5 rounded-3xl border border-gold/20 bg-gradient-to-br from-white via-gold/5 to-stone-50 p-5 overflow-hidden relative">
+            <div className="absolute -right-12 -top-12 w-40 h-40 bg-gold/10 rounded-full blur-2xl" />
+            <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5 items-center">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-navy text-gold flex items-center justify-center flex-shrink-0">
+                  <QrCode className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="font-black text-navy text-lg">{t.qrTitle}</p>
+                  <p className="text-sm text-gray-500 mt-1 max-w-2xl">{t.qrHint}</p>
+                  <p className="text-xs text-gold font-bold mt-3">{t.qrStats}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 flex-wrap lg:justify-end">
+                {qrPreviewUrl && (
+                  <div className="bg-white rounded-2xl border border-stone-100 p-3 shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={qrPreviewUrl} alt="Tracked QR Code preview" className="w-28 h-28" />
+                  </div>
+                )}
+                <div className="flex flex-col gap-2 min-w-[190px]">
+                  <button
+                    onClick={handleCreateTrackedQr}
+                    disabled={qrCreating}
+                    className="inline-flex items-center justify-center gap-2 bg-gold text-navy px-4 py-3 rounded-xl text-sm font-black hover:bg-yellow-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    {qrCreating ? t.qrCreating : qrPreviewUrl ? t.qrReady : t.qrCreate}
+                  </button>
+                  {qrPreviewUrl && (
+                    <>
+                      <button
+                        onClick={() => downloadQrDataUrl(qrPreviewUrl, `vitrine-${business.slug}-tracked-qr.png`)}
+                        className="inline-flex items-center justify-center gap-2 bg-navy text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-navy/90 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        {t.qrDownload}
+                      </button>
+                      <button
+                        onClick={handleCopyQrLink}
+                        className="inline-flex items-center justify-center gap-2 bg-white border border-stone-200 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
+                      >
+                        {qrCopied ? <><Check className="w-4 h-4 text-green-500" />{t.qrCopied}</> : <><Copy className="w-4 h-4" />{t.qrCopy}</>}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
-            <button
-              onClick={handleDownloadQr}
-              className="inline-flex items-center gap-2 bg-gold/10 text-navy border border-gold/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-gold/20 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Download QR
-            </button>
           </div>
         </div>}
 

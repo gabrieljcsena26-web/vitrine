@@ -13,7 +13,9 @@ const STEPS = ['Business details', 'Services & hours', 'Photos', 'Preview']
 
 const CATEGORIES = [
   'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
-  'Tattoo Studio', 'Massage Therapy', 'Makeup Artist', 'Personal Trainer', 'Other',
+  'Tattoo Studio', 'Massage Therapy', 'Makeup Artist', 'Personal Trainer',
+  'Restaurant', 'Café', 'Home Cleaning', 'Auto Detailing', 'Pet Grooming',
+  'Dental Clinic', 'Yoga Studio', 'Other',
 ]
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']

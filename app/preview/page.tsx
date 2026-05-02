@@ -6,9 +6,13 @@ import type { Language } from '@/lib/translations'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
+import Benefits from '@/components/Benefits'
 import Services from '@/components/Services'
 import Gallery from '@/components/Gallery'
+import Testimonials from '@/components/Testimonials'
 import Hours from '@/components/Hours'
+import LocationMap from '@/components/LocationMap'
+import FAQ from '@/components/FAQ'
 import ContactActions from '@/components/ContactActions'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
@@ -91,9 +95,13 @@ export default function PreviewPage() {
         businessName={userData.businessName}
         aboutPhoto={userData.photos?.[1]}
       />
+      <Benefits businessName={userData.businessName} />
       <Services t={t} services={userData.services} />
       <Gallery t={t} photos={userData.photos} />
+      <Testimonials showDefaults />
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />
+      <LocationMap address={userData.address} businessName={userData.businessName} />
+      <FAQ />
       {userData.bookingUrl || userData.whatsappNumber ? (
         <ContactActions
           t={t}

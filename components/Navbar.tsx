@@ -59,7 +59,10 @@ export default function Navbar({
     { href: '#about', label: t.nav.about },
     { href: '#services', label: t.nav.services },
     { href: '#gallery', label: t.nav.gallery },
+    { href: '#testimonials', label: 'Reviews' },
     { href: '#hours', label: t.nav.hours },
+    { href: '#location', label: 'Location' },
+    { href: '#faq', label: 'FAQ' },
     { href: '#contact', label: t.nav.contact },
   ]
 
@@ -80,7 +83,7 @@ export default function Navbar({
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             {links.map((link) => (
               <a
                 key={link.href}

@@ -30,6 +30,17 @@ export async function POST(req: NextRequest) {
       services,
       hours,
       photos,
+      benefits,
+      testimonials,
+      faqs,
+      socialLinks,
+      logoUrl,
+      primaryColor,
+      accentColor,
+      mapUrl,
+      seoTitle,
+      seoDescription,
+      ogImageUrl,
       slug,
       bookingUrl,
       whatsappNumber,
@@ -92,6 +103,17 @@ export async function POST(req: NextRequest) {
       services,
       hours,
       photos,
+      benefits: Array.isArray(benefits) ? benefits : null,
+      testimonials: Array.isArray(testimonials) ? testimonials : null,
+      faqs: Array.isArray(faqs) ? faqs : null,
+      social_links: socialLinks && typeof socialLinks === 'object' ? socialLinks : null,
+      logo_url: logoUrl || null,
+      primary_color: primaryColor || null,
+      accent_color: accentColor || null,
+      map_url: mapUrl || null,
+      seo_title: seoTitle || null,
+      seo_description: seoDescription || null,
+      og_image_url: ogImageUrl || null,
       booking_url: bookingUrl ?? null,
       whatsapp_number: whatsappNumber ?? null,
       whatsapp_message: whatsappMessage ? String(whatsappMessage).trim().slice(0, 500) : null,
@@ -103,10 +125,37 @@ export async function POST(req: NextRequest) {
       .select('id, slug, secret_token')
       .single()
 
-    if (error && (error.message?.includes('whatsapp_message') || error.message?.includes('plan'))) {
+    if (error && (
+      error.message?.includes('whatsapp_message') ||
+      error.message?.includes('plan') ||
+      error.message?.includes('benefits') ||
+      error.message?.includes('testimonials') ||
+      error.message?.includes('faqs') ||
+      error.message?.includes('social_links') ||
+      error.message?.includes('logo_url') ||
+      error.message?.includes('primary_color') ||
+      error.message?.includes('accent_color') ||
+      error.message?.includes('map_url') ||
+      error.message?.includes('seo_title') ||
+      error.message?.includes('seo_description') ||
+      error.message?.includes('og_image_url')
+    )) {
       const fallbackPayload: Record<string, unknown> = { ...businessPayload }
       if (error.message?.includes('whatsapp_message')) delete fallbackPayload.whatsapp_message
       if (error.message?.includes('plan')) delete fallbackPayload.plan
+      ;[
+        'benefits',
+        'testimonials',
+        'faqs',
+        'social_links',
+        'logo_url',
+        'primary_color',
+        'accent_color',
+        'map_url',
+        'seo_title',
+        'seo_description',
+        'og_image_url',
+      ].forEach((key) => delete fallbackPayload[key])
       const fallback = await db
         .from('businesses')
         .upsert(fallbackPayload, { onConflict: 'slug', ignoreDuplicates: false })

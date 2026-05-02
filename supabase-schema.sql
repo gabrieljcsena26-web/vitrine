@@ -18,6 +18,17 @@ create table if not exists businesses (
   services          jsonb,
   hours             jsonb,
   photos            jsonb,
+  benefits          jsonb,
+  testimonials      jsonb,
+  faqs              jsonb,
+  social_links      jsonb,
+  logo_url          text,
+  primary_color     text,
+  accent_color      text,
+  map_url           text,
+  seo_title         text,
+  seo_description   text,
+  og_image_url      text,
   booking_url       text,
   whatsapp_number   text,
   whatsapp_message  text,
@@ -39,6 +50,17 @@ create table if not exists page_views (
 -- alter table businesses  add column if not exists whatsapp_number text;
 -- alter table businesses  add column if not exists whatsapp_message text;
 -- alter table businesses  add column if not exists plan text default 'starter';
+-- alter table businesses  add column if not exists benefits jsonb;
+-- alter table businesses  add column if not exists testimonials jsonb;
+-- alter table businesses  add column if not exists faqs jsonb;
+-- alter table businesses  add column if not exists social_links jsonb;
+-- alter table businesses  add column if not exists logo_url text;
+-- alter table businesses  add column if not exists primary_color text;
+-- alter table businesses  add column if not exists accent_color text;
+-- alter table businesses  add column if not exists map_url text;
+-- alter table businesses  add column if not exists seo_title text;
+-- alter table businesses  add column if not exists seo_description text;
+-- alter table businesses  add column if not exists og_image_url text;
 -- alter table leads add column if not exists status text default 'new';
 -- alter table leads add column if not exists interest text;
 -- alter table leads add column if not exists temperature text default 'new';

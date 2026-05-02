@@ -12,10 +12,17 @@ interface Props {
   eventType: 'booking_click' | 'whatsapp_click'
 }
 
-const INTERESTS = [
+const BOOKING_INTERESTS = [
   'Book an appointment',
-  'Check availability',
+  'Check available times',
+  'Schedule a first visit',
+  'Confirm service before booking',
+]
+
+const WHATSAPP_INTERESTS = [
+  'Ask a question on WhatsApp',
   'Ask about prices',
+  'Check availability',
   'Know more about services',
 ]
 
@@ -30,7 +37,9 @@ export default function LeadCaptureModal({
 }: Props) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [interest, setInterest] = useState(INTERESTS[0])
+  const isBooking = eventType === 'booking_click'
+  const interests = isBooking ? BOOKING_INTERESTS : WHATSAPP_INTERESTS
+  const [interest, setInterest] = useState(interests[0])
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -82,7 +91,27 @@ export default function LeadCaptureModal({
     }
   }
 
-  const isBooking = eventType === 'booking_click'
+  const modalCopy = isBooking
+    ? {
+        badge: 'Booking step',
+        title: 'Before opening the booking page',
+        description: 'Leave your details so the business knows who is trying to book. After this, you go directly to the scheduling platform chosen by the business.',
+        selectLabel: 'What do you want to schedule?',
+        primary: 'Continue to booking platform',
+        success: 'Opening booking platform...',
+        successText: 'Your interest was saved. Now you will complete the booking on the external scheduling page.',
+        footnote: 'You will finish the appointment on the business booking platform.',
+      }
+    : {
+        badge: 'WhatsApp step',
+        title: 'Before opening WhatsApp',
+        description: 'Leave your details so the business can recognize your request. After this, WhatsApp opens with the message ready to send.',
+        selectLabel: 'What do you want to ask?',
+        primary: 'Continue to WhatsApp',
+        success: 'Opening WhatsApp...',
+        successText: 'Your interest was saved. Now WhatsApp will open with the message ready.',
+        footnote: 'WhatsApp will open after this step. No account is needed here.',
+      }
 
   return (
     <div className="fixed inset-0 z-[80] overflow-y-auto px-4 py-4 sm:py-6">
@@ -106,20 +135,20 @@ export default function LeadCaptureModal({
         {saved ? (
           <div className="text-center py-8 sm:py-10">
             <CheckCircle className="w-14 h-14 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-navy mb-2">Saved. Opening next step...</h3>
-            <p className="text-gray-500 text-sm">We captured your interest and are sending you to {actionLabel}.</p>
+            <h3 className="text-xl font-bold text-navy mb-2">{modalCopy.success}</h3>
+            <p className="text-gray-500 text-sm">{modalCopy.successText}</p>
           </div>
         ) : (
           <form onSubmit={submitAndContinue}>
             <div className="pr-9">
               <span className="inline-flex bg-gold/10 text-gold border border-gold/20 rounded-full px-3 py-1 text-xs font-bold mb-3">
-                {isBooking ? 'Before opening booking' : 'Before opening WhatsApp'}
+                {modalCopy.badge}
               </span>
               <h3 className="text-2xl sm:text-3xl font-black text-navy mb-2">
-                Want faster follow-up?
+                {modalCopy.title}
               </h3>
               <p className="text-gray-500 text-sm sm:text-base mb-5 leading-relaxed">
-                Leave your details so the business can identify your request. After this, you go directly to {actionLabel}.
+                {modalCopy.description}
               </p>
             </div>
 
@@ -140,15 +169,20 @@ export default function LeadCaptureModal({
                 placeholder="your@email.com"
                 className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
               />
-              <select
-                value={interest}
-                onChange={(e) => setInterest(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm bg-white"
-              >
-                {INTERESTS.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">
+                  {modalCopy.selectLabel}
+                </label>
+                <select
+                  value={interest}
+                  onChange={(e) => setInterest(e.target.value)}
+                  className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm bg-white"
+                >
+                  {interests.map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {via && (
@@ -164,7 +198,7 @@ export default function LeadCaptureModal({
                 <span className="w-5 h-5 border-2 border-navy/30 border-t-navy rounded-full animate-spin" />
               ) : (
                 <>
-                  Save and continue to {isBooking ? 'booking' : 'WhatsApp'}
+                  {modalCopy.primary}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -177,7 +211,7 @@ export default function LeadCaptureModal({
               Continue without leaving details
             </button>
             <p className="text-[11px] text-center text-gray-400 mt-3">
-              No account needed. This only helps the business follow up faster.
+              {modalCopy.footnote}
             </p>
           </form>
         )}

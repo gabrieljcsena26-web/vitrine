@@ -2,11 +2,40 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
-  Scissors, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
+  ThumbsUp, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
   CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download,
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+
+type DashboardLang = 'pt' | 'es' | 'en' | 'fr'
+
+const dashboardCopy = {
+  pt: {
+    newPage: 'Nova página', upgrade: 'Melhorar plano', viewPage: 'Ver página', copyPage: 'Copiar link', copied: 'Copiado!', openPage: 'Abrir página', publicUrl: 'Seu link público',
+    liveFor: 'Online há', day: 'dia', days: 'dias', since: 'desde', period: 'Período do dashboard', updated: 'atualizado', ranges: { '7d': '7 dias', '30d': '30 dias', '90d': '90 dias', all: 'Tudo' },
+    currentPlan: 'Plano atual', pageUsed: 'página usada', pagesUsed: 'páginas usadas', createAnother: 'Criar outra página', limitReached: 'Limite de páginas atingido.', upgradeHint: 'Melhore para o Pro para criar até 3 páginas com este email.',
+    tabs: { overview: 'Visão geral', leads: 'Leads', channels: 'Canais', settings: 'Ajustes' }, visits: 'Visitas', intent: 'Ações de intenção', leadsLabel: 'Leads', conversion: 'Conversão', noVisits: 'Sem visitas ainda',
+    recommended: 'Ação recomendada', next: 'O que fazer agora', recentLeads: 'Leads recentes', recentLeadsHint: 'Últimas pessoas que deixaram contato.', viewAll: 'Ver todos', noLeads: 'Nenhum lead ainda. Compartilhe sua página e eles aparecerão aqui.',
+    topChannels: 'Top canais', topChannelsHint: 'Melhores fontes por visitas e intenção.', manage: 'Gerenciar', noChannelData: 'Ainda não há dados de canais. Crie um link rastreável para começar.',
+    settingsTitle: 'Agendamento e WhatsApp', settingsHint: 'Configure como os clientes podem falar com você e agendar diretamente pela página pública.', saveChanges: 'Salvar alterações', saved: 'Salvo!',
+  },
+  en: {
+    newPage: 'New page', upgrade: 'Upgrade plan', viewPage: 'View my page', copyPage: 'Copy page link', copied: 'Copied!', openPage: 'Open page', publicUrl: 'Your public URL',
+    liveFor: 'Live for', day: 'day', days: 'days', since: 'since', period: 'Dashboard period', updated: 'updated', ranges: { '7d': '7 days', '30d': '30 days', '90d': '90 days', all: 'All' },
+    currentPlan: 'Current plan', pageUsed: 'page used', pagesUsed: 'pages used', createAnother: 'Create another page', limitReached: 'Page limit reached.', upgradeHint: 'Upgrade to Pro to create up to 3 pages for this email.',
+    tabs: { overview: 'Overview', leads: 'Leads', channels: 'Channels', settings: 'Settings' }, visits: 'Visits', intent: 'Intent actions', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'No visits yet',
+    recommended: 'Recommended action', next: 'What to do next', recentLeads: 'Recent leads', recentLeadsHint: 'Latest people who left contact details.', viewAll: 'View all', noLeads: 'No leads yet. Share your page and they will appear here.',
+    topChannels: 'Top channels', topChannelsHint: 'Best sources by visits and intent.', manage: 'Manage', noChannelData: 'No channel data yet. Create one tracked link to start.', settingsTitle: 'Booking & WhatsApp', settingsHint: 'Configure how customers can reach you and book appointments directly from your public page.', saveChanges: 'Save Changes', saved: 'Saved!',
+  },
+  es: {
+    newPage: 'Nueva página', upgrade: 'Mejorar plan', viewPage: 'Ver mi página', copyPage: 'Copiar enlace', copied: '¡Copiado!', openPage: 'Abrir página', publicUrl: 'Tu URL pública', liveFor: 'Online hace', day: 'día', days: 'días', since: 'desde', period: 'Período del dashboard', updated: 'actualizado', ranges: { '7d': '7 días', '30d': '30 días', '90d': '90 días', all: 'Todo' }, currentPlan: 'Plan actual', pageUsed: 'página usada', pagesUsed: 'páginas usadas', createAnother: 'Crear otra página', limitReached: 'Límite de páginas alcanzado.', upgradeHint: 'Mejora a Pro para crear hasta 3 páginas con este email.', tabs: { overview: 'Resumen', leads: 'Leads', channels: 'Canales', settings: 'Ajustes' }, visits: 'Visitas', intent: 'Acciones de intención', leadsLabel: 'Leads', conversion: 'Conversión', noVisits: 'Sin visitas todavía', recommended: 'Acción recomendada', next: 'Qué hacer ahora', recentLeads: 'Leads recientes', recentLeadsHint: 'Últimas personas que dejaron contacto.', viewAll: 'Ver todos', noLeads: 'Sin leads todavía. Comparte tu página y aparecerán aquí.', topChannels: 'Top canales', topChannelsHint: 'Mejores fuentes por visitas e intención.', manage: 'Gestionar', noChannelData: 'Aún no hay datos de canales. Crea un enlace rastreable para empezar.', settingsTitle: 'Reservas y WhatsApp', settingsHint: 'Configura cómo los clientes pueden contactarte y reservar directamente desde la página pública.', saveChanges: 'Guardar cambios', saved: '¡Guardado!',
+  },
+  fr: {
+    newPage: 'Nouvelle page', upgrade: 'Améliorer le plan', viewPage: 'Voir ma page', copyPage: 'Copier le lien', copied: 'Copié !', openPage: 'Ouvrir la page', publicUrl: 'Votre URL publique', liveFor: 'En ligne depuis', day: 'jour', days: 'jours', since: 'depuis', period: 'Période du dashboard', updated: 'mis à jour', ranges: { '7d': '7 jours', '30d': '30 jours', '90d': '90 jours', all: 'Tout' }, currentPlan: 'Plan actuel', pageUsed: 'page utilisée', pagesUsed: 'pages utilisées', createAnother: 'Créer une autre page', limitReached: 'Limite de pages atteinte.', upgradeHint: 'Passez au Pro pour créer jusqu’à 3 pages avec cet email.', tabs: { overview: 'Vue générale', leads: 'Leads', channels: 'Canaux', settings: 'Réglages' }, visits: 'Visites', intent: 'Actions d’intention', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'Aucune visite pour le moment', recommended: 'Action recommandée', next: 'Que faire maintenant', recentLeads: 'Leads récents', recentLeadsHint: 'Dernières personnes ayant laissé leurs coordonnées.', viewAll: 'Voir tout', noLeads: 'Aucun lead pour le moment. Partagez votre page et ils apparaîtront ici.', topChannels: 'Top canaux', topChannelsHint: 'Meilleures sources par visites et intention.', manage: 'Gérer', noChannelData: 'Aucune donnée de canal pour le moment. Créez un lien suivi pour commencer.', settingsTitle: 'Réservation et WhatsApp', settingsHint: 'Configurez comment les clients peuvent vous contacter et réserver depuis votre page publique.', saveChanges: 'Enregistrer', saved: 'Enregistré !',
+  },
+} as const
 
 interface Lead {
   id: string
@@ -149,6 +178,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [notFound, setNotFound] = useState(false)
   const [range, setRange] = useState('30d')
   const [activeSection, setActiveSection] = useState<'overview' | 'leads' | 'channels' | 'settings'>('overview')
+  const [dashboardLang, setDashboardLang] = useState<DashboardLang>('pt')
 
   // Campaign link creator
   const [campaignName, setCampaignName] = useState('')
@@ -170,6 +200,23 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [contactSaving, setContactSaving] = useState(false)
   const [contactSaved, setContactSaved] = useState(false)
   const contactSaveTimeoutRef = useRef<NodeJS.Timeout>()
+
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem('vitrine_dashboard_language') as DashboardLang | null
+      if (savedLang && savedLang in dashboardCopy) setDashboardLang(savedLang)
+    } catch {
+      // ignore localStorage issues
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('vitrine_dashboard_language', dashboardLang)
+    } catch {
+      // ignore localStorage issues
+    }
+  }, [dashboardLang])
 
   useEffect(() => {
     async function load() {
@@ -351,6 +398,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     )
   }
 
+  const t = dashboardCopy[dashboardLang]
+
   const { business, pageUsage, stats } = data
   const isDemoDashboard = business.ownerEmail === 'test@vitrine.local'
   const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : isDemoDashboard ? demoViewsBySource : []
@@ -449,25 +498,28 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-gold rounded-full flex items-center justify-center">
-              <Scissors className="w-3.5 h-3.5 text-navy" />
+              <ThumbsUp className="w-3.5 h-3.5 text-navy" />
             </div>
             <span className="text-white font-bold">Vitrine</span>
           </Link>
           <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <LanguageSwitcher lang={dashboardLang} setLang={(value) => setDashboardLang(value as DashboardLang)} />
+            </div>
             {pageUsage.canCreateMore ? (
               <Link
                 href={newPageHref}
                 className="flex items-center gap-1.5 bg-gold/10 hover:bg-gold/20 text-gold text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
               >
                 <Plus className="w-3.5 h-3.5" />
-                New Page
+                {t.newPage}
               </Link>
             ) : (
               <Link
                 href={newPageHref}
                 className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-gray-300 text-sm px-3 py-1.5 rounded-lg transition-colors font-medium"
               >
-                Upgrade plan
+                {t.upgrade}
               </Link>
             )}
             <a
@@ -476,7 +528,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-gray-400 hover:text-white text-sm transition-colors"
             >
-              View my page
+              {t.viewPage}
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -491,15 +543,18 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               <p className="text-xs font-semibold text-gold uppercase tracking-wider mb-1">{business.category}</p>
               <h1 className="text-2xl md:text-3xl font-bold text-navy">{business.ownerName}</h1>
               <p className="text-gray-400 text-xs mt-1.5">
-                Live for {daysLive} {daysLive === 1 ? 'day' : 'days'} · since {createdDate.toLocaleDateString()}
+                {t.liveFor} {daysLive} {daysLive === 1 ? t.day : t.days} · {t.since} {createdDate.toLocaleDateString()}
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
+              <div className="md:hidden w-full mb-1">
+                <LanguageSwitcher lang={dashboardLang} setLang={(value) => setDashboardLang(value as DashboardLang)} />
+              </div>
               <button
                 onClick={handleCopyPageUrl}
                 className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-gold/40 text-navy text-sm px-3.5 py-2 rounded-xl transition-colors font-medium"
               >
-                {pageUrlCopied ? <><Check className="w-4 h-4 text-green-500" />Copied!</> : <><Copy className="w-4 h-4" />Copy page link</>}
+                {pageUrlCopied ? <><Check className="w-4 h-4 text-green-500" />{t.copied}</> : <><Copy className="w-4 h-4" />{t.copyPage}</>}
               </button>
               <a
                 href={`/p/${business.slug}`}
@@ -508,12 +563,12 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                 className="flex items-center gap-1.5 bg-navy hover:bg-navy/90 text-white text-sm px-3.5 py-2 rounded-xl transition-colors font-medium"
               >
                 <ExternalLink className="w-4 h-4" />
-                Open page
+                {t.openPage}
               </a>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-stone-200/60">
-            <p className="text-xs text-gray-400 mb-1">Your public URL</p>
+            <p className="text-xs text-gray-400 mb-1">{t.publicUrl}</p>
             <p className="text-navy/70 font-mono text-sm break-all">{pageUrl}</p>
           </div>
         </div>
@@ -521,15 +576,15 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         {/* ── Date range filter ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-3 mb-6 flex items-center justify-between gap-3 flex-wrap">
           <div className="px-2">
-            <p className="text-sm font-bold text-navy">Dashboard period</p>
-            <p className="text-xs text-gray-400">{weekdayLabel} · updated {lastUpdatedLabel}</p>
+            <p className="text-sm font-bold text-navy">{t.period}</p>
+            <p className="text-xs text-gray-400">{weekdayLabel} · {t.updated} {lastUpdatedLabel}</p>
           </div>
           <div className="flex gap-2 bg-stone-50 rounded-xl p-1 border border-stone-100">
             {[
-              { id: '7d', label: '7 days' },
-              { id: '30d', label: '30 days' },
-              { id: '90d', label: '90 days' },
-              { id: 'all', label: 'All' },
+              { id: '7d', label: t.ranges['7d'] },
+              { id: '30d', label: t.ranges['30d'] },
+              { id: '90d', label: t.ranges['90d'] },
+              { id: 'all', label: t.ranges.all },
             ].map((item) => (
               <button
                 key={item.id}
@@ -548,10 +603,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         {/* ── Plan usage ── */}
         <div className="bg-navy rounded-2xl shadow-sm border border-white/10 p-5 mb-6 text-white flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-semibold text-gold uppercase tracking-wider mb-1">Current plan</p>
+            <p className="text-xs font-semibold text-gold uppercase tracking-wider mb-1">{t.currentPlan}</p>
             <h2 className="text-xl font-bold">{planName}</h2>
             <p className="text-sm text-gray-300 mt-1">
-              {pageUsage.pagesUsed}/{pageLimitLabel} {pageUsage.pagesUsed === 1 ? 'page used' : 'pages used'}
+              {pageUsage.pagesUsed}/{pageLimitLabel} {pageUsage.pagesUsed === 1 ? t.pageUsed : t.pagesUsed}
             </p>
           </div>
           {pageUsage.canCreateMore ? (
@@ -560,12 +615,12 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               className="inline-flex items-center gap-2 bg-gold text-navy px-4 py-2.5 rounded-xl font-semibold hover:bg-yellow-400 transition-colors text-sm"
             >
               <Plus className="w-4 h-4" />
-              Create another page
+              {t.createAnother}
             </Link>
           ) : (
             <div className="text-sm text-gray-200 max-w-md">
-              <p className="font-semibold text-white">Page limit reached.</p>
-              <p className="text-gray-300">Upgrade to Pro to create up to 3 pages for this email.</p>
+              <p className="font-semibold text-white">{t.limitReached}</p>
+              <p className="text-gray-300">{t.upgradeHint}</p>
             </div>
           )}
         </div>
@@ -573,10 +628,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         {/* ── Simple navigation ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-2">
           {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'leads', label: `Leads (${leads.length})` },
-            { id: 'channels', label: 'Channels' },
-            { id: 'settings', label: 'Settings' },
+            { id: 'overview', label: t.tabs.overview },
+            { id: 'leads', label: `${t.tabs.leads} (${leads.length})` },
+            { id: 'channels', label: t.tabs.channels },
+            { id: 'settings', label: t.tabs.settings },
           ].map((item) => (
             <button
               key={item.id}
@@ -594,10 +649,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         {activeSection === 'overview' && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              <StatCard icon={<Eye className="w-5 h-5 text-gold" />} label="Visits" value={stats.totalViews} hint="people opened the page" />
-              <StatCard icon={<MousePointerClick className="w-5 h-5 text-gold" />} label="Intent actions" value={totalClicks} hint={`${stats.bookingClicks} booking · ${stats.whatsappClicks} WhatsApp`} />
-              <StatCard icon={<Users className="w-5 h-5 text-gold" />} label="Leads" value={stats.totalLeads} hint={`${stats.leadsThisWeek} this week`} />
-              <StatCard icon={<Sparkles className="w-5 h-5 text-gold" />} label="Conversion" value={conversionRate} suffix="%" hint={stats.totalViews === 0 ? 'No visits yet' : `${stats.totalLeads}/${stats.totalViews} became leads`} />
+              <StatCard icon={<Eye className="w-5 h-5 text-gold" />} label={t.visits} value={stats.totalViews} hint={dashboardLang === 'pt' ? 'pessoas abriram a página' : 'people opened the page'} />
+              <StatCard icon={<MousePointerClick className="w-5 h-5 text-gold" />} label={t.intent} value={totalClicks} hint={`${stats.bookingClicks} booking · ${stats.whatsappClicks} WhatsApp`} />
+              <StatCard icon={<Users className="w-5 h-5 text-gold" />} label={t.leadsLabel} value={stats.totalLeads} hint={dashboardLang === 'pt' ? `${stats.leadsThisWeek} esta semana` : `${stats.leadsThisWeek} this week`} />
+              <StatCard icon={<Sparkles className="w-5 h-5 text-gold" />} label={t.conversion} value={conversionRate} suffix="%" hint={stats.totalViews === 0 ? t.noVisits : `${stats.totalLeads}/${stats.totalViews} became leads`} />
             </div>
 
             <div className="bg-gradient-to-br from-navy to-slate-900 rounded-3xl p-6 mb-6 text-white shadow-xl overflow-hidden relative">
@@ -607,8 +662,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                   <Sparkles className="w-5 h-5 text-navy" />
                 </div>
                 <div>
-                  <p className="text-gold text-xs font-black uppercase tracking-wider mb-1">Recommended action</p>
-                  <h2 className="text-2xl font-black mb-2">What to do next</h2>
+                  <p className="text-gold text-xs font-black uppercase tracking-wider mb-1">{t.recommended}</p>
+                  <h2 className="text-2xl font-black mb-2">{t.next}</h2>
                   <p className="text-gray-300 leading-relaxed max-w-3xl">{recommendedAction}</p>
                 </div>
               </div>
@@ -618,13 +673,13 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-lg font-black text-navy">Recent leads</h2>
-                    <p className="text-sm text-gray-400">Latest people who left contact details.</p>
+                    <h2 className="text-lg font-black text-navy">{t.recentLeads}</h2>
+                    <p className="text-sm text-gray-400">{t.recentLeadsHint}</p>
                   </div>
-                  <button onClick={() => setActiveSection('leads')} className="text-gold text-sm font-black hover:underline">View all</button>
+                  <button onClick={() => setActiveSection('leads')} className="text-gold text-sm font-black hover:underline">{t.viewAll}</button>
                 </div>
                 {recentLeads.length === 0 ? (
-                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">No leads yet. Share your page and they will appear here.</p>
+                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">{t.noLeads}</p>
                 ) : (
                   <div className="space-y-3">
                     {recentLeads.map((lead) => (
@@ -643,13 +698,13 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-lg font-black text-navy">Top channels</h2>
-                    <p className="text-sm text-gray-400">Best sources by visits and intent.</p>
+                    <h2 className="text-lg font-black text-navy">{t.topChannels}</h2>
+                    <p className="text-sm text-gray-400">{t.topChannelsHint}</p>
                   </div>
-                  <button onClick={() => setActiveSection('channels')} className="text-gold text-sm font-black hover:underline">Manage</button>
+                  <button onClick={() => setActiveSection('channels')} className="text-gold text-sm font-black hover:underline">{t.manage}</button>
                 </div>
                 {topChannelRows.length === 0 ? (
-                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">No channel data yet. Create one channel link to start tracking.</p>
+                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">{t.noChannelData}</p>
                 ) : (
                   <div className="space-y-3">
                     {topChannelRows.map((channel) => (
@@ -881,10 +936,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         {activeSection === 'settings' && <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-5 h-5 text-gold" />
-            <h2 className="text-lg font-bold text-navy">Booking &amp; WhatsApp</h2>
+            <h2 className="text-lg font-bold text-navy">{t.settingsTitle}</h2>
           </div>
           <p className="text-gray-500 text-sm mb-6">
-            Configure how customers can reach you and book appointments directly from your public page.
+            {t.settingsHint}
           </p>
 
           {/* Booking URL */}
@@ -966,12 +1021,12 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             {contactSaved ? (
               <>
                 <Check className="w-4 h-4" />
-                Saved!
+                {t.saved}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Changes
+                {t.saveChanges}
               </>
             )}
           </button>

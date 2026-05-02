@@ -2,14 +2,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Scissors, Plus, Trash2, Upload, ArrowRight, Check } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check } from 'lucide-react'
 
 interface Service {
   name: string
   price: string
 }
 
-const STEPS = ['Business Info', 'Services & Hours', 'Photos', 'Preview']
+const STEPS = ['Business details', 'Services & hours', 'Photos', 'Preview']
 
 const CATEGORIES = [
   'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
@@ -341,12 +341,12 @@ export default function DashboardPage() {
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-7 h-7 bg-gold rounded-full flex items-center justify-center">
-              <Scissors className="w-3.5 h-3.5 text-navy" />
+              <ThumbsUp className="w-3.5 h-3.5 text-navy" />
             </div>
             <span className="text-white font-bold">Vitrine</span>
           </Link>
           <Link href="/demo" className="text-gray-400 hover:text-white text-sm transition-colors">
-            View Demo →
+            View demos →
           </Link>
         </div>
       </div>
@@ -386,15 +386,16 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           {step === 0 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-6">Business Information</h2>
+              <h2 className="text-2xl font-bold text-navy mb-2">Business details</h2>
+              <p className="text-sm text-gray-500 mb-6">Tell Vitrine what your business does. These details become the first version of your public page.</p>
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Business name *</label>
                   <input
                     type="text"
                     value={businessName}
                     onChange={(e) => { setBusinessName(e.target.value); if (e.target.value.trim()) setNameError('') }}
-                    placeholder="e.g. My Barbershop"
+                    placeholder="e.g. Studio Luna"
                     className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${nameError ? 'border-red-400' : 'border-gray-200'}`}
                   />
                   {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
@@ -412,12 +413,12 @@ export default function DashboardPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Short description</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={4}
-                    placeholder="Tell your customers about your business..."
+                    placeholder="Describe what makes your business special, who you serve, and why customers should choose you."
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors resize-none"
                   />
                 </div>
@@ -428,7 +429,7 @@ export default function DashboardPage() {
                       type="text"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Street, City, Country"
+                      placeholder="Street, city, country"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
                     />
                   </div>
@@ -438,7 +439,7 @@ export default function DashboardPage() {
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+1 555 000 0000"
+                      placeholder="+351 912 345 678"
                       className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
                     />
                   </div>
@@ -449,14 +450,14 @@ export default function DashboardPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="contact@yourbusiness.com"
+                    placeholder="hello@yourbusiness.com"
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
                   />
                 </div>
                 <div className="rounded-2xl border border-gold/30 bg-gold/5 p-5">
                   <h3 className="font-bold text-navy mb-2">Customer action buttons</h3>
                   <p className="text-sm text-gray-500 mb-4">
-                    Add the WhatsApp number and booking platform link now. These become strong call-to-action buttons at the top of the client&apos;s landing page.
+                    Add your WhatsApp number and booking link now. These become the main buttons at the top of your landing page.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -470,7 +471,7 @@ export default function DashboardPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Booking / calendar URL</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Booking or calendar URL</label>
                       <input
                         type="text"
                         value={bookingUrl}
@@ -494,7 +495,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Language Preference</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Page language</label>
+                  <p className="text-xs text-gray-400 mb-2">Choose the main language your customers should see first. You can still offer multiple languages on the page.</p>
                   <div className="flex gap-2">
                     {['pt', 'es', 'en', 'fr'].map((l) => (
                       <button

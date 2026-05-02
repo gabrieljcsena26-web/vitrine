@@ -10,9 +10,9 @@ export async function POST(req: NextRequest) {
   try {
     const { businessId, visitorName, visitorEmail, message, via, interest } = await req.json()
 
-    if (!businessId || !visitorName || !visitorEmail || !message) {
+    if (!businessId || !visitorName || !message) {
       return NextResponse.json(
-        { error: 'businessId, visitorName, visitorEmail, and message are required' },
+        { error: 'businessId, visitorName, and message are required' },
         { status: 400 }
       )
     }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     let { error: insertError } = await db.from('leads').insert({
       business_id: businessId,
       visitor_name: visitorName,
-      visitor_email: visitorEmail,
+      visitor_email: visitorEmail || '',
       message,
       via: via || null,
       status: 'new',
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       const fallback = await db.from('leads').insert({
         business_id: businessId,
         visitor_name: visitorName,
-        visitor_email: visitorEmail,
+        visitor_email: visitorEmail || '',
         message,
         via: via || null,
       })
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
           <p>You have a new lead from your Vitrine page!</p>
           <table style="border-collapse:collapse;width:100%;max-width:500px">
             <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Name</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(visitorName)}</td></tr>
-            <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Email</td><td style="padding:8px;border:1px solid #eee"><a href="mailto:${escapeHtml(visitorEmail)}">${escapeHtml(visitorEmail)}</a></td></tr>
+            ${visitorEmail ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Email</td><td style="padding:8px;border:1px solid #eee"><a href="mailto:${escapeHtml(visitorEmail)}">${escapeHtml(visitorEmail)}</a></td></tr>` : ''}
             <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Message</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(message)}</td></tr>
             ${via ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Source</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(via)}</td></tr>` : ''}
           </table>

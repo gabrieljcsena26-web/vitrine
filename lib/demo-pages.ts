@@ -17,7 +17,7 @@ export interface CommercialDemo {
   photos: string[]
   services: { name: string; price: string; description: string }[]
   benefits: string[]
-  testimonials: { name: string; text: string; rating: number }[]
+  testimonials: { name: string; text: string; rating: number; photo: string }[]
   faqs: { question: string; answer: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
 }
@@ -59,9 +59,9 @@ export const commercialDemos: CommercialDemo[] = [
     ],
     benefits: ['Marcação rápida pelo WhatsApp', 'Ambiente premium e pontual', 'Serviços claros com preço visível', 'Ideal para clientes recorrentes'],
     testimonials: [
-      { name: 'Miguel R.', text: 'Marquei pelo WhatsApp e fui atendido no horário. Corte impecável.', rating: 5 },
-      { name: 'André S.', text: 'A página é simples, bonita e consegui ver preços antes de ir.', rating: 5 },
-      { name: 'João P.', text: 'Barba muito bem feita e atendimento profissional.', rating: 5 },
+      { name: 'Miguel R.', text: 'Marquei pelo WhatsApp e fui atendido no horário. Corte impecável.', rating: 5, photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
+      { name: 'André S.', text: 'A página é simples, bonita e consegui ver preços antes de ir.', rating: 4, photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop' },
+      { name: 'João P.', text: 'Barba muito bem feita e atendimento profissional.', rating: 5, photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop' },
     ],
     faqs: [
       { question: 'Preciso marcar horário?', answer: 'Sim. O ideal é enviar mensagem pelo WhatsApp para garantir disponibilidade.' },
@@ -97,9 +97,9 @@ export const commercialDemos: CommercialDemo[] = [
     ],
     benefits: ['Orçamento rápido pelo WhatsApp', 'Equipa treinada e confiável', 'Produtos e materiais organizados', 'Planos únicos ou recorrentes'],
     testimonials: [
-      { name: 'Carla M.', text: 'Pedi orçamento pela página e responderam muito rápido.', rating: 5 },
-      { name: 'Rui A.', text: 'Excelente para o nosso escritório. Serviço consistente.', rating: 5 },
-      { name: 'Sofia L.', text: 'Contratei pós-obra e ficou tudo pronto no prazo.', rating: 5 },
+      { name: 'Carla M.', text: 'Pedi orçamento pela página e responderam muito rápido.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Rui A.', text: 'Excelente para o nosso escritório. Serviço consistente.', rating: 4, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Sofia L.', text: 'Contratei pós-obra e ficou tudo pronto no prazo.', rating: 5, photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
     ],
     faqs: [
       { question: 'Como peço orçamento?', answer: 'Clique no WhatsApp e envie morada, tipo de limpeza e tamanho aproximado do espaço.' },
@@ -135,9 +135,9 @@ export const commercialDemos: CommercialDemo[] = [
     ],
     benefits: ['Avaliação antes do tratamento', 'Ambiente limpo e acolhedor', 'Explicação clara dos cuidados', 'Marcação simples pelo WhatsApp'],
     testimonials: [
-      { name: 'Inês F.', text: 'A página me passou confiança e marquei avaliação em poucos minutos.', rating: 5 },
-      { name: 'Beatriz C.', text: 'Atendimento calmo, profissional e muito cuidadoso.', rating: 5 },
-      { name: 'Mariana T.', text: 'Gostei de ver serviços e dúvidas respondidas antes de contactar.', rating: 5 },
+      { name: 'Inês F.', text: 'A página me passou confiança e marquei avaliação em poucos minutos.', rating: 5, photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Beatriz C.', text: 'Atendimento calmo, profissional e muito cuidadoso.', rating: 5, photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Mariana T.', text: 'Gostei de ver serviços e dúvidas respondidas antes de contactar.', rating: 4, photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=200&auto=format&fit=crop' },
     ],
     faqs: [
       { question: 'Preciso fazer avaliação?', answer: 'Sim, a avaliação ajuda a indicar o tratamento mais adequado para cada pessoa.' },

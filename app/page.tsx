@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { Scissors, Upload, FileText, Zap, Check, ArrowRight, Star, BarChart3, Globe2, MessageCircle, CalendarDays } from 'lucide-react'
+import { Scissors, Upload, FileText, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -16,7 +16,7 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
-              View Demo
+              View Demos
             </Link>
             <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
               Login
@@ -146,7 +146,7 @@ export default function HomePage() {
       </section>
 
       {/* Visual demo */}
-      <section className="py-20 px-4 bg-white text-navy">
+      <section className="py-20 px-4 bg-gradient-to-b from-navy via-slate-950 to-navy text-white border-y border-white/10">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-10 items-center">
             <div>
@@ -162,8 +162,8 @@ export default function HomePage() {
                   ['Service cards', 'Clear offers'],
                   ['Gallery', 'Proof of work'],
                 ].map(([title, desc]) => (
-                  <div key={title} className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
-                    <p className="font-bold text-navy">{title}</p>
+                  <div key={title} className="rounded-2xl bg-white/5 border border-white/10 p-4 hover:border-gold/30 transition-colors">
+                    <p className="font-bold text-white">{title}</p>
                     <p className="text-sm text-gray-400 mt-1">{desc}</p>
                   </div>
                 ))}
@@ -176,7 +176,7 @@ export default function HomePage() {
                 ['https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=900&auto=format&fit=crop', 'Beauty service'],
                 ['https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=900&auto=format&fit=crop', 'Haircut detail'],
               ].map(([src, alt], index) => (
-                <div key={alt} className={`rounded-3xl overflow-hidden shadow-xl shadow-stone-200/70 ${index === 0 ? 'row-span-2 h-96' : 'h-44'}`}>
+                <div key={alt} className={`rounded-3xl overflow-hidden shadow-2xl shadow-black/30 border border-white/10 ${index === 0 ? 'row-span-2 h-96' : 'h-44'}`}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={src} alt={alt} className="w-full h-full object-cover" />
                 </div>
@@ -291,9 +291,11 @@ export default function HomePage() {
       {/* CTA */}
       <section className="py-24 px-4 text-center">
         <div className="max-w-2xl mx-auto">
-          <div className="flex justify-center mb-4">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-5 h-5 text-gold fill-gold" />
+          <div className="flex justify-center gap-2 mb-5 flex-wrap">
+            {['Ready demos', 'WhatsApp leads', 'SEO foundation'].map((label) => (
+              <span key={label} className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-gold text-xs font-bold">
+                {label}
+              </span>
             ))}
           </div>
           <h2 className="text-4xl font-bold mb-4">

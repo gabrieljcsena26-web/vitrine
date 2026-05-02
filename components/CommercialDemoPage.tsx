@@ -130,11 +130,20 @@ export default function CommercialDemoPage({ demo }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {demo.testimonials.map((item) => (
               <article key={item.name} className="bg-white rounded-3xl border border-stone-100 p-6 shadow-sm">
-                <div className="flex text-gold mb-4">
-                  {Array.from({ length: item.rating }).map((_, index) => <Star key={index} className="w-4 h-4 fill-current" />)}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-stone-100 flex-shrink-0">
+                    <Image src={item.photo} alt={item.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <p className="font-black text-navy">{item.name}</p>
+                    <div className="flex text-gold mt-1">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star key={index} className={`w-4 h-4 ${index < item.rating ? 'fill-current' : 'text-stone-200'}`} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <p className="text-gray-600 leading-relaxed mb-5">“{item.text}”</p>
-                <p className="font-black text-navy">{item.name}</p>
               </article>
             ))}
           </div>

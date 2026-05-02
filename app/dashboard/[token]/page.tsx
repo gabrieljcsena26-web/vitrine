@@ -148,6 +148,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [range, setRange] = useState('30d')
+  const [activeSection, setActiveSection] = useState<'overview' | 'leads' | 'channels' | 'settings'>('overview')
 
   // Campaign link creator
   const [campaignName, setCampaignName] = useState('')
@@ -399,6 +400,30 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       isTracked: true,
     }
   })
+  const recentLeads = leads.slice(0, 5)
+  const topChannelRows = channelRows.length > 0
+    ? [...channelRows].sort((a, b) => (b.intentCount - a.intentCount) || (b.visits - a.visits)).slice(0, 3)
+    : sourceInsights.slice(0, 3).map((item) => ({
+      id: item.source,
+      name: formatSourceLabel(item.source),
+      slug: item.source,
+      url: '',
+      createdAt: '',
+      visits: item.count,
+      bookingCount: item.bookingCount,
+      whatsappCount: item.whatsappCount,
+      intentCount: item.intentCount,
+      isTracked: false,
+    }))
+  const recommendedAction = stats.totalViews === 0
+    ? 'Share your page on Instagram bio, WhatsApp status and Google Business to get the first visits.'
+    : stats.totalLeads === 0 && stats.totalViews > 5
+    ? 'You have visits but no captured leads yet. Keep WhatsApp visible and add the page link to your strongest channel.'
+    : stats.leadsThisWeek > 0
+    ? `Follow up with ${stats.leadsThisWeek} new ${stats.leadsThisWeek === 1 ? 'lead' : 'leads'} this week while interest is fresh.`
+    : topSource
+    ? `${formatSourceLabel(topSource.source)} is currently your strongest source. Keep sharing there and test one more channel.`
+    : 'Create one tracking channel for Instagram, WhatsApp or Google to see where customers come from.'
 
   const getLeadInterest = (message: string) => {
     const capturedInterest = message.match(/Interest:\s*([^.]*)/i)?.[1]?.trim()
@@ -545,86 +570,109 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           )}
         </div>
 
-        {/* ── Block A: Summary cards ── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-          <StatCard
-            icon={<Eye className="w-5 h-5 text-gold" />}
-            label="Page Visits"
-            value={stats.totalViews}
-          />
-          <StatCard
-            icon={<MousePointerClick className="w-5 h-5 text-gold" />}
-            label="Booking Clicks"
-            value={stats.bookingClicks}
-          />
-          <StatCard
-            icon={<MessageCircle className="w-5 h-5 text-gold" />}
-            label="WhatsApp Clicks"
-            value={stats.whatsappClicks}
-          />
-          <StatCard
-            icon={<Users className="w-5 h-5 text-gold" />}
-            label="Total Leads"
-            value={stats.totalLeads}
-          />
-          <StatCard
-            icon={<TrendingUp className="w-5 h-5 text-gold" />}
-            label="Leads This Week"
-            value={stats.leadsThisWeek}
-          />
-          <StatCard
-            icon={<Sparkles className="w-5 h-5 text-gold" />}
-            label="Conversion"
-            value={conversionRate}
-            suffix="%"
-            hint={stats.totalViews === 0 ? 'No visits yet' : `${stats.totalLeads}/${stats.totalViews}`}
-          />
+        {/* ── Simple navigation ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { id: 'overview', label: 'Overview' },
+            { id: 'leads', label: `Leads (${leads.length})` },
+            { id: 'channels', label: 'Channels' },
+            { id: 'settings', label: 'Settings' },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveSection(item.id as typeof activeSection)}
+              className={`rounded-xl px-4 py-3 text-sm font-black transition-all ${
+                activeSection === item.id ? 'bg-navy text-white shadow-sm' : 'text-gray-500 hover:bg-stone-50 hover:text-navy'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
-        {/* ── Insights strip ── */}
-        {(stats.totalViews > 0 || totalClicks > 0) && (
-          <div className="bg-amber-50/60 border border-amber-100 rounded-2xl p-4 mb-6 flex items-start gap-3">
-            <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-amber-600" />
+        {activeSection === 'overview' && (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              <StatCard icon={<Eye className="w-5 h-5 text-gold" />} label="Visits" value={stats.totalViews} hint="people opened the page" />
+              <StatCard icon={<MousePointerClick className="w-5 h-5 text-gold" />} label="Intent actions" value={totalClicks} hint={`${stats.bookingClicks} booking · ${stats.whatsappClicks} WhatsApp`} />
+              <StatCard icon={<Users className="w-5 h-5 text-gold" />} label="Leads" value={stats.totalLeads} hint={`${stats.leadsThisWeek} this week`} />
+              <StatCard icon={<Sparkles className="w-5 h-5 text-gold" />} label="Conversion" value={conversionRate} suffix="%" hint={stats.totalViews === 0 ? 'No visits yet' : `${stats.totalLeads}/${stats.totalViews} became leads`} />
             </div>
-            <div className="text-sm text-amber-900/80 leading-relaxed">
-              {stats.totalViews === 0 ? (
-                <>Your page is ready but hasn&apos;t been seen yet. <strong>Share it on Instagram bio and WhatsApp status</strong> to drive the first visits.</>
-              ) : stats.totalLeads === 0 && stats.totalViews > 5 ? (
-                <>You have <strong>{stats.totalViews} visits</strong> but no leads yet. Try adding a <strong>WhatsApp number</strong> and a <strong>booking link</strong> below to convert visitors.</>
-              ) : stats.leadsThisWeek > 0 ? (
-                <>🔥 You got <strong>{stats.leadsThisWeek} new {stats.leadsThisWeek === 1 ? 'lead' : 'leads'}</strong> this week. Keep sharing your link — momentum is building.</>
-              ) : (
-                <>Track where your customers come from by creating <strong>campaign links</strong> below — one per channel (Instagram, WhatsApp, flyer…).</>
-              )}
+
+            <div className="bg-gradient-to-br from-navy to-slate-900 rounded-3xl p-6 mb-6 text-white shadow-xl overflow-hidden relative">
+              <div className="absolute -right-16 -top-16 w-44 h-44 bg-gold/10 rounded-full blur-2xl" />
+              <div className="relative flex items-start gap-4">
+                <div className="w-11 h-11 bg-gold rounded-2xl flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-5 h-5 text-navy" />
+                </div>
+                <div>
+                  <p className="text-gold text-xs font-black uppercase tracking-wider mb-1">Recommended action</p>
+                  <h2 className="text-2xl font-black mb-2">What to do next</h2>
+                  <p className="text-gray-300 leading-relaxed max-w-3xl">{recommendedAction}</p>
+                </div>
+              </div>
             </div>
-          </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-lg font-black text-navy">Recent leads</h2>
+                    <p className="text-sm text-gray-400">Latest people who left contact details.</p>
+                  </div>
+                  <button onClick={() => setActiveSection('leads')} className="text-gold text-sm font-black hover:underline">View all</button>
+                </div>
+                {recentLeads.length === 0 ? (
+                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">No leads yet. Share your page and they will appear here.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentLeads.map((lead) => (
+                      <div key={lead.id} className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 border border-stone-100 p-3">
+                        <div className="min-w-0">
+                          <p className="font-bold text-navy truncate">{lead.visitor_name}</p>
+                          <p className="text-xs text-gray-400 truncate">{lead.interest ?? getLeadInterest(lead.message)} · {formatSourceLabel(lead.via)}</p>
+                        </div>
+                        <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">{new Date(lead.submitted_at).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-lg font-black text-navy">Top channels</h2>
+                    <p className="text-sm text-gray-400">Best sources by visits and intent.</p>
+                  </div>
+                  <button onClick={() => setActiveSection('channels')} className="text-gold text-sm font-black hover:underline">Manage</button>
+                </div>
+                {topChannelRows.length === 0 ? (
+                  <p className="text-sm text-gray-400 bg-stone-50 rounded-2xl p-5">No channel data yet. Create one channel link to start tracking.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {topChannelRows.map((channel) => (
+                      <div key={channel.id} className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <p className="font-black text-navy truncate">{channel.name}</p>
+                          <span className="text-xs text-gray-400 font-bold">{channel.visits} visits</span>
+                        </div>
+                        <div className="h-2 bg-white rounded-full overflow-hidden border border-stone-100">
+                          <div className="h-full bg-gradient-to-r from-gold to-yellow-400 rounded-full" style={{ width: `${maxViews ? Math.min(100, (channel.visits / maxViews) * 100) : 0}%` }} />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">{channel.intentCount} intent actions</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
         )}
 
-        {/* ── Dashboard guide ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-gold" />
-            <h2 className="text-lg font-bold text-navy">How to read this dashboard</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="rounded-xl bg-stone-50 p-4">
-              <p className="font-bold text-navy mb-1">Traffic</p>
-              <p className="text-gray-500">Shows how many people visited the public page and which source brought them in.</p>
-            </div>
-            <div className="rounded-xl bg-stone-50 p-4">
-              <p className="font-bold text-navy mb-1">Intent</p>
-              <p className="text-gray-500">Booking and WhatsApp clicks show who is interested enough to take action.</p>
-            </div>
-            <div className="rounded-xl bg-stone-50 p-4">
-              <p className="font-bold text-navy mb-1">Leads</p>
-              <p className="text-gray-500">Names, emails and messages from customers who contacted the business through the page.</p>
-            </div>
-          </div>
-        </div>
-
         {/* ── Block B: Traffic & intent by source ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
+        {activeSection === 'channels' && <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
           <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
             <div>
               <h2 className="text-lg font-bold text-navy">Tracking Channels</h2>
@@ -755,10 +803,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               Download QR
             </button>
           </div>
-        </div>
+        </div>}
 
         {/* ── Block C: Leads list ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
+        {activeSection === 'leads' && <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6 mb-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-navy">Leads</h2>
@@ -792,7 +840,11 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
                     <div className="flex items-start justify-between gap-4 flex-wrap">
                       <div className="min-w-0">
                         <p className="font-bold text-navy truncate">{lead.visitor_name}</p>
-                        <a href={`mailto:${lead.visitor_email}`} className="text-sm text-gold hover:underline break-all">{lead.visitor_email}</a>
+                        {lead.visitor_email ? (
+                          <a href={`mailto:${lead.visitor_email}`} className="text-sm text-gold hover:underline break-all">{lead.visitor_email}</a>
+                        ) : (
+                          <p className="text-sm text-gray-400">No email captured</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`border px-2.5 py-1 rounded-full text-xs font-bold ${tempClass}`}>{displayTemperature}</span>
@@ -823,10 +875,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               })}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* ── Block E: Booking & WhatsApp contact setup ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
+        {activeSection === 'settings' && <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
           <div className="flex items-center gap-2 mb-2">
             <CalendarDays className="w-5 h-5 text-gold" />
             <h2 className="text-lg font-bold text-navy">Booking &amp; WhatsApp</h2>
@@ -923,7 +975,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               </>
             )}
           </button>
-        </div>
+        </div>}
       </div>
     </div>
   )

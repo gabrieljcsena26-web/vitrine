@@ -100,12 +100,12 @@ export default function LeadCaptureModal({
         primary: 'Continue to booking platform',
         success: 'Opening booking platform...',
         successText: 'Your interest was saved. Now you will complete the booking on the external scheduling page.',
-        footnote: 'You will finish the appointment on the business booking platform.',
+        footnote: 'Email is optional. You will finish the appointment on the business booking platform.',
       }
     : {
         badge: 'WhatsApp step',
         title: 'Before opening WhatsApp',
-        description: 'Leave your details so the business can recognize your request. After this, WhatsApp opens with the message ready to send.',
+        description: 'Leave just your name so the business can recognize your request. After this, WhatsApp opens with the message ready to send.',
         selectLabel: 'What do you want to ask?',
         primary: 'Continue to WhatsApp',
         success: 'Opening WhatsApp...',
@@ -161,14 +161,15 @@ export default function LeadCaptureModal({
                 placeholder="Your name"
                 className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
               />
-              <input
-                required
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
-              />
+              {isBooking && (
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email optional"
+                  className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors text-sm"
+                />
+              )}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">
                   {modalCopy.selectLabel}

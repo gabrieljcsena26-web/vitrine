@@ -82,15 +82,18 @@ export default function LeadCaptureModal({
     }
   }
 
+  const isBooking = eventType === 'booking_click'
+
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[80] overflow-y-auto px-4 py-4 sm:py-6">
       <button
         type="button"
         aria-label="Close modal"
         onClick={onClose}
-        className="absolute inset-0 bg-navy/75 backdrop-blur-sm"
+        className="fixed inset-0 bg-navy/80 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6">
+      <div className="relative z-10 min-h-full flex items-center justify-center pointer-events-none">
+      <div className="relative w-full max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto bg-white rounded-3xl shadow-2xl p-5 sm:p-6 pointer-events-auto">
         <button
           type="button"
           onClick={onClose}
@@ -101,20 +104,24 @@ export default function LeadCaptureModal({
         </button>
 
         {saved ? (
-          <div className="text-center py-8">
+          <div className="text-center py-8 sm:py-10">
             <CheckCircle className="w-14 h-14 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-navy mb-2">Saved. Redirecting...</h3>
-            <p className="text-gray-500 text-sm">We captured your interest and are opening {actionLabel}.</p>
+            <h3 className="text-xl font-bold text-navy mb-2">Saved. Opening next step...</h3>
+            <p className="text-gray-500 text-sm">We captured your interest and are sending you to {actionLabel}.</p>
           </div>
         ) : (
           <form onSubmit={submitAndContinue}>
-            <span className="inline-flex bg-gold/10 text-gold border border-gold/20 rounded-full px-3 py-1 text-xs font-bold mb-4">
-              Quick step before {actionLabel}
-            </span>
-            <h3 className="text-2xl font-bold text-navy mb-2">Want faster follow-up?</h3>
-            <p className="text-gray-500 text-sm mb-5">
-              Leave your name and email. We will save your interest, then send you directly to {actionLabel}.
-            </p>
+            <div className="pr-9">
+              <span className="inline-flex bg-gold/10 text-gold border border-gold/20 rounded-full px-3 py-1 text-xs font-bold mb-3">
+                {isBooking ? 'Before opening booking' : 'Before opening WhatsApp'}
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-navy mb-2">
+                Want faster follow-up?
+              </h3>
+              <p className="text-gray-500 text-sm sm:text-base mb-5 leading-relaxed">
+                Leave your details so the business can identify your request. After this, you go directly to {actionLabel}.
+              </p>
+            </div>
 
             <div className="space-y-3">
               <input
@@ -151,13 +158,13 @@ export default function LeadCaptureModal({
             <button
               type="submit"
               disabled={loading}
-              className="mt-5 w-full bg-gold text-navy py-3.5 rounded-xl font-bold hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              className="mt-5 w-full bg-gold text-navy py-4 rounded-xl font-black hover:bg-yellow-400 transition-all flex items-center justify-center gap-2 disabled:opacity-60 shadow-lg shadow-gold/20"
             >
               {loading ? (
                 <span className="w-5 h-5 border-2 border-navy/30 border-t-navy rounded-full animate-spin" />
               ) : (
                 <>
-                  Save and continue
+                  Save and continue to {isBooking ? 'booking' : 'WhatsApp'}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -165,12 +172,16 @@ export default function LeadCaptureModal({
             <button
               type="button"
               onClick={continueWithoutSaving}
-              className="mt-3 w-full text-gray-400 hover:text-navy text-sm font-medium transition-colors"
+              className="mt-3 w-full rounded-xl border border-stone-200 py-3 text-gray-500 hover:text-navy hover:border-gold/40 text-sm font-bold transition-colors"
             >
               Continue without leaving details
             </button>
+            <p className="text-[11px] text-center text-gray-400 mt-3">
+              No account needed. This only helps the business follow up faster.
+            </p>
           </form>
         )}
+      </div>
       </div>
     </div>
   )

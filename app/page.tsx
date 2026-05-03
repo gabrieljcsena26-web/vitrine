@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, MessageCircle, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
@@ -87,11 +87,96 @@ const landingPreviewsByLang = {
   ],
 } satisfies Record<Lang, Array<{ label: string; title: string; subtitle: string; image: string; cta: string; details: string[]; meta: string }>>
 
+const heroShowcaseByLang = {
+  pt: {
+    label: 'Experiência completa',
+    title: 'Landing de restaurante + dashboard em um só fluxo',
+    subtitle: 'O cliente entende de cara: uma página linda para vender confiança e um painel claro para acompanhar resultados.',
+    landing: 'Landing restaurante',
+    dashboard: 'Dashboard do dono',
+    arrow: 'Publica → mede',
+    reserve: 'Reservar mesa',
+    menu: 'Ver destaques',
+    restaurant: 'Casa Aurora Bistro',
+    line: 'Pratos autorais, ambiente acolhedor e reservas rápidas.',
+    sections: ['Hero com foto', 'Pratos sem preço', 'Localização', 'WhatsApp'],
+    slides: [
+      { title: 'Página luxuosa pronta', note: 'Fotos, história, pratos e CTA em uma experiência mobile bonita.' },
+      { title: 'Seta para o resultado', note: 'Cada visita, clique e lead aparece no dashboard do cliente.' },
+      { title: 'Prova de valor imediata', note: 'O cliente vê a landing e entende como vai acompanhar crescimento.' },
+    ],
+  },
+  en: {
+    label: 'Complete experience',
+    title: 'Restaurant landing + dashboard in one flow',
+    subtitle: 'Clients instantly understand: a beautiful page to build trust and a clear panel to track results.',
+    landing: 'Restaurant landing',
+    dashboard: 'Owner dashboard',
+    arrow: 'Publish → measure',
+    reserve: 'Reserve a table',
+    menu: 'View highlights',
+    restaurant: 'Casa Aurora Bistro',
+    line: 'Signature dishes, warm atmosphere and fast reservations.',
+    sections: ['Photo hero', 'No-price dishes', 'Location', 'WhatsApp'],
+    slides: [
+      { title: 'Luxury page ready', note: 'Photos, story, dishes and CTA in a beautiful mobile experience.' },
+      { title: 'Arrow to results', note: 'Every visit, click and lead appears in the customer dashboard.' },
+      { title: 'Instant value proof', note: 'Clients see the landing and understand how growth is tracked.' },
+    ],
+  },
+  es: {
+    label: 'Experiencia completa',
+    title: 'Landing de restaurante + dashboard en un solo flujo',
+    subtitle: 'El cliente entiende al instante: una página bonita para generar confianza y un panel claro para medir resultados.',
+    landing: 'Landing restaurante',
+    dashboard: 'Dashboard del dueño',
+    arrow: 'Publica → mide',
+    reserve: 'Reservar mesa',
+    menu: 'Ver destacados',
+    restaurant: 'Casa Aurora Bistro',
+    line: 'Platos de autor, ambiente acogedor y reservas rápidas.',
+    sections: ['Hero con foto', 'Platos sin precio', 'Ubicación', 'WhatsApp'],
+    slides: [
+      { title: 'Página lujosa lista', note: 'Fotos, historia, platos y CTA en una experiencia móvil bonita.' },
+      { title: 'Flecha hacia resultados', note: 'Cada visita, clic y lead aparece en el dashboard del cliente.' },
+      { title: 'Valor inmediato', note: 'El cliente ve la landing y entiende cómo seguirá el crecimiento.' },
+    ],
+  },
+  fr: {
+    label: 'Expérience complète',
+    title: 'Landing restaurant + dashboard dans un seul flux',
+    subtitle: 'Le client comprend tout de suite : une belle page pour inspirer confiance et un panneau clair pour suivre les résultats.',
+    landing: 'Landing restaurant',
+    dashboard: 'Dashboard propriétaire',
+    arrow: 'Publier → mesurer',
+    reserve: 'Réserver une table',
+    menu: 'Voir les favoris',
+    restaurant: 'Casa Aurora Bistro',
+    line: 'Plats signature, ambiance chaleureuse et réservations rapides.',
+    sections: ['Hero photo', 'Plats sans prix', 'Adresse', 'WhatsApp'],
+    slides: [
+      { title: 'Page luxueuse prête', note: 'Photos, histoire, plats et CTA dans une belle expérience mobile.' },
+      { title: 'Flèche vers les résultats', note: 'Chaque visite, clic et lead apparaît dans le dashboard client.' },
+      { title: 'Preuve de valeur immédiate', note: 'Le client voit la landing et comprend comment suivre la croissance.' },
+    ],
+  },
+} satisfies Record<Lang, any>
+
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('pt')
+  const [showcaseIndex, setShowcaseIndex] = useState(0)
   const t = homeCopy[lang]
   const mock = t.dashboardMock
   const landingPreviews = landingPreviewsByLang[lang]
+  const heroShowcase = heroShowcaseByLang[lang]
+  const activeShowcase = heroShowcase.slides[showcaseIndex]
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setShowcaseIndex((current) => (current + 1) % heroShowcase.slides.length)
+    }, 4200)
+    return () => window.clearInterval(interval)
+  }, [heroShowcase.slides.length])
   const starterFeatures = {
     pt: ['1 página publicada', 'Preview com suas fotos', 'QR Code da página', 'Relatório a cada 14 dias', 'Dashboard básico'],
     en: ['1 published page', 'Preview with your photos', 'Page QR Code', 'Report every 14 days', 'Basic dashboard'],
@@ -249,71 +334,167 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="relative">
-              <div className="absolute -inset-6 rounded-[3rem] bg-gold/20 blur-3xl" />
-              <div className="relative rounded-[2.25rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/40 backdrop-blur">
-                <div className="rounded-[1.75rem] bg-white text-navy overflow-hidden">
-                  <div className="bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-5 text-white">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.22em] text-gold">{mock.title}</p>
-                        <h3 className="text-2xl font-black mt-1">{mock.business}</h3>
-                      </div>
-                      <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-bold">{mock.period}</span>
+            <div className="relative lg:min-h-[720px]">
+              <div className="absolute -inset-8 rounded-[4rem] bg-[radial-gradient(circle,rgba(212,175,55,0.24),transparent_62%)] blur-3xl" />
+              <div className="relative rounded-[2.5rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/40 backdrop-blur">
+                <div className="rounded-[2rem] overflow-hidden bg-gradient-to-br from-[#fffaf0] via-white to-stone-100 text-navy p-4 md:p-5">
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <span className="inline-flex items-center gap-2 rounded-full bg-navy text-gold px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em]">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {heroShowcase.label}
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-black mt-3 max-w-md">{heroShowcase.title}</h3>
                     </div>
-                    <div className="mt-5 flex gap-2 overflow-hidden">
-                      {mock.tabs.map((tab: string, i: number) => (
-                        <span key={tab} className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ${i === 0 ? 'bg-gold text-navy' : 'bg-white/10 text-white/70'}`}>
-                          {tab}
-                        </span>
+                    <div className="hidden sm:flex gap-1.5 rounded-full bg-white border border-stone-200 p-1 shadow-sm">
+                      {heroShowcase.slides.map((slide: { title: string }, index: number) => (
+                        <button
+                          key={slide.title}
+                          type="button"
+                          aria-label={slide.title}
+                          onClick={() => setShowcaseIndex(index)}
+                          className={`h-2.5 rounded-full transition-all ${index === showcaseIndex ? 'w-8 bg-gold' : 'w-2.5 bg-stone-300 hover:bg-stone-400'}`}
+                        />
                       ))}
                     </div>
                   </div>
-                  <div className="p-5 bg-stone-50">
-                    <div className="grid grid-cols-2 gap-3">
-                      {mock.metrics.map(([value, label]: string[], i: number) => (
-                        <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-2xl font-black text-navy">{value}</p>
-                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${i === 2 ? 'bg-gold/20 text-gold' : 'bg-navy/5 text-navy'}`}>
-                              {i === 2 ? <MessageCircle className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
-                            </span>
+
+                  <div className="relative min-h-[510px] md:min-h-[560px]">
+                    <div className="absolute left-0 top-0 w-[70%] max-w-[390px] rounded-[2rem] bg-navy p-2 shadow-2xl shadow-stone-900/30 rotate-[-2deg]">
+                      <div className="rounded-[1.55rem] overflow-hidden bg-white">
+                        <div className="relative h-48 md:h-56 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1100&auto=format&fit=crop"
+                            alt={heroShowcase.restaurant}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          <div className="absolute left-4 right-4 bottom-4 text-white">
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gold">{heroShowcase.landing}</p>
+                            <h4 className="text-2xl md:text-3xl font-black leading-tight">{heroShowcase.restaurant}</h4>
+                            <p className="text-xs text-white/75 mt-1 line-clamp-2">{heroShowcase.line}</p>
                           </div>
-                          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">{label}</p>
                         </div>
+                        <div className="p-4 bg-[#fffaf0]">
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <span className="rounded-xl bg-navy text-white px-3 py-2 text-center text-[11px] font-black">{heroShowcase.reserve}</span>
+                            <span className="rounded-xl bg-white border border-gold/30 text-navy px-3 py-2 text-center text-[11px] font-black">{heroShowcase.menu}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              'https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=500&auto=format&fit=crop',
+                              'https://images.unsplash.com/photo-1476124369491-e7addf5db371?q=80&w=500&auto=format&fit=crop',
+                              'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?q=80&w=500&auto=format&fit=crop',
+                              'https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=500&auto=format&fit=crop',
+                            ].map((photo, index) => (
+                              <div key={photo} className="relative h-20 overflow-hidden rounded-2xl bg-stone-200">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={photo} alt={`${heroShowcase.restaurant} ${index + 1}`} className="h-full w-full object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            {heroShowcase.sections.map((section: string) => (
+                              <div key={section} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-navy shadow-sm">
+                                <Check className="w-3.5 h-3.5 text-gold" />
+                                {section}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="absolute left-[45%] top-[42%] z-20 hidden md:flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border border-gold/40 bg-navy px-4 py-2 text-xs font-black text-gold shadow-xl shadow-gold/20">
+                      <span>{heroShowcase.arrow}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </div>
+
+                    <div className="absolute right-0 bottom-0 w-[63%] max-w-[360px] rounded-[2rem] border border-white bg-white p-3 shadow-2xl shadow-stone-900/25 rotate-[2deg]">
+                      <div className="rounded-[1.5rem] overflow-hidden border border-stone-100">
+                        <div className="bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-4 text-white">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-gold">{heroShowcase.dashboard}</p>
+                              <h4 className="text-xl font-black mt-1">{mock.business}</h4>
+                            </div>
+                            <span className="rounded-full bg-white/10 border border-white/10 px-2.5 py-1 text-[10px] font-bold">{mock.period}</span>
+                          </div>
+                        </div>
+                        <div className="bg-stone-50 p-4">
+                          <div className="grid grid-cols-2 gap-2">
+                            {mock.metrics.map(([value, label]: string[], i: number) => (
+                              <div key={label} className="rounded-2xl bg-white border border-stone-100 p-3 shadow-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-xl font-black text-navy">{value}</p>
+                                  <span className={`w-7 h-7 rounded-xl flex items-center justify-center ${i === 2 ? 'bg-gold/20 text-gold' : 'bg-navy/5 text-navy'}`}>
+                                    {i === 2 ? <MessageCircle className="w-3.5 h-3.5" /> : <BarChart3 className="w-3.5 h-3.5" />}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider mt-1">{label}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 rounded-2xl bg-navy text-white p-3">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Sparkles className="w-3.5 h-3.5 text-gold" />
+                              <p className="text-xs font-black">{mock.action}</p>
+                            </div>
+                            <p className="text-[11px] text-white/70 leading-relaxed line-clamp-2">{mock.actionText}</p>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            <div className="rounded-2xl bg-white border border-stone-100 p-3">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{mock.leads}</p>
+                              {['Maria S.', 'João P.'].map((lead) => (
+                                <div key={lead} className="flex items-center justify-between gap-2 py-1 text-xs font-bold">
+                                  <span>{lead}</span>
+                                  <span className="w-1.5 h-1.5 rounded-full bg-gold" />
+                                </div>
+                              ))}
+                            </div>
+                            <div className="rounded-2xl bg-white border border-stone-100 p-3">
+                              <p className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-2">{mock.channels}</p>
+                              {['Instagram', 'QR'].map((channel, i) => (
+                                <div key={channel} className="mb-2 last:mb-0">
+                                  <div className="flex justify-between text-[10px] font-bold mb-1">
+                                    <span>{channel}</span>
+                                    <span>{i === 0 ? '52%' : '17%'}</span>
+                                  </div>
+                                  <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                                    <div className="h-full rounded-full bg-gold" style={{ width: i === 0 ? '52%' : '17%' }} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-[1.5rem] bg-navy text-white p-4 border border-white/10 overflow-hidden relative">
+                    <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gold/20 blur-2xl" />
+                    <div className="relative flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-black">{activeShowcase.title}</h4>
+                        <p className="text-sm text-white/70 mt-1 leading-relaxed">{activeShowcase.note}</p>
+                        <p className="text-xs text-gold/90 mt-2 font-bold">{heroShowcase.subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="sm:hidden mt-4 flex gap-1.5">
+                      {heroShowcase.slides.map((slide: { title: string }, index: number) => (
+                        <button
+                          key={slide.title}
+                          type="button"
+                          aria-label={slide.title}
+                          onClick={() => setShowcaseIndex(index)}
+                          className={`h-2.5 rounded-full transition-all ${index === showcaseIndex ? 'w-8 bg-gold' : 'w-2.5 bg-white/30'}`}
+                        />
                       ))}
-                    </div>
-                    <div className="mt-4 rounded-2xl bg-navy text-white p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-4 h-4 text-gold" />
-                        <p className="text-sm font-black">{mock.action}</p>
-                      </div>
-                      <p className="text-sm text-white/70 leading-relaxed">{mock.actionText}</p>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl bg-white border border-stone-100 p-4">
-                        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">{mock.leads}</p>
-                        {['Maria S.', 'João P.', 'Ana C.'].map((lead) => (
-                          <div key={lead} className="flex items-center justify-between gap-2 py-1.5 text-sm font-bold">
-                            <span>{lead}</span>
-                            <span className="w-2 h-2 rounded-full bg-gold" />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="rounded-2xl bg-white border border-stone-100 p-4">
-                        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">{mock.channels}</p>
-                        {['Instagram', 'Google', 'QR Code'].map((channel, i) => (
-                          <div key={channel} className="mb-2 last:mb-0">
-                            <div className="flex justify-between text-[11px] font-bold mb-1">
-                              <span>{channel}</span>
-                              <span>{i === 0 ? '52%' : i === 1 ? '31%' : '17%'}</span>
-                            </div>
-                            <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
-                              <div className="h-full rounded-full bg-gold" style={{ width: i === 0 ? '52%' : i === 1 ? '31%' : '17%' }} />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>

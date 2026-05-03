@@ -4,6 +4,7 @@ import Link from 'next/link'
 import {
   ThumbsUp, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
   CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download, QrCode, BarChart3,
+  ChevronDown, Layers,
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
@@ -98,6 +99,69 @@ const menuQrCopy = {
   },
 } as const
 
+const pageCollectionCopy = {
+  pt: {
+    eyebrow: 'Coleção Pro',
+    title: 'Suas landing pages no mesmo painel',
+    subtitle: 'Abra cada página para ver o link público, foco comercial e ações rápidas sem misturar informações.',
+    current: 'Atual',
+    live: 'Online',
+    openDetails: 'Abrir detalhes',
+    created: 'Criada em',
+    publicLink: 'Link público',
+    mainAction: 'Ação principal',
+    booking: 'Reserva/link ativo',
+    whatsapp: 'WhatsApp ativo',
+    menu: 'Menu ativo',
+    simpleHint: 'No Starter o dashboard fica simples, com uma página principal.',
+  },
+  en: {
+    eyebrow: 'Pro collection',
+    title: 'Your landing pages in one panel',
+    subtitle: 'Open each page to see the public link, commercial focus and quick actions without mixing information.',
+    current: 'Current',
+    live: 'Live',
+    openDetails: 'Open details',
+    created: 'Created on',
+    publicLink: 'Public link',
+    mainAction: 'Main action',
+    booking: 'Booking/link active',
+    whatsapp: 'WhatsApp active',
+    menu: 'Menu active',
+    simpleHint: 'On Starter the dashboard stays simple, with one main page.',
+  },
+  es: {
+    eyebrow: 'Colección Pro',
+    title: 'Tus landing pages en un mismo panel',
+    subtitle: 'Abre cada página para ver el enlace público, el enfoque comercial y acciones rápidas sin mezclar información.',
+    current: 'Actual',
+    live: 'Online',
+    openDetails: 'Abrir detalles',
+    created: 'Creada el',
+    publicLink: 'Enlace público',
+    mainAction: 'Acción principal',
+    booking: 'Reserva/enlace activo',
+    whatsapp: 'WhatsApp activo',
+    menu: 'Menú activo',
+    simpleHint: 'En Starter el dashboard queda simple, con una página principal.',
+  },
+  fr: {
+    eyebrow: 'Collection Pro',
+    title: 'Vos landing pages dans un seul panneau',
+    subtitle: 'Ouvrez chaque page pour voir le lien public, l’objectif commercial et les actions rapides sans mélanger les informations.',
+    current: 'Actuelle',
+    live: 'En ligne',
+    openDetails: 'Ouvrir les détails',
+    created: 'Créée le',
+    publicLink: 'Lien public',
+    mainAction: 'Action principale',
+    booking: 'Réservation/lien actif',
+    whatsapp: 'WhatsApp actif',
+    menu: 'Menu actif',
+    simpleHint: 'Avec Starter, le dashboard reste simple, avec une seule page principale.',
+  },
+} as const
+
 const QR_CHANNEL_NAME = 'Store QR Code'
 
 interface Lead {
@@ -134,6 +198,19 @@ interface SavedChannel {
   createdAt: string
 }
 
+interface OwnerPageSummary {
+  id: string
+  slug: string
+  ownerName: string
+  category: string | null
+  createdAt: string
+  bookingUrl: string | null
+  whatsappNumber: string | null
+  menuUrl: string | null
+  plan: string
+  isCurrent?: boolean
+}
+
 interface DashboardData {
   business: {
     id: string
@@ -155,6 +232,7 @@ interface DashboardData {
     pageLimit: number
     canCreateMore: boolean
   }
+  pages?: OwnerPageSummary[]
   stats: {
     totalViews: number
     bookingClicks: number
@@ -244,6 +322,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [range, setRange] = useState('30d')
   const [activeSection, setActiveSection] = useState<'overview' | 'leads' | 'channels' | 'settings'>('overview')
   const [dashboardLang, setDashboardLang] = useState<DashboardLang>('pt')
+  const [expandedPageId, setExpandedPageId] = useState('')
 
   // Campaign link creator
   const [campaignName, setCampaignName] = useState('')
@@ -542,6 +621,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
 
   const t = dashboardCopy[dashboardLang]
   const mt = menuQrCopy[dashboardLang]
+  const pt = pageCollectionCopy[dashboardLang]
 
   const { business, pageUsage, stats } = data
   const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
@@ -564,6 +644,20 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const reportLabel = isProPlan ? t.proReport : t.starterReport
   const pageLimitLabel = pageUsage.pageLimit
   const newPageHref = `/dashboard?new=1&ownerEmail=${encodeURIComponent(business.ownerEmail)}&plan=${encodeURIComponent(pageUsage.plan)}`
+  const ownerPages = (data.pages && data.pages.length > 0 ? data.pages : [{
+    id: business.id,
+    slug: business.slug,
+    ownerName: business.ownerName,
+    category: business.category,
+    createdAt: business.createdAt,
+    bookingUrl: business.bookingUrl,
+    whatsappNumber: business.whatsappNumber,
+    menuUrl: business.menuUrl,
+    plan: business.plan,
+    isCurrent: true,
+  }]) as OwnerPageSummary[]
+  const showProPageCollection = isProPlan && ownerPages.length > 1
+  const activeExpandedPageId = expandedPageId || ownerPages.find((page) => page.isCurrent)?.id || ownerPages[0]?.id
   const now = new Date()
   const weekdayLabel = now.toLocaleDateString(undefined, { weekday: 'long' })
   const lastUpdatedLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -783,6 +877,121 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             </div>
           )}
         </div>
+
+        {showProPageCollection && (
+          <div className="bg-gradient-to-br from-white via-stone-50 to-amber-50/70 rounded-3xl shadow-sm border border-gold/20 p-5 md:p-6 mb-6 overflow-hidden relative">
+            <div className="absolute -right-16 -top-16 w-44 h-44 bg-gold/20 rounded-full blur-3xl" />
+            <div className="absolute -left-20 -bottom-20 w-52 h-52 bg-navy/5 rounded-full blur-3xl" />
+            <div className="relative flex items-start justify-between gap-4 flex-wrap mb-5">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full bg-navy text-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider mb-3">
+                  <Layers className="w-3.5 h-3.5 text-gold" />
+                  {pt.eyebrow}
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-navy">{pt.title}</h2>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed">{pt.subtitle}</p>
+              </div>
+              <div className="rounded-2xl bg-white/80 border border-white shadow-sm px-4 py-3 text-right">
+                <p className="text-2xl font-black text-navy">{ownerPages.length}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{t.pagesUsed}</p>
+              </div>
+            </div>
+
+            <div className="relative space-y-3">
+              {ownerPages.map((page, index) => {
+                const isExpanded = activeExpandedPageId === page.id
+                const publicPageUrl = typeof window !== 'undefined'
+                  ? `${window.location.origin}/p/${page.slug}`
+                  : `/p/${page.slug}`
+                const mainAction = page.bookingUrl ? pt.booking : page.whatsappNumber ? pt.whatsapp : page.menuUrl ? pt.menu : pt.live
+
+                return (
+                  <div key={page.id} className="rounded-2xl bg-white/90 border border-stone-200/70 shadow-sm overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPageId(isExpanded ? '' : page.id)}
+                      className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-stone-50/80 transition-colors"
+                      aria-expanded={isExpanded}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black ${page.isCurrent ? 'bg-navy text-gold' : 'bg-stone-100 text-navy'}`}>
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-black text-navy truncate">{page.ownerName}</h3>
+                            {page.isCurrent && (
+                              <span className="rounded-full bg-gold/15 text-navy border border-gold/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                                {pt.current}
+                              </span>
+                            )}
+                            <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
+                              {pt.live}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 truncate">{page.category || 'Landing page'} · /p/{page.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="hidden md:inline-flex text-xs font-bold text-gray-400">{pt.openDetails}</span>
+                        <ChevronDown className={`w-5 h-5 text-navy transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t border-stone-100 p-4 md:p-5 bg-gradient-to-br from-stone-50 to-white">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.created}</p>
+                            <p className="font-bold text-navy">{new Date(page.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.mainAction}</p>
+                            <p className="font-bold text-navy">{mainAction}</p>
+                          </div>
+                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
+                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.publicLink}</p>
+                            <p className="font-mono text-xs text-navy/70 truncate">{publicPageUrl}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <a
+                            href={`/p/${page.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 bg-navy text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-navy/90 transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            {t.openPage}
+                          </a>
+                          {page.isCurrent ? (
+                            <button
+                              type="button"
+                              onClick={handleCopyPageUrl}
+                              className="inline-flex items-center gap-2 bg-white border border-stone-200 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
+                            >
+                              {pageUrlCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                              {pageUrlCopied ? t.copied : t.copyPage}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => navigator.clipboard?.writeText(publicPageUrl)}
+                              className="inline-flex items-center gap-2 bg-white border border-stone-200 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
+                            >
+                              <Copy className="w-4 h-4" />
+                              {t.copyPage}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Simple navigation ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-2 mb-6 grid grid-cols-2 md:grid-cols-4 gap-2">

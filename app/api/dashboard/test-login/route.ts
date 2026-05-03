@@ -8,36 +8,70 @@ export async function POST() {
 
     const payload = {
       slug: 'vitrine-test-demo',
-      owner_name: 'Vitrine Test Studio',
+      owner_name: 'Casa Aurora Bistro',
       owner_email: 'test@vitrine.local',
-      category: 'Beauty Studio',
-      description: 'Demo landing page used to test the dashboard, WhatsApp and booking buttons.',
-      address: 'Demo Street 123, Lisbon',
+      category: 'Restaurant',
+      description: 'Um bistro acolhedor com pratos de autor, ambiente elegante e reservas rápidas para almoço, jantar e grupos especiais.',
+      address: 'Rua das Flores 55, Porto, Portugal',
       phone: '+351 910 000 000',
-      lang: 'en',
+      lang: 'pt',
       plan: 'pro',
       services: [
-        { name: 'Consultation', price: '25' },
-        { name: 'Premium Service', price: '65' },
+        {
+          name: 'Brunch de assinatura',
+          price: '',
+          description: 'Pratos frescos, pães artesanais, ovos cremosos e ingredientes locais para começar o dia com calma.',
+          photo: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?q=80&w=1200&auto=format&fit=crop',
+        },
+        {
+          name: 'Risotto da estação',
+          price: '',
+          description: 'Uma sugestão quente da cozinha, preparada com legumes da época e finalização delicada.',
+          photo: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?q=80&w=1200&auto=format&fit=crop',
+        },
+        {
+          name: 'Mesa para partilhar',
+          price: '',
+          description: 'Entradas, queijos, saladas e pratos pequenos pensados para grupos e encontros especiais.',
+          photo: 'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?q=80&w=1200&auto=format&fit=crop',
+        },
+        {
+          name: 'Sobremesa da casa',
+          price: '',
+          description: 'Uma criação doce, leve e elegante para fechar a experiência sem pressa.',
+          photo: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?q=80&w=1200&auto=format&fit=crop',
+        },
       ],
       hours: [
-        { day: 'Monday', open: true, from: '09:00', to: '18:00' },
-        { day: 'Tuesday', open: true, from: '09:00', to: '18:00' },
-        { day: 'Wednesday', open: true, from: '09:00', to: '18:00' },
-        { day: 'Thursday', open: true, from: '09:00', to: '18:00' },
-        { day: 'Friday', open: true, from: '09:00', to: '18:00' },
-        { day: 'Saturday', open: true, from: '10:00', to: '16:00' },
-        { day: 'Sunday', open: false, from: '09:00', to: '18:00' },
+        { day: 'Segunda', open: false, from: '12:00', to: '22:00' },
+        { day: 'Terça', open: true, from: '12:00', to: '22:00' },
+        { day: 'Quarta', open: true, from: '12:00', to: '22:00' },
+        { day: 'Quinta', open: true, from: '12:00', to: '22:30' },
+        { day: 'Sexta', open: true, from: '12:00', to: '23:00' },
+        { day: 'Sábado', open: true, from: '10:00', to: '23:00' },
+        { day: 'Domingo', open: true, from: '10:00', to: '16:00' },
       ],
       photos: [
-        'https://picsum.photos/seed/vitrine-test-hero/1920/1080',
-        'https://picsum.photos/seed/vitrine-test-about/900/700',
-        'https://picsum.photos/seed/vitrine-test-gallery-1/900/700',
-        'https://picsum.photos/seed/vitrine-test-gallery-2/900/700',
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1920&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=1200&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1200&auto=format&fit=crop',
       ],
-      booking_url: 'https://calendly.com/demo',
+      benefits: ['Ambiente elegante e acolhedor', 'Reservas rápidas pelo WhatsApp', 'Destaques visuais dos pratos', 'Perfeito para almoço, jantar e grupos'],
+      testimonials: [
+        { name: 'Mariana S.', text: 'O espaço é lindo, a comida chegou impecável e reservei mesa em poucos segundos.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+        { name: 'Tiago R.', text: 'A página mostrou o ambiente e os pratos antes da reserva. Muito fácil escolher.', rating: 5, photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
+      ],
+      faqs: [
+        { question: 'É possível reservar mesa pelo WhatsApp?', answer: 'Sim. O botão abre uma mensagem pronta para confirmar dia, hora e número de pessoas.' },
+        { question: 'A página mostra preços?', answer: 'Não. Este modelo valoriza a experiência, os pratos e a reserva, sem lista de preços.' },
+        { question: 'Funciona para restaurantes, cafés e bares?', answer: 'Sim. A estrutura pode ser adaptada para menus, brunch, jantar, eventos ou delivery.' },
+      ],
+      social_links: { contactMethods: ['whatsapp', 'booking'] },
+      booking_url: 'https://www.opentable.com/',
       whatsapp_number: '+351910000000',
-      whatsapp_message: 'Hello! I found your page and would like to book an appointment.',
+      whatsapp_message: 'Olá! Vi a página da Casa Aurora Bistro e quero reservar uma mesa.',
     }
 
     let { data, error } = await db
@@ -64,12 +98,83 @@ export async function POST() {
       return NextResponse.json({ error: error?.message ?? 'Could not create test login' }, { status: 500 })
     }
 
+    await upsertProCompanionPages(db)
     await seedDemoAnalytics(db, data.id)
 
     return NextResponse.json({ slug: data.slug, token: data.secret_token })
   } catch (err) {
     console.error('POST /api/dashboard/test-login error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+async function upsertProCompanionPages(db: ReturnType<typeof createServiceClient>) {
+  const pages = [
+    {
+      slug: 'vitrine-test-brunch',
+      owner_name: 'Aurora Brunch Club',
+      owner_email: 'test@vitrine.local',
+      category: 'Café & Brunch',
+      description: 'Uma página extra para brunch, eventos pequenos e reservas de fim de semana.',
+      address: 'Rua das Flores 55, Porto, Portugal',
+      phone: '+351 910 000 000',
+      lang: 'pt',
+      plan: 'pro',
+      services: [
+        { name: 'Brunch de fim de semana', price: '', description: 'Mesa completa com opções doces, salgadas e bebidas especiais.' },
+        { name: 'Café de especialidade', price: '', description: 'Seleção da casa para manhãs e encontros leves.' },
+      ],
+      photos: [
+        'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1400&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?q=80&w=1200&auto=format&fit=crop',
+      ],
+      booking_url: 'https://www.opentable.com/',
+      whatsapp_number: '+351910000000',
+      whatsapp_message: 'Olá! Quero reservar uma mesa para brunch.',
+    },
+    {
+      slug: 'vitrine-test-eventos',
+      owner_name: 'Aurora Private Dining',
+      owner_email: 'test@vitrine.local',
+      category: 'Eventos gastronómicos',
+      description: 'Uma página dedicada a jantares privados, aniversários e experiências em grupo.',
+      address: 'Rua das Flores 55, Porto, Portugal',
+      phone: '+351 910 000 000',
+      lang: 'pt',
+      plan: 'pro',
+      services: [
+        { name: 'Jantar privado', price: '', description: 'Experiência personalizada para grupos, equipa ou família.' },
+        { name: 'Menu de celebração', price: '', description: 'Sequência especial criada para datas importantes.' },
+      ],
+      photos: [
+        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?q=80&w=1400&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1200&auto=format&fit=crop',
+      ],
+      booking_url: 'https://www.opentable.com/',
+      whatsapp_number: '+351910000000',
+      whatsapp_message: 'Olá! Quero informações sobre um jantar privado.',
+    },
+  ]
+
+  let { error } = await db
+    .from('businesses')
+    .upsert(pages, { onConflict: 'slug', ignoreDuplicates: false })
+
+  if (error && (error.message?.includes('plan') || error.message?.includes('whatsapp_message'))) {
+    const fallbackPages = pages.map((page) => {
+      const fallback: Record<string, unknown> = { ...page }
+      if (error?.message?.includes('plan')) delete fallback.plan
+      if (error?.message?.includes('whatsapp_message')) delete fallback.whatsapp_message
+      return fallback
+    })
+    const fallback = await db
+      .from('businesses')
+      .upsert(fallbackPages, { onConflict: 'slug', ignoreDuplicates: false })
+    error = fallback.error
+  }
+
+  if (error) {
+    console.warn('Could not seed companion Pro demo pages:', error.message)
   }
 }
 
@@ -112,7 +217,7 @@ async function seedDemoAnalytics(db: ReturnType<typeof createServiceClient>, bus
       business_id: businessId,
       visitor_name: 'Maria Silva',
       visitor_email: 'maria@example.com',
-      message: 'Hi! I saw your page on Instagram and would like to book a consultation this week.',
+      message: 'Olá! Vi a página no Instagram e quero reservar mesa para este fim de semana.',
       via: 'instagram-bio',
       submitted_at: minutesAgo(6),
     },
@@ -120,7 +225,7 @@ async function seedDemoAnalytics(db: ReturnType<typeof createServiceClient>, bus
       business_id: businessId,
       visitor_name: 'João Pereira',
       visitor_email: 'joao@example.com',
-      message: 'I came from Google and want to know available times for Saturday.',
+      message: 'Encontrei pelo Google e queria confirmar disponibilidade para sábado à noite.',
       via: 'google-profile',
       submitted_at: minutesAgo(18),
     },
@@ -128,7 +233,7 @@ async function seedDemoAnalytics(db: ReturnType<typeof createServiceClient>, bus
       business_id: businessId,
       visitor_name: 'Ana Costa',
       visitor_email: 'ana@example.com',
-      message: 'Can you send me more information about the premium service?',
+      message: 'Gostei do ambiente. Vocês recebem grupos pequenos para jantar?',
       via: 'whatsapp-status',
       submitted_at: minutesAgo(52),
     },
@@ -136,7 +241,7 @@ async function seedDemoAnalytics(db: ReturnType<typeof createServiceClient>, bus
       business_id: businessId,
       visitor_name: 'Beatriz Almeida',
       visitor_email: 'beatriz@example.com',
-      message: 'I found you through the QR flyer and want to book for next Friday.',
+      message: 'Vi o QR Code e quero reservar para sexta-feira.',
       via: 'flyer-qr',
       submitted_at: minutesAgo(548),
     },
@@ -144,7 +249,7 @@ async function seedDemoAnalytics(db: ReturnType<typeof createServiceClient>, bus
       business_id: businessId,
       visitor_name: 'Carlos Mendes',
       visitor_email: 'carlos@example.com',
-      message: 'Do you have appointments after 6pm? I came from Instagram stories.',
+      message: 'Vi nos stories. Têm mesa depois das 20h?',
       via: 'instagram-story',
       submitted_at: minutesAgo(320),
     },

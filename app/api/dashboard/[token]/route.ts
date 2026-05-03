@@ -53,6 +53,21 @@ async function findBusinessByToken(db: ReturnType<typeof createServiceClient>, t
   return { business: null, error: lastError }
 }
 
+async function findOwnerPages(db: ReturnType<typeof createServiceClient>, ownerEmail: string): Promise<any[]> {
+  for (const select of businessSelects) {
+    const result = await db
+      .from('businesses')
+      .select(select)
+      .eq('owner_email', ownerEmail)
+      .order('created_at', { ascending: false })
+
+    if (!result.error) return (result.data ?? []) as any[]
+    if (!missingColumnError(result.error)) break
+  }
+
+  return []
+}
+
 // GET /api/dashboard/[token] — return stats for the owner dashboard
 export async function GET(
   req: NextRequest,
@@ -85,6 +100,8 @@ export async function GET(
     .from('businesses')
     .select('id', { count: 'exact', head: true })
     .eq('owner_email', business.owner_email)
+
+  const ownerPages = await findOwnerPages(db, business.owner_email)
 
   // Total page views
   let totalViewsQuery = db
@@ -207,6 +224,18 @@ export async function GET(
       pageLimit,
       canCreateMore: (pagesUsed ?? 1) < pageLimit,
     },
+    pages: ownerPages.map((page) => ({
+      id: page.id,
+      slug: page.slug,
+      ownerName: page.owner_name,
+      category: page.category,
+      createdAt: page.created_at,
+      bookingUrl: page.booking_url ?? null,
+      whatsappNumber: page.whatsapp_number ?? null,
+      menuUrl: page.menu_url ?? null,
+      plan: normalizePlan(page.plan || plan),
+      isCurrent: page.id === business.id,
+    })),
     stats: {
       totalViews: totalViews ?? 0,
       bookingClicks: bookingClicks ?? 0,

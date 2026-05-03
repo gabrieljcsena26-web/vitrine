@@ -21,6 +21,38 @@ const normalizeSource = (source: string | null) => {
   return value || 'direct'
 }
 
+const missingColumnError = (error: { code?: string; message?: string } | null) => (
+  error?.code === '42703' ||
+  Boolean(error?.message?.includes('does not exist')) ||
+  Boolean(error?.message?.includes('schema cache'))
+)
+
+const businessSelects = [
+  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, menu_url, menu_image_url, whatsapp_message, plan',
+  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, whatsapp_message, plan',
+  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, whatsapp_message',
+  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number',
+  'id, slug, owner_name, owner_email, category, created_at',
+]
+
+async function findBusinessByToken(db: ReturnType<typeof createServiceClient>, token: string): Promise<{ business: any | null; error: any | null }> {
+  let lastError = null
+
+  for (const select of businessSelects) {
+    const result = await db
+      .from('businesses')
+      .select(select)
+      .eq('secret_token', token)
+      .single()
+
+    if (!result.error) return { business: result.data, error: null }
+    lastError = result.error
+    if (!missingColumnError(result.error)) break
+  }
+
+  return { business: null, error: lastError }
+}
+
 // GET /api/dashboard/[token] — return stats for the owner dashboard
 export async function GET(
   req: NextRequest,
@@ -37,27 +69,9 @@ export async function GET(
 
   const db = createServiceClient()
 
-  // Look up business by secret token
-  const baseBusinessSelect = 'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, menu_url, menu_image_url'
-  const businessResult = await db
-    .from('businesses')
-    .select(`${baseBusinessSelect}, whatsapp_message, plan`)
-    .eq('secret_token', token)
-    .single()
-
-  let business: any = businessResult.data
-  let bizError = businessResult.error
-
-  if (bizError && (bizError.message?.includes('whatsapp_message') || bizError.message?.includes('plan') || bizError.message?.includes('menu_url') || bizError.message?.includes('menu_image_url'))) {
-    const fallback = await db
-      .from('businesses')
-      .select(baseBusinessSelect)
-      .eq('secret_token', token)
-      .single()
-
-    business = fallback.data
-    bizError = fallback.error
-  }
+  // Look up business by secret token. Some deployments may not have every new
+  // optional column yet, so progressively retry with older schema shapes.
+  const { business, error: bizError } = await findBusinessByToken(db, token)
 
   if (bizError || !business) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })

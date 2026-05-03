@@ -88,6 +88,7 @@ const landingPreviews = [
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('pt')
   const t = homeCopy[lang]
+  const mock = t.dashboardMock
   const starterFeatures = {
     pt: ['1 página publicada', 'Preview com suas fotos', 'QR Code da página', 'Relatório a cada 14 dias', 'Dashboard básico'],
     en: ['1 published page', 'Preview with your photos', 'Page QR Code', 'Report every 14 days', 'Basic dashboard'],
@@ -114,43 +115,43 @@ export default function HomePage() {
   }[lang]
   const credibility = {
     pt: {
-      eyebrow: 'Confiança desde o primeiro clique',
-      title: 'Mais do que uma página bonita: uma presença que passa profissionalismo.',
-      text: 'Cores elegantes, botões claros, prova visual, avaliações, mapa, idiomas e métricas — tudo pensado para o cliente sentir segurança antes de chamar você.',
+      eyebrow: 'Por que escolher a Vitrine',
+      title: 'Confiança, leads e ação no mesmo lugar.',
+      text: 'Uma landing bonita para passar profissionalismo, botões claros para gerar WhatsApp ou booking, QR para campanhas e um dashboard simples para acompanhar visitas, leads e melhores canais.',
       cards: [
-        ['Aparência premium', 'Design limpo com contraste navy e dourado para transmitir seriedade, cuidado e valor.'],
-        ['Feito para negócios locais', 'Funciona para serviços, beleza, saúde, limpeza, fitness e negócios de comida que precisam de cardápio.'],
-        ['QR Code que gera ação', 'Use QR em loja, mesa, flyer ou sacola e veja visitas e cliques no dashboard.'],
+        ['Aparência premium', 'Fotos, prova visual, avaliações, mapa e idiomas numa página que transmite seriedade.'],
+        ['Leads sem complicação', 'Visitantes chegam ao WhatsApp, booking ou formulário com menos passos e mais intenção.'],
+        ['QR + dashboard', 'Use QR em loja, mesa, flyer ou sacola e veja visitas, cliques, leads e canais fortes.'],
       ],
     },
     en: {
-      eyebrow: 'Trust from the first click',
-      title: 'More than a pretty page: a presence that feels professional.',
-      text: 'Elegant colors, clear buttons, visual proof, reviews, map, languages and metrics — designed to make customers feel safe before contacting you.',
+      eyebrow: 'Why choose Vitrine',
+      title: 'Trust, leads and action in one place.',
+      text: 'A polished landing page to build confidence, clear buttons for WhatsApp or booking, QR for campaigns and a simple dashboard to track visits, leads and top channels.',
       cards: [
-        ['Premium appearance', 'Clean design with navy and gold contrast to communicate care, seriousness and value.'],
-        ['Built for local businesses', 'Works for services, beauty, health, cleaning, fitness and food businesses that need a menu.'],
-        ['QR Code that drives action', 'Use QR in-store, on tables, flyers or bags and track visits and clicks in the dashboard.'],
+        ['Premium appearance', 'Photos, visual proof, reviews, map and languages in a page that feels serious.'],
+        ['Leads without friction', 'Visitors reach WhatsApp, booking or the form with fewer steps and stronger intent.'],
+        ['QR + dashboard', 'Use QR in-store, on tables, flyers or bags and track visits, clicks, leads and top channels.'],
       ],
     },
     es: {
-      eyebrow: 'Confianza desde el primer clic',
-      title: 'Más que una página bonita: una presencia que se siente profesional.',
-      text: 'Colores elegantes, botones claros, prueba visual, reseñas, mapa, idiomas y métricas — pensado para que el cliente se sienta seguro antes de contactarte.',
+      eyebrow: 'Por qué elegir Vitrine',
+      title: 'Confianza, leads y acción en un solo lugar.',
+      text: 'Una landing bonita para transmitir profesionalismo, botones claros para WhatsApp o reservas, QR para campañas y un dashboard simple para seguir visitas, leads y mejores canales.',
       cards: [
-        ['Apariencia premium', 'Diseño limpio con contraste navy y dorado para transmitir cuidado, seriedad y valor.'],
-        ['Hecho para negocios locales', 'Funciona para servicios, belleza, salud, limpieza, fitness y negocios de comida que necesitan menú.'],
-        ['QR Code que genera acción', 'Usa QR en tienda, mesas, flyers o bolsas y mide visitas y clics en el dashboard.'],
+        ['Apariencia premium', 'Fotos, prueba visual, reseñas, mapa e idiomas en una página que transmite seriedad.'],
+        ['Leads sin fricción', 'Visitantes llegan a WhatsApp, reservas o formulario con menos pasos y más intención.'],
+        ['QR + dashboard', 'Usa QR en tienda, mesas, flyers o bolsas y mide visitas, clics, leads y canales fuertes.'],
       ],
     },
     fr: {
-      eyebrow: 'Confiance dès le premier clic',
-      title: 'Plus qu’une belle page : une présence qui inspire le professionnalisme.',
-      text: 'Couleurs élégantes, boutons clairs, preuve visuelle, avis, carte, langues et métriques — conçu pour rassurer le client avant le contact.',
+      eyebrow: 'Pourquoi choisir Vitrine',
+      title: 'Confiance, leads et action au même endroit.',
+      text: 'Une landing page soignée pour inspirer confiance, des boutons clairs pour WhatsApp ou réservation, QR pour campagnes et dashboard simple pour suivre visites, leads et meilleurs canaux.',
       cards: [
-        ['Image premium', 'Design clair avec contraste navy et or pour transmettre soin, sérieux et valeur.'],
-        ['Pour entreprises locales', 'Fonctionne pour services, beauté, santé, nettoyage, fitness et commerces alimentaires avec menu.'],
-        ['QR Code orienté action', 'Utilisez le QR en boutique, sur tables, flyers ou sacs et suivez visites et clics dans le dashboard.'],
+        ['Image premium', 'Photos, preuve visuelle, avis, carte et langues dans une page qui inspire le sérieux.'],
+        ['Leads sans friction', 'Les visiteurs arrivent sur WhatsApp, réservation ou formulaire avec moins d’étapes.'],
+        ['QR + dashboard', 'Utilisez le QR en boutique, sur tables, flyers ou sacs et suivez visites, clics, leads et canaux forts.'],
       ],
     },
   }[lang]
@@ -190,51 +191,124 @@ export default function HomePage() {
       <section className="relative pt-32 pb-24 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
         <div className="relative max-w-6xl mx-auto">
-          <div className="max-w-4xl">
-            <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-4 py-2 mb-8">
-              <Zap className="w-4 h-4 text-gold" />
-              <span className="text-gold text-sm font-medium">{t.badge}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_0.92fr] gap-10 items-center">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-4 py-2 mb-8">
+                <Zap className="w-4 h-4 text-gold" />
+                <span className="text-gold text-sm font-medium">{t.badge}</span>
+              </div>
+              <h1 className="text-5xl md:text-6xl xl:text-7xl font-bold leading-tight mb-6">
+                {t.heroTitle}
+                <span className="text-gold">{t.heroAccent}</span>
+              </h1>
+              <p className="text-xl text-gray-400 mb-10 max-w-2xl">
+                {t.heroText}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/dashboard"
+                  className="bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/20 flex items-center gap-2 justify-center"
+                >
+                  {t.primaryCta}
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="bg-white/10 border border-white/20 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all flex items-center gap-2 justify-center"
+                >
+                  {t.secondaryCta}
+                </Link>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-10 max-w-xl">
+                {t.stats.map(([value, label]: string[]) => (
+                  <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-2xl font-black text-white">{value}</p>
+                    <p className="text-xs text-gray-400 mt-1">{label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2 max-w-2xl">
+                {trustPills.map((pill: string) => (
+                  <span key={pill} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-gray-200">
+                    <Check className="w-3.5 h-3.5 text-gold" />
+                    {pill}
+                  </span>
+                ))}
+              </div>
+              <div className="md:hidden mt-6">
+                <LanguageSwitcher lang={lang} setLang={(value) => setLang(value as Lang)} />
+              </div>
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-              {t.heroTitle}
-              <span className="text-gold">{t.heroAccent}</span>
-            </h1>
-            <p className="text-xl text-gray-400 mb-10 max-w-2xl">
-              {t.heroText}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/dashboard"
-                className="bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/20 flex items-center gap-2 justify-center"
-              >
-                {t.primaryCta}
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/login"
-                className="bg-white/10 border border-white/20 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all flex items-center gap-2 justify-center"
-              >
-                {t.secondaryCta}
-              </Link>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mt-10 max-w-xl">
-              {t.stats.map(([value, label]: string[]) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-2xl font-black text-white">{value}</p>
-                  <p className="text-xs text-gray-400 mt-1">{label}</p>
+
+            <div className="relative">
+              <div className="absolute -inset-6 rounded-[3rem] bg-gold/20 blur-3xl" />
+              <div className="relative rounded-[2.25rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/40 backdrop-blur">
+                <div className="rounded-[1.75rem] bg-white text-navy overflow-hidden">
+                  <div className="bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-5 text-white">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.22em] text-gold">{mock.title}</p>
+                        <h3 className="text-2xl font-black mt-1">{mock.business}</h3>
+                      </div>
+                      <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-bold">{mock.period}</span>
+                    </div>
+                    <div className="mt-5 flex gap-2 overflow-hidden">
+                      {mock.tabs.map((tab: string, i: number) => (
+                        <span key={tab} className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold ${i === 0 ? 'bg-gold text-navy' : 'bg-white/10 text-white/70'}`}>
+                          {tab}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="p-5 bg-stone-50">
+                    <div className="grid grid-cols-2 gap-3">
+                      {mock.metrics.map(([value, label]: string[], i: number) => (
+                        <div key={label} className="rounded-2xl bg-white border border-stone-100 p-4 shadow-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-2xl font-black text-navy">{value}</p>
+                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center ${i === 2 ? 'bg-gold/20 text-gold' : 'bg-navy/5 text-navy'}`}>
+                              {i === 2 ? <MessageCircle className="w-4 h-4" /> : <BarChart3 className="w-4 h-4" />}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mt-1">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 rounded-2xl bg-navy text-white p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-gold" />
+                        <p className="text-sm font-black">{mock.action}</p>
+                      </div>
+                      <p className="text-sm text-white/70 leading-relaxed">{mock.actionText}</p>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl bg-white border border-stone-100 p-4">
+                        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">{mock.leads}</p>
+                        {['Maria S.', 'João P.', 'Ana C.'].map((lead) => (
+                          <div key={lead} className="flex items-center justify-between gap-2 py-1.5 text-sm font-bold">
+                            <span>{lead}</span>
+                            <span className="w-2 h-2 rounded-full bg-gold" />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="rounded-2xl bg-white border border-stone-100 p-4">
+                        <p className="text-xs font-black uppercase tracking-wider text-gray-400 mb-3">{mock.channels}</p>
+                        {['Instagram', 'Google', 'QR Code'].map((channel, i) => (
+                          <div key={channel} className="mb-2 last:mb-0">
+                            <div className="flex justify-between text-[11px] font-bold mb-1">
+                              <span>{channel}</span>
+                              <span>{i === 0 ? '52%' : i === 1 ? '31%' : '17%'}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
+                              <div className="h-full rounded-full bg-gold" style={{ width: i === 0 ? '52%' : i === 1 ? '31%' : '17%' }} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
-            <div className="mt-6 flex flex-wrap gap-2 max-w-2xl">
-              {trustPills.map((pill: string) => (
-                <span key={pill} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-gray-200">
-                  <Check className="w-3.5 h-3.5 text-gold" />
-                  {pill}
-                </span>
-              ))}
-            </div>
-            <div className="md:hidden mt-6">
-              <LanguageSwitcher lang={lang} setLang={(value) => setLang(value as Lang)} />
+              </div>
             </div>
           </div>
 
@@ -273,7 +347,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trust and prestige */}
+      {/* Trust, leads and growth */}
       <section className="py-20 px-4 bg-gradient-to-br from-[#fffaf0] via-white to-stone-50 text-navy border-y border-stone-100">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
           <div>
@@ -286,8 +360,8 @@ export default function HomePage() {
             <div className="grid grid-cols-3 gap-3 max-w-lg">
               {[
                 ['5★', 'Trust'],
-                ['QR', 'Action'],
-                ['24/7', 'Online'],
+                ['Leads', 'Contacts'],
+                ['QR', 'Tracking'],
               ].map(([value, label]) => (
                 <div key={label} className="rounded-2xl bg-white border border-gold/20 p-4 shadow-sm">
                   <p className="text-2xl font-black text-navy">{value}</p>
@@ -309,38 +383,6 @@ export default function HomePage() {
                 </div>
               )
             })}
-          </div>
-        </div>
-      </section>
-
-      {/* Direct value section */}
-      <section className="py-20 px-4 bg-white text-navy border-y border-stone-100">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
-            <div>
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">{t.valueEyebrow}</span>
-              <h2 className="text-4xl md:text-5xl font-black mt-2 mb-5">
-                {t.valueTitle}
-              </h2>
-              <p className="text-gray-500 text-lg leading-relaxed mb-6">
-                {t.valueText}
-              </p>
-              <Link href="/dashboard" className="inline-flex items-center gap-2 bg-navy text-white px-6 py-3 rounded-full font-bold hover:bg-navy/90 transition-colors">
-                {t.demoCta}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {t.valueCards.map(([title, desc]: string[], i: number) => (
-                <div key={title} className="group rounded-3xl border border-stone-100 bg-stone-50 p-5 hover:border-gold/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/10 transition-all">
-                  <div className="w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
-                    {i === 0 ? <MessageCircle className="w-5 h-5" /> : i === 1 ? <CalendarDays className="w-5 h-5" /> : i === 2 ? <Globe2 className="w-5 h-5" /> : <BarChart3 className="w-5 h-5" />}
-                  </div>
-                  <p className="font-black text-navy text-lg mb-1">{title}</p>
-                  <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>

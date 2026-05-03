@@ -1,16 +1,16 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { ThumbsUp, Upload, FileText, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Eye, Users, MousePointerClick, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ThumbsUp, Upload, FileText, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Eye, Users, MousePointerClick, Sparkles, ChevronLeft, ChevronRight, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type Lang = 'pt' | 'es' | 'en' | 'fr'
 
 const homeCopy = {
   pt: {
-    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login teste', getStarted: 'Começar', badge: 'Landing page + leads + dashboard',
-    heroTitle: 'Monte a landing page do seu negócio', heroAccent: ' em minutos.',
-    heroText: 'Vitrine cria uma página profissional para o seu negócio, com WhatsApp, agendamento, fotos, avaliações, idiomas e um dashboard simples para acompanhar resultados.',
+    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login teste', getStarted: 'Começar', badge: 'Presença online premium para negócios locais',
+    heroTitle: 'Seu negócio com aparência profissional, confiável e pronta para vender', heroAccent: ' em minutos.',
+    heroText: 'A Vitrine transforma fotos, serviços, cardápios, WhatsApp e agendamentos numa página bonita, rápida e fácil de compartilhar — com dashboard para acompanhar resultados.',
     primaryCta: 'Criar minha página', secondaryCta: 'Abrir dashboard demo', stats: [['4', 'Idiomas'], ['2', 'Planos'], ['24/7', 'Página online']],
     includedEyebrow: 'O que está incluído', includedTitle: 'Tudo para colocar seu negócio online com aparência profissional.', includedText: 'Um setup guiado, seções prontas e um dashboard claro para qualquer dono de negócio local.',
     features: [
@@ -26,7 +26,7 @@ const homeCopy = {
       ['Base de SEO local', 'Metadados, sitemap e estrutura para negócio local.'],
       ['Dashboard simples', 'Veja visitas, leads, canais e próxima ação recomendada.'],
     ],
-    previewEyebrow: 'Prévia da página', previewTitle: 'Qualquer negócio pode virar uma Vitrine bonita e fácil de compartilhar.', previewText: 'No setup você escolhe o tipo de negócio, adiciona suas fotos e monta uma página acolhedora para salão, barbearia, restaurante, limpeza, estética, fitness e muito mais.',
+    previewEyebrow: 'Prévia da página', previewTitle: 'Qualquer negócio pode virar uma Vitrine bonita e fácil de compartilhar.', previewText: 'No setup você escolhe o tipo de negócio, adiciona suas fotos e monta uma página acolhedora para salão, barbearia, negócios de comida com cardápio, limpeza, estética, fitness e muito mais.',
     previewCards: [['Foto principal', 'Primeira impressão'], ['Sobre o negócio', 'História e confiança'], ['Serviços', 'Ofertas claras'], ['Galeria', 'Prova visual']],
     processEyebrow: 'Processo simples', processTitle: 'Como funciona',
     steps: [['01', 'Crie sua página', 'Use o setup guiado para montar a estrutura principal.'], ['02', 'Adicione seu negócio', 'Preencha informações, fotos, serviços e horários.'], ['03', 'Compartilhe o link', 'Publique no Instagram, WhatsApp, Google e materiais com QR Code.']],
@@ -44,17 +44,17 @@ const homeCopy = {
     features: [['Upload photos', 'Add your best business photos. Vitrine organizes them into a beautiful page.'], ['Fill your details', 'Add name, services, hours, location and contacts in a few minutes.'], ['Publish fast', 'Your landing page is ready to share on Instagram, WhatsApp and Google.']],
     valueEyebrow: 'Built for selling', valueTitle: 'A simple page to turn visitors into real contacts.', valueText: 'No complicated website: your business gets one focused page with WhatsApp, booking, photos, reviews, location and easy metrics.', demoCta: 'View commercial demos',
     valueCards: [['WhatsApp first', 'Move visitors straight into a conversation.'], ['Booking ready', 'Connect the calendar or platform you already use.'], ['Local SEO base', 'Metadata, sitemap and local business structure.'], ['Simple dashboard', 'See visits, leads, channels and the recommended next action.']],
-    previewEyebrow: 'Page preview', previewTitle: 'Any business can become a beautiful Vitrine that is easy to share.', previewText: 'In the setup you choose the business type, add your photos and build a welcoming page for salons, barbershops, restaurants, cleaning, beauty, fitness and more.',
+    previewEyebrow: 'Page preview', previewTitle: 'Any business can become a beautiful Vitrine that is easy to share.', previewText: 'In the setup you choose the business type, add your photos and build a welcoming page for salons, barbershops, food businesses with menus, cleaning, beauty, fitness and more.',
     previewCards: [['Hero photo', 'First impression'], ['About the business', 'Trust and story'], ['Services', 'Clear offers'], ['Gallery', 'Visual proof']],
     processEyebrow: 'Simple process', processTitle: 'How it works', steps: [['01', 'Create your page', 'Use the guided setup to build the main structure.'], ['02', 'Add your business', 'Fill in details, photos, services and opening hours.'], ['03', 'Share the link', 'Post it on Instagram, WhatsApp, Google and QR materials.']],
     plansEyebrow: 'Plans', plansTitle: 'Choose the page capacity', plansText: 'Plan capacity is ready; commercial terms stay private during beta.', starterDesc: 'Perfect for one business page', proDesc: 'For multiple services or locations', popular: 'Most popular', startStarter: 'Start Starter', choosePro: 'Choose Pro',
     readyTags: ['Ready demos', 'WhatsApp leads', 'SEO foundation'], readyTitle: 'Ready to go live?', readyText: 'Create a professional page and see exactly how your business can appear online.', readyCta: 'Create a demo page', footerDemo: 'Demo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Vitrine Dashboard', business: 'Luna Studio', period: '30 days', tabs: ['Overview', 'Leads', 'Channels', 'Settings'], metrics: [['128', 'Visits'], ['34', 'Actions'], ['12', 'Leads'], ['9.4%', 'Conversion']], action: 'Recommended action', actionText: 'Instagram is your strongest channel. Keep sharing there and test an in-store QR Code.', leads: 'Recent leads', channels: 'Top channels' },
   },
   es: {
-    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login de prueba', getStarted: 'Empezar', badge: 'Landing page + leads + dashboard', heroTitle: 'Crea la landing page de tu negocio', heroAccent: ' en minutos.', heroText: 'Vitrine crea una página profesional para tu negocio con WhatsApp, reservas, fotos, reseñas, idiomas y un dashboard simple para seguir resultados.', primaryCta: 'Crear mi página', secondaryCta: 'Abrir dashboard demo', stats: [['4', 'Idiomas'], ['2', 'Planes'], ['24/7', 'Página online']], includedEyebrow: 'Qué incluye', includedTitle: 'Todo para poner tu negocio online con aspecto profesional.', includedText: 'Un setup guiado, secciones listas y un dashboard claro para cualquier dueño de negocio local.', features: [['Sube fotos', 'Agrega las mejores fotos de tu negocio. Vitrine las organiza en una página bonita.'], ['Completa tus datos', 'Añade nombre, servicios, horarios, ubicación y contactos en minutos.'], ['Publica rápido', 'Tu landing page queda lista para compartir en Instagram, WhatsApp y Google.']], valueEyebrow: 'Hecho para vender', valueTitle: 'Una página simple para convertir visitantes en contactos reales.', valueText: 'Sin sitio complicado: tu negocio gana una vitrina enfocada con WhatsApp, reservas, fotos, reseñas, ubicación y métricas fáciles.', demoCta: 'Ver demos comerciales', valueCards: [['WhatsApp primero', 'Lleva visitantes directo a una conversación.'], ['Reservas listas', 'Conecta el calendario o plataforma que ya usas.'], ['Base SEO local', 'Metadatos, sitemap y estructura para negocio local.'], ['Dashboard simple', 'Ve visitas, leads, canales y la próxima acción recomendada.']], previewEyebrow: 'Vista previa', previewTitle: 'Cualquier negocio puede convertirse en una Vitrine bonita y fácil de compartir.', previewText: 'En el setup eliges el tipo de negocio, agregas tus fotos y creas una página acogedora para salones, barberías, restaurantes, limpieza, estética, fitness y más.', previewCards: [['Foto principal', 'Primera impresión'], ['Sobre el negocio', 'Confianza e historia'], ['Servicios', 'Ofertas claras'], ['Galería', 'Prueba visual']], processEyebrow: 'Proceso simple', processTitle: 'Cómo funciona', steps: [['01', 'Crea tu página', 'Usa el setup guiado para construir la estructura principal.'], ['02', 'Añade tu negocio', 'Completa datos, fotos, servicios y horarios.'], ['03', 'Comparte el enlace', 'Publícalo en Instagram, WhatsApp, Google y materiales con QR.']], plansEyebrow: 'Planes', plansTitle: 'Elige la capacidad de páginas', plansText: 'La capacidad de los planes está lista; las condiciones comerciales quedan privadas durante beta.', starterDesc: 'Perfecto para una página de negocio', proDesc: 'Para múltiples servicios o ubicaciones', popular: 'Más popular', startStarter: 'Empezar Starter', choosePro: 'Elegir Pro', readyTags: ['Demos listas', 'Leads por WhatsApp', 'Base SEO'], readyTitle: '¿Listo para publicar?', readyText: 'Crea una página profesional y mira exactamente cómo puede aparecer tu negocio online.', readyCta: 'Crear una página demo', footerDemo: 'Demo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Dashboard Vitrine', business: 'Luna Studio', period: '30 días', tabs: ['Resumen', 'Leads', 'Canales', 'Ajustes'], metrics: [['128', 'Visitas'], ['34', 'Acciones'], ['12', 'Leads'], ['9.4%', 'Conversión']], action: 'Acción recomendada', actionText: 'Instagram es tu canal más fuerte. Sigue compartiendo ahí y prueba un QR Code en la tienda.', leads: 'Leads recientes', channels: 'Top canales' },
+    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login de prueba', getStarted: 'Empezar', badge: 'Landing page + leads + dashboard', heroTitle: 'Crea la landing page de tu negocio', heroAccent: ' en minutos.', heroText: 'Vitrine crea una página profesional para tu negocio con WhatsApp, reservas, fotos, reseñas, idiomas y un dashboard simple para seguir resultados.', primaryCta: 'Crear mi página', secondaryCta: 'Abrir dashboard demo', stats: [['4', 'Idiomas'], ['2', 'Planes'], ['24/7', 'Página online']], includedEyebrow: 'Qué incluye', includedTitle: 'Todo para poner tu negocio online con aspecto profesional.', includedText: 'Un setup guiado, secciones listas y un dashboard claro para cualquier dueño de negocio local.', features: [['Sube fotos', 'Agrega las mejores fotos de tu negocio. Vitrine las organiza en una página bonita.'], ['Completa tus datos', 'Añade nombre, servicios, horarios, ubicación y contactos en minutos.'], ['Publica rápido', 'Tu landing page queda lista para compartir en Instagram, WhatsApp y Google.']], valueEyebrow: 'Hecho para vender', valueTitle: 'Una página simple para convertir visitantes en contactos reales.', valueText: 'Sin sitio complicado: tu negocio gana una vitrina enfocada con WhatsApp, reservas, fotos, reseñas, ubicación y métricas fáciles.', demoCta: 'Ver demos comerciales', valueCards: [['WhatsApp primero', 'Lleva visitantes directo a una conversación.'], ['Reservas listas', 'Conecta el calendario o plataforma que ya usas.'], ['Base SEO local', 'Metadatos, sitemap y estructura para negocio local.'], ['Dashboard simple', 'Ve visitas, leads, canales y la próxima acción recomendada.']], previewEyebrow: 'Vista previa', previewTitle: 'Cualquier negocio puede convertirse en una Vitrine bonita y fácil de compartir.', previewText: 'En el setup eliges el tipo de negocio, agregas tus fotos y creas una página acogedora para salones, barberías, negocios de comida con menú, limpieza, estética, fitness y más.', previewCards: [['Foto principal', 'Primera impresión'], ['Sobre el negocio', 'Confianza e historia'], ['Servicios', 'Ofertas claras'], ['Galería', 'Prueba visual']], processEyebrow: 'Proceso simple', processTitle: 'Cómo funciona', steps: [['01', 'Crea tu página', 'Usa el setup guiado para construir la estructura principal.'], ['02', 'Añade tu negocio', 'Completa datos, fotos, servicios y horarios.'], ['03', 'Comparte el enlace', 'Publícalo en Instagram, WhatsApp, Google y materiales con QR.']], plansEyebrow: 'Planes', plansTitle: 'Elige la capacidad de páginas', plansText: 'La capacidad de los planes está lista; las condiciones comerciales quedan privadas durante beta.', starterDesc: 'Perfecto para una página de negocio', proDesc: 'Para múltiples servicios o ubicaciones', popular: 'Más popular', startStarter: 'Empezar Starter', choosePro: 'Elegir Pro', readyTags: ['Demos listas', 'Leads por WhatsApp', 'Base SEO'], readyTitle: '¿Listo para publicar?', readyText: 'Crea una página profesional y mira exactamente cómo puede aparecer tu negocio online.', readyCta: 'Crear una página demo', footerDemo: 'Demo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Dashboard Vitrine', business: 'Luna Studio', period: '30 días', tabs: ['Resumen', 'Leads', 'Canales', 'Ajustes'], metrics: [['128', 'Visitas'], ['34', 'Acciones'], ['12', 'Leads'], ['9.4%', 'Conversión']], action: 'Acción recomendada', actionText: 'Instagram es tu canal más fuerte. Sigue compartiendo ahí y prueba un QR Code en la tienda.', leads: 'Leads recientes', channels: 'Top canales' },
   },
   fr: {
-    demos: 'Voir les démos', login: 'Connexion', testLogin: 'Connexion test', getStarted: 'Commencer', badge: 'Landing page + leads + dashboard', heroTitle: 'Créez la landing page de votre entreprise', heroAccent: ' en quelques minutes.', heroText: 'Vitrine crée une page professionnelle pour votre entreprise avec WhatsApp, réservation, photos, avis, langues et un dashboard simple pour suivre les résultats.', primaryCta: 'Créer ma page', secondaryCta: 'Ouvrir le dashboard démo', stats: [['4', 'Langues'], ['2', 'Plans'], ['24/7', 'Page en ligne']], includedEyebrow: 'Ce qui est inclus', includedTitle: 'Tout pour mettre votre entreprise en ligne avec une image professionnelle.', includedText: 'Un setup guidé, des sections prêtes et un dashboard clair pour tout propriétaire local.', features: [['Ajoutez vos photos', 'Ajoutez les meilleures photos de votre entreprise. Vitrine les organise dans une belle page.'], ['Complétez vos informations', 'Ajoutez nom, services, horaires, adresse et contacts en quelques minutes.'], ['Publiez rapidement', 'Votre landing page est prête à partager sur Instagram, WhatsApp et Google.']], valueEyebrow: 'Conçu pour vendre', valueTitle: 'Une page simple pour transformer les visiteurs en vrais contacts.', valueText: 'Pas de site compliqué : votre entreprise obtient une vitrine claire avec WhatsApp, réservation, photos, avis, adresse et métriques faciles.', demoCta: 'Voir les démos commerciales', valueCards: [['WhatsApp d’abord', 'Amenez les visiteurs directement vers une conversation.'], ['Réservation prête', 'Connectez le calendrier ou la plateforme que vous utilisez déjà.'], ['Base SEO locale', 'Métadonnées, sitemap et structure pour entreprise locale.'], ['Dashboard simple', 'Suivez visites, leads, canaux et prochaine action recommandée.']], previewEyebrow: 'Aperçu de la page', previewTitle: 'Toute entreprise peut devenir une belle Vitrine facile à partager.', previewText: 'Dans le setup, vous choisissez le type d’entreprise, ajoutez vos photos et créez une page accueillante pour salons, barbiers, restaurants, nettoyage, beauté, fitness et plus encore.', previewCards: [['Photo principale', 'Première impression'], ['À propos', 'Confiance et histoire'], ['Services', 'Offres claires'], ['Galerie', 'Preuve visuelle']], processEyebrow: 'Processus simple', processTitle: 'Comment ça marche', steps: [['01', 'Créez votre page', 'Utilisez le setup guidé pour construire la structure principale.'], ['02', 'Ajoutez votre entreprise', 'Complétez informations, photos, services et horaires.'], ['03', 'Partagez le lien', 'Publiez-le sur Instagram, WhatsApp, Google et supports avec QR Code.']], plansEyebrow: 'Plans', plansTitle: 'Choisissez la capacité de pages', plansText: 'La capacité des plans est prête ; les conditions commerciales restent privées pendant la bêta.', starterDesc: 'Parfait pour une page d’entreprise', proDesc: 'Pour plusieurs services ou lieux', popular: 'Le plus populaire', startStarter: 'Commencer Starter', choosePro: 'Choisir Pro', readyTags: ['Démos prêtes', 'Leads WhatsApp', 'Base SEO'], readyTitle: 'Prêt à publier ?', readyText: 'Créez une page professionnelle et voyez exactement comment votre entreprise peut apparaître en ligne.', readyCta: 'Créer une page démo', footerDemo: 'Démo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Dashboard Vitrine', business: 'Luna Studio', period: '30 jours', tabs: ['Vue générale', 'Leads', 'Canaux', 'Réglages'], metrics: [['128', 'Visites'], ['34', 'Actions'], ['12', 'Leads'], ['9.4%', 'Conversion']], action: 'Action recommandée', actionText: 'Instagram est votre canal le plus fort. Continuez à partager là-bas et testez un QR Code en boutique.', leads: 'Leads récents', channels: 'Top canaux' },
+    demos: 'Voir les démos', login: 'Connexion', testLogin: 'Connexion test', getStarted: 'Commencer', badge: 'Landing page + leads + dashboard', heroTitle: 'Créez la landing page de votre entreprise', heroAccent: ' en quelques minutes.', heroText: 'Vitrine crée une page professionnelle pour votre entreprise avec WhatsApp, réservation, photos, avis, langues et un dashboard simple pour suivre les résultats.', primaryCta: 'Créer ma page', secondaryCta: 'Ouvrir le dashboard démo', stats: [['4', 'Langues'], ['2', 'Plans'], ['24/7', 'Page en ligne']], includedEyebrow: 'Ce qui est inclus', includedTitle: 'Tout pour mettre votre entreprise en ligne avec une image professionnelle.', includedText: 'Un setup guidé, des sections prêtes et un dashboard clair pour tout propriétaire local.', features: [['Ajoutez vos photos', 'Ajoutez les meilleures photos de votre entreprise. Vitrine les organise dans une belle page.'], ['Complétez vos informations', 'Ajoutez nom, services, horaires, adresse et contacts en quelques minutes.'], ['Publiez rapidement', 'Votre landing page est prête à partager sur Instagram, WhatsApp et Google.']], valueEyebrow: 'Conçu pour vendre', valueTitle: 'Une page simple pour transformer les visiteurs en vrais contacts.', valueText: 'Pas de site compliqué : votre entreprise obtient une vitrine claire avec WhatsApp, réservation, photos, avis, adresse et métriques faciles.', demoCta: 'Voir les démos commerciales', valueCards: [['WhatsApp d’abord', 'Amenez les visiteurs directement vers une conversation.'], ['Réservation prête', 'Connectez le calendrier ou la plateforme que vous utilisez déjà.'], ['Base SEO locale', 'Métadonnées, sitemap et structure pour entreprise locale.'], ['Dashboard simple', 'Suivez visites, leads, canaux et prochaine action recommandée.']], previewEyebrow: 'Aperçu de la page', previewTitle: 'Toute entreprise peut devenir une belle Vitrine facile à partager.', previewText: 'Dans le setup, vous choisissez le type d’entreprise, ajoutez vos photos et créez une page accueillante pour salons, barbiers, commerces alimentaires avec menu, nettoyage, beauté, fitness et plus encore.', previewCards: [['Photo principale', 'Première impression'], ['À propos', 'Confiance et histoire'], ['Services', 'Offres claires'], ['Galerie', 'Preuve visuelle']], processEyebrow: 'Processus simple', processTitle: 'Comment ça marche', steps: [['01', 'Créez votre page', 'Utilisez le setup guidé pour construire la structure principale.'], ['02', 'Ajoutez votre entreprise', 'Complétez informations, photos, services et horaires.'], ['03', 'Partagez le lien', 'Publiez-le sur Instagram, WhatsApp, Google et supports avec QR Code.']], plansEyebrow: 'Plans', plansTitle: 'Choisissez la capacité de pages', plansText: 'La capacité des plans est prête ; les conditions commerciales restent privées pendant la bêta.', starterDesc: 'Parfait pour une page d’entreprise', proDesc: 'Pour plusieurs services ou lieux', popular: 'Le plus populaire', startStarter: 'Commencer Starter', choosePro: 'Choisir Pro', readyTags: ['Démos prêtes', 'Leads WhatsApp', 'Base SEO'], readyTitle: 'Prêt à publier ?', readyText: 'Créez une page professionnelle et voyez exactement comment votre entreprise peut apparaître en ligne.', readyCta: 'Créer une page démo', footerDemo: 'Démo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Dashboard Vitrine', business: 'Luna Studio', period: '30 jours', tabs: ['Vue générale', 'Leads', 'Canaux', 'Réglages'], metrics: [['128', 'Visites'], ['34', 'Actions'], ['12', 'Leads'], ['9.4%', 'Conversion']], action: 'Action recommandée', actionText: 'Instagram est votre canal le plus fort. Continuez à partager là-bas et testez un QR Code en boutique.', leads: 'Leads récents', channels: 'Top canaux' },
   },
 } satisfies Record<Lang, any>
 
@@ -91,7 +91,7 @@ const previewSlides = [
   },
   {
     name: 'Mesa Local',
-    label: 'Restaurant',
+    label: 'Food & menu',
     photos: [
       'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=900&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=900&auto=format&fit=crop',
@@ -117,6 +117,54 @@ export default function HomePage() {
     en: ['Everything in Starter', '3 pages', 'Demo dashboard', 'Priority improvements'],
     es: ['Todo lo de Starter', '3 páginas', 'Dashboard demo', 'Mejoras prioritarias'],
     fr: ['Tout dans Starter', '3 pages', 'Dashboard démo', 'Améliorations prioritaires'],
+  }[lang]
+  const trustPills = {
+    pt: ['Visual premium', 'WhatsApp em 1 toque', 'Cardápio com QR', 'Dashboard simples'],
+    en: ['Premium look', '1-tap WhatsApp', 'Menu with QR', 'Simple dashboard'],
+    es: ['Visual premium', 'WhatsApp en 1 toque', 'Menú con QR', 'Dashboard simple'],
+    fr: ['Image premium', 'WhatsApp en 1 clic', 'Menu avec QR', 'Dashboard simple'],
+  }[lang]
+  const credibility = {
+    pt: {
+      eyebrow: 'Confiança desde o primeiro clique',
+      title: 'Mais do que uma página bonita: uma presença que passa profissionalismo.',
+      text: 'Cores elegantes, botões claros, prova visual, avaliações, mapa, idiomas e métricas — tudo pensado para o cliente sentir segurança antes de chamar você.',
+      cards: [
+        ['Aparência premium', 'Design limpo com contraste navy e dourado para transmitir seriedade, cuidado e valor.'],
+        ['Feito para negócios locais', 'Funciona para serviços, beleza, saúde, limpeza, fitness e negócios de comida que precisam de cardápio.'],
+        ['QR Code que gera ação', 'Use QR em loja, mesa, flyer ou sacola e veja visitas e cliques no dashboard.'],
+      ],
+    },
+    en: {
+      eyebrow: 'Trust from the first click',
+      title: 'More than a pretty page: a presence that feels professional.',
+      text: 'Elegant colors, clear buttons, visual proof, reviews, map, languages and metrics — designed to make customers feel safe before contacting you.',
+      cards: [
+        ['Premium appearance', 'Clean design with navy and gold contrast to communicate care, seriousness and value.'],
+        ['Built for local businesses', 'Works for services, beauty, health, cleaning, fitness and food businesses that need a menu.'],
+        ['QR Code that drives action', 'Use QR in-store, on tables, flyers or bags and track visits and clicks in the dashboard.'],
+      ],
+    },
+    es: {
+      eyebrow: 'Confianza desde el primer clic',
+      title: 'Más que una página bonita: una presencia que se siente profesional.',
+      text: 'Colores elegantes, botones claros, prueba visual, reseñas, mapa, idiomas y métricas — pensado para que el cliente se sienta seguro antes de contactarte.',
+      cards: [
+        ['Apariencia premium', 'Diseño limpio con contraste navy y dorado para transmitir cuidado, seriedad y valor.'],
+        ['Hecho para negocios locales', 'Funciona para servicios, belleza, salud, limpieza, fitness y negocios de comida que necesitan menú.'],
+        ['QR Code que genera acción', 'Usa QR en tienda, mesas, flyers o bolsas y mide visitas y clics en el dashboard.'],
+      ],
+    },
+    fr: {
+      eyebrow: 'Confiance dès le premier clic',
+      title: 'Plus qu’une belle page : une présence qui inspire le professionnalisme.',
+      text: 'Couleurs élégantes, boutons clairs, preuve visuelle, avis, carte, langues et métriques — conçu pour rassurer le client avant le contact.',
+      cards: [
+        ['Image premium', 'Design clair avec contraste navy et or pour transmettre soin, sérieux et valeur.'],
+        ['Pour entreprises locales', 'Fonctionne pour services, beauté, santé, nettoyage, fitness et commerces alimentaires avec menu.'],
+        ['QR Code orienté action', 'Utilisez le QR en boutique, sur tables, flyers ou sacs et suivez visites et clics dans le dashboard.'],
+      ],
+    },
   }[lang]
 
   return (
@@ -192,6 +240,14 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
+            <div className="mt-6 flex flex-wrap gap-2 max-w-2xl">
+              {trustPills.map((pill: string) => (
+                <span key={pill} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-gray-200">
+                  <Check className="w-3.5 h-3.5 text-gold" />
+                  {pill}
+                </span>
+              ))}
+            </div>
             <div className="md:hidden mt-6">
               <LanguageSwitcher lang={lang} setLang={(value) => setLang(value as Lang)} />
             </div>
@@ -252,6 +308,46 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust and prestige */}
+      <section className="py-20 px-4 bg-gradient-to-br from-[#fffaf0] via-white to-stone-50 text-navy border-y border-stone-100">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
+          <div>
+            <span className="inline-flex items-center gap-2 text-gold font-semibold text-sm uppercase tracking-wider">
+              <ShieldCheck className="w-4 h-4" />
+              {credibility.eyebrow}
+            </span>
+            <h2 className="text-4xl md:text-5xl font-black mt-3 mb-5">{credibility.title}</h2>
+            <p className="text-gray-500 text-lg leading-relaxed mb-6">{credibility.text}</p>
+            <div className="grid grid-cols-3 gap-3 max-w-lg">
+              {[
+                ['5★', 'Trust'],
+                ['QR', 'Action'],
+                ['24/7', 'Online'],
+              ].map(([value, label]) => (
+                <div key={label} className="rounded-2xl bg-white border border-gold/20 p-4 shadow-sm">
+                  <p className="text-2xl font-black text-navy">{value}</p>
+                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {credibility.cards.map(([title, desc]: string[], i: number) => {
+              const Icon = i === 0 ? Star : i === 1 ? Store : QrCode
+              return (
+                <div key={title} className="rounded-[1.75rem] bg-white border border-stone-100 p-6 shadow-xl shadow-stone-200/60 hover:-translate-y-1 hover:border-gold/40 transition-all">
+                  <div className="w-12 h-12 rounded-2xl bg-navy text-gold flex items-center justify-center mb-5">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-black text-lg mb-2">{title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

@@ -59,7 +59,7 @@ const TEMPLATE_DETAILS = {
   },
   food: {
     title: 'Food, menu & orders page',
-    description: 'Best for restaurants, cafés, bars and food trucks. The preview includes a menu section and order-friendly actions.',
+    description: 'Best for any food business with a menu: restaurants, cafés, bars, bakeries, food trucks and takeaways.',
     badge: 'Menu focused',
   },
   technical: {
@@ -606,7 +606,7 @@ export default function DashboardPage() {
                         type="text"
                         value={menuUrl}
                         onChange={(e) => setMenuUrl(e.target.value)}
-                        placeholder="https://your-restaurant.com/menu or delivery menu link"
+                        placeholder="https://your-business.com/menu or delivery menu link"
                         className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
                       />
                       <button
@@ -679,7 +679,7 @@ export default function DashboardPage() {
               </h2>
               <p className="text-sm text-gray-500 mb-6">
                 {selectedTemplate === 'food'
-                  ? 'Add your menu highlights here. They appear as food choices in the restaurant-style landing page.'
+                  ? 'Add your best menu highlights here. They appear as food choices in the food-business landing page.'
                   : selectedTemplate === 'technical'
                   ? 'Add the main services or quote options customers can request.'
                   : 'Add the services customers can view before booking or contacting you.'}
@@ -816,7 +816,7 @@ export default function DashboardPage() {
           {step === 2 && (
             <div>
               <h2 className="text-2xl font-bold text-navy mb-2">
-                {selectedTemplate === 'food' ? 'Restaurant photos & menu visuals' : 'Photos'}
+                {selectedTemplate === 'food' ? 'Food business photos & menu visuals' : 'Photos'}
               </h2>
               <p className="text-gray-400 text-sm mb-8">
                 {selectedTemplate === 'food'
@@ -838,14 +838,14 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? 'Restaurant hero photo' : 'Hero Photo'}</h3>
+                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? 'Food business hero photo' : 'Hero Photo'}</h3>
                         <span className="bg-gold text-navy text-[10px] font-bold px-2 py-0.5 rounded-full">
                           Full-screen background
                         </span>
                       </div>
                       <p className="text-gray-400 text-xs mb-4">
                         {selectedTemplate === 'food'
-                          ? 'First impression of your restaurant. Best: warm photo of the dining room, bar, counter or signature table.'
+                          ? 'First impression of your food business. Best: warm photo of the dining room, bar, counter, bakery display, food truck or signature table.'
                           : 'First thing visitors see — fills the entire screen on arrival. Best: a wide photo of your space or best work.'}
                       </p>
                       {heroPhoto ? (
@@ -867,7 +867,7 @@ export default function DashboardPage() {
                           className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
                         >
                           <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
-                          <span className="text-gray-400 text-sm">{selectedTemplate === 'food' ? 'Upload restaurant hero photo' : 'Click to upload hero photo'}</span>
+                          <span className="text-gray-400 text-sm">{selectedTemplate === 'food' ? 'Upload food business hero photo' : 'Click to upload hero photo'}</span>
                         </button>
                       )}
                     </div>

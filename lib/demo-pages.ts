@@ -1,5 +1,6 @@
 export interface CommercialDemo {
-  slug: 'barbearia' | 'limpeza' | 'estetica'
+  slug: 'barbearia' | 'limpeza' | 'estetica' | 'comida' | 'advocacia'
+  variant?: 'standard' | 'food' | 'professional'
   businessName: string
   category: string
   headline: string
@@ -33,6 +34,84 @@ const defaultHours = [
 ]
 
 export const commercialDemos: CommercialDemo[] = [
+  {
+    slug: 'comida',
+    variant: 'food',
+    businessName: 'Mesa Viva Kitchen',
+    category: 'Comida & cardápio QR',
+    headline: 'Cardápio bonito, pedido rápido e QR Code direto para o menu.',
+    subheadline: 'Uma estrutura feita para negócios de comida: destaques visuais, menu completo, WhatsApp, QR de mesa e fotos que dão vontade de pedir.',
+    whatsappNumber: '+351 915 678 901',
+    whatsappMessage: 'Olá! Vi o menu da Mesa Viva e quero fazer um pedido.',
+    address: 'Rua das Flores 55, Porto, Portugal',
+    email: 'menu@mesaviva.pt',
+    phone: '+351 915 678 901',
+    theme: { badge: 'Menu + QR experience', primary: 'bg-orange-950', accent: 'text-orange-200' },
+    photos: [
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=1200&auto=format&fit=crop',
+    ],
+    services: [
+      { name: 'Menu executivo', price: '12€', description: 'Prato do dia, bebida e sobremesa em decisão rápida.' },
+      { name: 'Burger artesanal', price: '14€', description: 'Carne premium, pão brioche e molho da casa.' },
+      { name: 'Bowl fresco', price: '11€', description: 'Opção leve, colorida e perfeita para almoço.' },
+      { name: 'Sobremesa da casa', price: '6€', description: 'Final doce para aumentar o ticket médio.' },
+    ],
+    benefits: ['QR Code para mesas e flyers', 'Menu completo separado da landing', 'Pedido direto pelo WhatsApp', 'Fotos de pratos em destaque'],
+    testimonials: [
+      { name: 'Laura M.', text: 'Abri o QR na mesa, vi o menu e pedi sem esperar.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Pedro N.', text: 'As fotos ajudaram muito na escolha. Tudo simples e rápido.', rating: 5, photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Sofia R.', text: 'Muito melhor que PDF perdido no Instagram.', rating: 5, photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
+    ],
+    faqs: [
+      { question: 'O QR pode ir na mesa?', answer: 'Sim. A ideia é levar clientes direto para o menu completo e rastrear visitas.' },
+      { question: 'Posso usar link de delivery?', answer: 'Sim, pode ser um link externo ou uma imagem do menu completo.' },
+      { question: 'Dá para destacar pratos?', answer: 'Sim, a landing mostra destaques e o menu completo fica em uma página separada.' },
+      { question: 'Funciona para café, bar e food truck?', answer: 'Sim, foi pensado para qualquer negócio de comida com cardápio.' },
+    ],
+    hours: defaultHours,
+  },
+  {
+    slug: 'advocacia',
+    variant: 'professional',
+    businessName: 'Almeida & Rocha Advocacia',
+    category: 'Advocacia & consultoria',
+    headline: 'Página profissional para gerar confiança antes da primeira consulta.',
+    subheadline: 'Uma estrutura mais sóbria para advogados, consultores e freelancers: áreas de atuação, processo claro, prova de autoridade e contacto qualificado.',
+    whatsappNumber: '+351 916 789 012',
+    whatsappMessage: 'Olá! Vi a página da Almeida & Rocha e quero agendar uma consulta.',
+    address: 'Avenida da Liberdade 210, Lisboa, Portugal',
+    email: 'consulta@almeidarocha.pt',
+    phone: '+351 916 789 012',
+    theme: { badge: 'Professional trust', primary: 'bg-slate-950', accent: 'text-blue-200' },
+    photos: [
+      'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?q=80&w=1400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1521791055366-0d553872125f?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=1200&auto=format&fit=crop',
+    ],
+    services: [
+      { name: 'Direito empresarial', price: 'consulta', description: 'Contratos, sociedades e proteção do negócio.' },
+      { name: 'Direito imobiliário', price: 'consulta', description: 'Arrendamento, compra, venda e litígios.' },
+      { name: 'Consultoria preventiva', price: 'mensal', description: 'Acompanhamento recorrente para empresas.' },
+      { name: 'Análise contratual', price: 'sob orçamento', description: 'Revisão clara antes da assinatura.' },
+    ],
+    benefits: ['Imagem sóbria e confiável', 'Contato qualificado por WhatsApp', 'Áreas de atuação claras', 'FAQ para reduzir dúvidas'],
+    testimonials: [
+      { name: 'Ricardo P.', text: 'A página explicou o processo e marquei consulta com segurança.', rating: 5, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Helena C.', text: 'Profissional, objetiva e fácil de contactar.', rating: 5, photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Bruno A.', text: 'Gostei de ver áreas de atuação e perguntas antes da chamada.', rating: 4, photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop' },
+    ],
+    faqs: [
+      { question: 'A primeira conversa é online?', answer: 'Pode ser online ou presencial, conforme disponibilidade e tipo de caso.' },
+      { question: 'Posso enviar documentos antes?', answer: 'Sim, o contato pelo WhatsApp ajuda a orientar os próximos passos.' },
+      { question: 'Atendem empresas?', answer: 'Sim, há consultoria pontual e acompanhamento recorrente.' },
+      { question: 'A página serve para freelancers?', answer: 'Sim, a estrutura funciona para consultores, contabilistas, designers e prestadores profissionais.' },
+    ],
+    hours: defaultHours,
+  },
   {
     slug: 'barbearia',
     businessName: 'Barbearia Dom Corte',

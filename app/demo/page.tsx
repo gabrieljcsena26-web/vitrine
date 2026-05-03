@@ -1,11 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Scissors } from 'lucide-react'
+import { ArrowRight, ThumbsUp } from 'lucide-react'
 import { commercialDemos } from '@/lib/demo-pages'
 
 export const metadata = {
   title: 'Commercial demos — Vitrine',
-  description: 'Explore ready-to-sell landing page demos for barbershops, cleaning companies and beauty clinics.',
+  description: 'Explore ready-to-sell landing page demos for food businesses, barbershops, cleaning companies, beauty clinics and professional services.',
 }
 
 export default function DemoHubPage() {
@@ -15,7 +15,7 @@ export default function DemoHubPage() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center">
-              <Scissors className="w-4 h-4 text-navy" />
+              <ThumbsUp className="w-4 h-4 text-navy" />
             </div>
             <span className="font-bold text-xl">Vitrine</span>
           </Link>
@@ -32,16 +32,16 @@ export default function DemoHubPage() {
             Sales-ready examples
           </span>
           <h1 className="text-5xl md:text-7xl font-black leading-tight mt-6 mb-6">
-            3 demos comerciais para mostrar e vender.
+            Demos comerciais com estruturas diferentes para cada tipo de negócio.
           </h1>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Barbearia, empresa de limpeza e clínica de estética com estrutura completa: hero, WhatsApp, serviços, benefícios, fotos, reviews, mapa, FAQ e CTA final.
+            Veja como a Vitrine muda o formato para comida com cardápio e QR, barbearia, limpeza, estética e serviços profissionais como advocacia ou consultoria.
           </p>
         </div>
       </section>
 
       <section className="px-4 pb-24">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {commercialDemos.map((demo) => (
             <Link key={demo.slug} href={`/demo/${demo.slug}`} className="group rounded-3xl overflow-hidden bg-white text-navy shadow-2xl hover:-translate-y-2 transition-all">
               <div className="relative h-64">

@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Clock, Mail, MapPin, MessageCircle, Phone, Star } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, Mail, MapPin, MessageCircle, Phone, QrCode, Scale, Star, Utensils } from 'lucide-react'
 import type { CommercialDemo } from '@/lib/demo-pages'
 import { whatsAppHref } from '@/lib/utils'
 
@@ -11,6 +11,12 @@ interface Props {
 export default function CommercialDemoPage({ demo }: Props) {
   const whatsappHref = whatsAppHref(demo.whatsappNumber, demo.whatsappMessage) ?? '#contact'
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`
+  const isFood = demo.variant === 'food'
+  const isProfessional = demo.variant === 'professional'
+  const serviceLabel = isFood ? 'Cardápio' : isProfessional ? 'Áreas' : 'Serviços'
+  const serviceTitle = isFood ? 'Destaques do menu para decisão rápida' : isProfessional ? 'Áreas de atuação com confiança' : 'Ofertas claras para decisão rápida'
+  const primaryCta = isFood ? 'Pedir pelo WhatsApp' : isProfessional ? 'Agendar consulta' : 'Pedir pelo WhatsApp'
+  const secondaryCta = isFood ? 'Ver cardápio' : isProfessional ? 'Ver áreas' : 'Ver serviços'
 
   return (
     <main className="bg-white text-navy">
@@ -21,7 +27,7 @@ export default function CommercialDemoPage({ demo }: Props) {
             Demos
           </Link>
           <div className="hidden md:flex items-center gap-5 text-sm text-white/70">
-            <a href="#services" className="hover:text-white">Serviços</a>
+            <a href="#services" className="hover:text-white">{serviceLabel}</a>
             <a href="#gallery" className="hover:text-white">Fotos</a>
             <a href="#reviews" className="hover:text-white">Reviews</a>
             <a href="#faq" className="hover:text-white">FAQ</a>
@@ -45,15 +51,90 @@ export default function CommercialDemoPage({ demo }: Props) {
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-8 py-4 rounded-full font-black text-lg hover:bg-[#1ebe5d] transition-all hover:scale-105">
                 <MessageCircle className="w-5 h-5" />
-                Pedir pelo WhatsApp
+                {primaryCta}
               </a>
               <a href="#services" className="inline-flex items-center justify-center bg-white/10 border border-white/25 text-white px-8 py-4 rounded-full font-black text-lg hover:bg-white/20 transition-colors">
-                Ver serviços
+                {secondaryCta}
               </a>
             </div>
           </div>
         </div>
       </section>
+
+      {isFood && (
+        <section className="py-20 bg-[#fffaf0]">
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
+                <QrCode className="w-4 h-4" /> Cardápio + QR Code
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Uma estrutura feita para negócios de comida.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-6">A landing mostra os pratos principais, enquanto o QR leva para o menu completo. Ideal para mesa, balcão, flyer, sacola e Instagram.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {['QR de mesa', 'Menu completo', 'Pedido WhatsApp', 'Fotos de pratos'].map((item) => (
+                  <div key={item} className="rounded-2xl bg-white border border-orange-100 p-4 font-black text-navy shadow-sm hover:-translate-y-1 hover:border-gold/40 transition-all">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-[2rem] bg-white border border-orange-100 shadow-2xl shadow-orange-100/60 p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-4">
+                <div className="relative min-h-[320px] rounded-3xl overflow-hidden">
+                  <Image src={demo.photos[1]} alt="Menu visual" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute left-4 bottom-4 text-white">
+                    <Utensils className="w-7 h-7 text-gold mb-2" />
+                    <p className="text-2xl font-black">Menu visual</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {demo.services.map((item) => (
+                    <div key={item.name} className="rounded-2xl bg-stone-50 border border-stone-100 p-4 hover:border-gold/40 transition-colors">
+                      <div className="flex justify-between gap-3">
+                        <p className="font-black text-navy">{item.name}</p>
+                        <p className="font-black text-gold whitespace-nowrap">{item.price}</p>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">{item.description}</p>
+                    </div>
+                  ))}
+                  <div className="rounded-2xl bg-navy text-white p-4 flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gold text-navy flex items-center justify-center"><QrCode className="w-6 h-6" /></div>
+                    <div><p className="font-black">QR pronto para o menu</p><p className="text-xs text-gray-300">Rastreie visitas do QR no dashboard.</p></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {isProfessional && (
+        <section className="py-20 bg-slate-50">
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
+                <Scale className="w-4 h-4" /> Confiança profissional
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Menos ruído, mais autoridade.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed">Para advocacia, consultoria e freelancers, a página precisa explicar áreas, processo e próximos passos com sobriedade.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                ['01', 'Entenda o caso', 'Contato qualificado com contexto antes da consulta.'],
+                ['02', 'Explique o processo', 'Áreas de atuação e perguntas respondidas sem excesso.'],
+                ['03', 'Converta com confiança', 'WhatsApp, mapa e prova social no momento certo.'],
+              ].map(([step, title, text]) => (
+                <div key={step} className="rounded-3xl bg-white border border-slate-100 p-6 shadow-xl shadow-slate-200/60 hover:-translate-y-1 hover:border-gold/40 transition-all">
+                  <p className="text-5xl font-black text-gold/30">{step}</p>
+                  <h3 className="font-black text-navy text-lg mt-3">{title}</h3>
+                  <p className="text-sm text-gray-500 mt-2 leading-relaxed">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -90,8 +171,8 @@ export default function CommercialDemoPage({ demo }: Props) {
       <section id="services" className="py-24 bg-navy text-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-14">
-            <span className="text-gold uppercase tracking-wider text-sm font-bold">Serviços</span>
-            <h2 className="text-4xl font-black mt-2">Ofertas claras para decisão rápida</h2>
+            <span className="text-gold uppercase tracking-wider text-sm font-bold">{serviceLabel}</span>
+            <h2 className="text-4xl font-black mt-2">{serviceTitle}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {demo.services.map((service) => (

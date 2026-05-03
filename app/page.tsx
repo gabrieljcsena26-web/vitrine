@@ -358,32 +358,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Feature Cards */}
-      <section className="py-20 px-4 bg-white text-navy">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-gold font-semibold text-sm uppercase tracking-wider">{t.includedEyebrow}</span>
-            <h2 className="text-4xl md:text-5xl font-black mt-2">{t.includedTitle}</h2>
-            <p className="text-gray-500 text-lg mt-4 max-w-2xl mx-auto">
-              {t.includedText}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {t.features.map(([title, desc]: string[], i: number) => (
-              <div key={i} className="bg-stone-50 border border-stone-100 rounded-3xl p-7 hover:border-gold/40 hover:-translate-y-1 transition-all shadow-sm">
-                <div className="w-12 h-12 bg-gold/10 rounded-xl flex items-center justify-center text-gold mb-4">
-                  {i === 0 ? <Upload className="w-6 h-6" /> : i === 1 ? <FileText className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
-                </div>
-                <h3 className="text-navy font-black text-lg mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Light value section */}
-      <section className="py-20 px-4 bg-stone-50 text-navy border-y border-stone-100">
+      {/* Direct value section */}
+      <section className="py-20 px-4 bg-white text-navy border-y border-stone-100">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
             <div>
@@ -401,7 +377,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {t.valueCards.map(([title, desc]: string[], i: number) => (
-                <div key={title} className="rounded-3xl border border-stone-100 bg-white p-5 hover:border-gold/40 hover:-translate-y-1 transition-all shadow-sm">
+                <div key={title} className="group rounded-3xl border border-stone-100 bg-stone-50 p-5 hover:border-gold/40 hover:-translate-y-1 hover:shadow-2xl hover:shadow-gold/10 transition-all">
                   <div className="w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center mb-4">
                     {i === 0 ? <MessageCircle className="w-5 h-5" /> : i === 1 ? <CalendarDays className="w-5 h-5" /> : i === 2 ? <Globe2 className="w-5 h-5" /> : <BarChart3 className="w-5 h-5" />}
                   </div>

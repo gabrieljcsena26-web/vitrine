@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2 } from 'lucide-react'
 
 interface Service {
   name: string
@@ -11,7 +11,7 @@ interface Service {
   photo?: string
 }
 
-const STEPS = ['Business details', 'Services & hours', 'Photos', 'Preview']
+const STEPS = ['Business + language', 'Services & hours', 'Photos', 'Preview']
 
 const CATEGORIES = [
   'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
@@ -469,9 +469,43 @@ export default function DashboardPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           {step === 0 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-2">Business details</h2>
-              <p className="text-sm text-gray-500 mb-6">Tell Vitrine what your business does. These details become the first version of your public page.</p>
+              <h2 className="text-2xl font-bold text-navy mb-2">Business details + language</h2>
+              <p className="text-sm text-gray-500 mb-6">Tell Vitrine what your business does and choose the first language customers should see.</p>
               <div className="space-y-5">
+                <div className="rounded-2xl border border-navy/10 bg-gradient-to-br from-navy to-slate-900 p-5 text-white">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-11 h-11 rounded-2xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
+                      <Globe2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-gold uppercase tracking-wider">Page language</p>
+                      <h3 className="font-black text-lg">Choose the main language now</h3>
+                      <p className="text-sm text-gray-300 mt-1">The public page still has a language switcher, but this is the first language your customer sees.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      ['pt', 'Português'],
+                      ['en', 'English'],
+                      ['es', 'Español'],
+                      ['fr', 'Français'],
+                    ].map(([code, label]) => (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => setLang(code)}
+                        className={`rounded-xl border px-3 py-3 text-left transition-all ${
+                          lang === code
+                            ? 'bg-gold text-navy border-gold shadow-lg shadow-gold/20'
+                            : 'bg-white/5 text-white border-white/10 hover:border-gold/40 hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="block text-xs font-black uppercase">{code}</span>
+                        <span className="block text-sm font-bold">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Business name *</label>
                   <input
@@ -628,25 +662,6 @@ export default function DashboardPage() {
                     )}
                   </div>
                 )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Page language</label>
-                  <p className="text-xs text-gray-400 mb-2">Choose the main language your customers should see first. You can still offer multiple languages on the page.</p>
-                  <div className="flex gap-2">
-                    {['pt', 'es', 'en', 'fr'].map((l) => (
-                      <button
-                        key={l}
-                        onClick={() => setLang(l)}
-                        className={`px-4 py-2 rounded-xl border font-medium uppercase text-sm transition-all ${
-                          lang === l
-                            ? 'bg-navy text-gold border-navy'
-                            : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                        }`}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Plan</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

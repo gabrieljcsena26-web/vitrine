@@ -1,25 +1,25 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Eye, Users, MousePointerClick, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
+import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type Lang = 'pt' | 'es' | 'en' | 'fr'
 
 const homeCopy = {
   pt: {
-    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login teste', getStarted: 'Começar', badge: 'Presença online premium para negócios locais',
-    heroTitle: 'Seu negócio com aparência profissional, confiável e pronta para vender', heroAccent: ' em minutos.',
-    heroText: 'A Vitrine transforma fotos, serviços, cardápios, WhatsApp e agendamentos numa página bonita, rápida e fácil de compartilhar — com dashboard para acompanhar resultados.',
-    primaryCta: 'Criar minha página', secondaryCta: 'Abrir dashboard demo', stats: [['4', 'Idiomas'], ['2', 'Planos'], ['24/7', 'Página online']],
+    demos: 'Ver demos', login: 'Entrar', testLogin: 'Login teste', getStarted: 'Começar', badge: '3 estruturas prontas para negócios locais',
+    heroTitle: 'Escolha o estilo. A Vitrine monta uma landing pronta para converter', heroAccent: ' em minutos.',
+    heroText: 'Restauração, salão ou serviços profissionais: cada landing já nasce com fotos, CTA, horário, localização, WhatsApp ou link de booking e dashboard simples.',
+    primaryCta: 'Criar minha Vitrine', secondaryCta: 'Ver dashboard teste', stats: [['3', 'Modelos'], ['1 clique', 'WhatsApp/Booking'], ['24/7', 'Online']],
     includedEyebrow: 'O que está incluído', includedTitle: 'Tudo para colocar seu negócio online com aparência profissional.', includedText: 'Um setup guiado, seções prontas e um dashboard claro para qualquer dono de negócio local.',
     features: [
       ['Enviar fotos', 'Envie as melhores fotos do seu negócio. A Vitrine organiza tudo numa página bonita.'],
       ['Preencher informações', 'Adicione nome, serviços, horários, localização e contatos em poucos minutos.'],
       ['Publicar rapidamente', 'Sua landing page fica pronta para compartilhar no Instagram, WhatsApp e Google.'],
     ],
-    valueEyebrow: 'Feito para vender', valueTitle: 'Uma página simples para transformar visitantes em contatos reais.',
-    valueText: 'Sem site complicado: seu negócio ganha uma vitrine focada, com WhatsApp, agendamento, fotos, avaliações, localização e métricas fáceis.', demoCta: 'Ver demos comerciais',
+    valueEyebrow: 'Por que escolher a Vitrine', valueTitle: 'Menos site complicado. Mais clientes a chamar.',
+    valueText: 'Você escolhe o tipo de negócio, coloca fotos e contactos, e recebe uma página organizada para gerar confiança e ação.', demoCta: 'Começar agora',
     valueCards: [
       ['WhatsApp em destaque', 'Leve visitantes direto para uma conversa.'],
       ['Agendamento pronto', 'Conecte o calendário ou plataforma que você já usa.'],
@@ -57,6 +57,33 @@ const homeCopy = {
     demos: 'Voir les démos', login: 'Connexion', testLogin: 'Connexion test', getStarted: 'Commencer', badge: 'Landing page + leads + dashboard', heroTitle: 'Créez la landing page de votre entreprise', heroAccent: ' en quelques minutes.', heroText: 'Vitrine crée une page professionnelle pour votre entreprise avec WhatsApp, réservation, photos, avis, langues et un dashboard simple pour suivre les résultats.', primaryCta: 'Créer ma page', secondaryCta: 'Ouvrir le dashboard démo', stats: [['4', 'Langues'], ['2', 'Plans'], ['24/7', 'Page en ligne']], includedEyebrow: 'Ce qui est inclus', includedTitle: 'Tout pour mettre votre entreprise en ligne avec une image professionnelle.', includedText: 'Un setup guidé, des sections prêtes et un dashboard clair pour tout propriétaire local.', features: [['Ajoutez vos photos', 'Ajoutez les meilleures photos de votre entreprise. Vitrine les organise dans une belle page.'], ['Complétez vos informations', 'Ajoutez nom, services, horaires, adresse et contacts en quelques minutes.'], ['Publiez rapidement', 'Votre landing page est prête à partager sur Instagram, WhatsApp et Google.']], valueEyebrow: 'Conçu pour vendre', valueTitle: 'Une page simple pour transformer les visiteurs en vrais contacts.', valueText: 'Pas de site compliqué : votre entreprise obtient une vitrine claire avec WhatsApp, réservation, photos, avis, adresse et métriques faciles.', demoCta: 'Voir les démos commerciales', valueCards: [['WhatsApp d’abord', 'Amenez les visiteurs directement vers une conversation.'], ['Réservation prête', 'Connectez le calendrier ou la plateforme que vous utilisez déjà.'], ['Base SEO locale', 'Métadonnées, sitemap et structure pour entreprise locale.'], ['Dashboard simple', 'Suivez visites, leads, canaux et prochaine action recommandée.']], previewEyebrow: 'Aperçu de la page', previewTitle: 'Toute entreprise peut devenir une belle Vitrine facile à partager.', previewText: 'Dans le setup, vous choisissez le type d’entreprise, ajoutez vos photos et créez une page accueillante pour salons, barbiers, commerces alimentaires avec menu, nettoyage, beauté, fitness et plus encore.', previewCards: [['Photo principale', 'Première impression'], ['À propos', 'Confiance et histoire'], ['Services', 'Offres claires'], ['Galerie', 'Preuve visuelle']], processEyebrow: 'Processus simple', processTitle: 'Comment ça marche', steps: [['01', 'Créez votre page', 'Utilisez le setup guidé pour construire la structure principale.'], ['02', 'Ajoutez votre entreprise', 'Complétez informations, photos, services et horaires.'], ['03', 'Partagez le lien', 'Publiez-le sur Instagram, WhatsApp, Google et supports avec QR Code.']], plansEyebrow: 'Plans', plansTitle: 'Choisissez le rythme de croissance', plansText: 'Commencez avec une page professionnelle puis passez aux rapports hebdomadaires, pages multiples et canaux suivis en Pro.', starterDesc: 'Parfait pour valider une page professionnelle', proDesc: 'Pour grandir avec jusqu’à 3 pages et rapports hebdomadaires', popular: 'Le plus populaire', startStarter: 'Commencer Starter', choosePro: 'Choisir Pro', readyTags: ['Démos prêtes', 'Leads WhatsApp', 'Base SEO'], readyTitle: 'Prêt à publier ?', readyText: 'Créez une page professionnelle et voyez exactement comment votre entreprise peut apparaître en ligne.', readyCta: 'Créer une page démo', footerDemo: 'Démo', footerDashboard: 'Dashboard', dashboardMock: { title: 'Dashboard Vitrine', business: 'Luna Studio', period: '30 jours', tabs: ['Vue générale', 'Leads', 'Canaux', 'Réglages'], metrics: [['128', 'Visites'], ['34', 'Actions'], ['12', 'Leads'], ['9.4%', 'Conversion']], action: 'Action recommandée', actionText: 'Instagram est votre canal le plus fort. Continuez à partager là-bas et testez un QR Code en boutique.', leads: 'Leads récents', channels: 'Top canaux' },
   },
 } satisfies Record<Lang, any>
+
+const landingPreviews = [
+  {
+    label: 'Restauração',
+    title: 'Menu, QR e pedidos',
+    subtitle: 'Restaurantes, cafés, bares, padarias e food trucks.',
+    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop',
+    cta: 'Pedir no WhatsApp',
+    details: ['Mais pedidos', 'Cardápio QR', 'Horário aberto'],
+  },
+  {
+    label: 'Salão',
+    title: 'Agenda e beleza',
+    subtitle: 'Salão, barbearia, unhas, estética leve e autocuidado.',
+    image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=900&auto=format&fit=crop',
+    cta: 'Reservar horário',
+    details: ['Serviços', 'Galeria', 'Localização'],
+  },
+  {
+    label: 'Clínicas & escritórios',
+    title: 'Confiança e consulta',
+    subtitle: 'Clínicas, advocacia, consultoria, terapeutas e freelancers.',
+    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=900&auto=format&fit=crop',
+    cta: 'Agendar consulta',
+    details: ['Autoridade', 'Processo claro', 'FAQ'],
+  },
+]
 
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('pt')
@@ -143,9 +170,6 @@ export default function HomePage() {
             <div className="hidden md:block">
               <LanguageSwitcher lang={lang} setLang={(value) => setLang(value as Lang)} />
             </div>
-            <Link href="/demo" className="text-gray-400 hover:text-white transition-colors text-sm">
-              {t.demos}
-            </Link>
             <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-sm">
               {t.login}
             </Link>
@@ -165,8 +189,8 @@ export default function HomePage() {
       {/* Hero */}
       <section className="relative pt-32 pb-24 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
-        <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_0.9fr] gap-12 items-center">
-          <div>
+        <div className="relative max-w-6xl mx-auto">
+          <div className="max-w-4xl">
             <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-4 py-2 mb-8">
               <Zap className="w-4 h-4 text-gold" />
               <span className="text-gold text-sm font-medium">{t.badge}</span>
@@ -214,61 +238,37 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="absolute -inset-6 bg-gold/10 blur-3xl rounded-full" />
-            <div className="relative rounded-[2rem] border border-white/10 bg-white/10 backdrop-blur p-4 shadow-2xl">
-              <div className="rounded-[1.5rem] overflow-hidden bg-white text-navy">
-                <div className="bg-navy text-white p-4 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-gold font-black">{t.dashboardMock.title}</p>
-                    <h3 className="text-2xl font-black mt-1">{t.dashboardMock.business}</h3>
-                  </div>
-                  <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-bold">{t.dashboardMock.period}</span>
-                </div>
-                <div className="p-4 bg-stone-50 border-b border-stone-100 grid grid-cols-4 gap-2">
-                  {t.dashboardMock.tabs.map((tab: string, index: number) => (
-                    <div key={tab} className={`rounded-xl px-2 py-2 text-center text-[10px] font-black ${index === 0 ? 'bg-navy text-white' : 'bg-white text-gray-400'}`}>
-                      {tab}
+          <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {landingPreviews.map((item) => (
+              <div key={item.label} className="group rounded-[2rem] border border-white/10 bg-white/10 p-3 backdrop-blur shadow-2xl shadow-black/20 hover:-translate-y-2 hover:border-gold/40 transition-all overflow-hidden">
+                <div className="rounded-[1.5rem] overflow-hidden bg-white text-navy">
+                  <div className="relative h-52 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.image} alt={item.label} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute left-4 right-4 bottom-4 text-white">
+                      <span className="inline-flex rounded-full bg-gold text-navy px-2.5 py-1 text-[10px] font-black uppercase tracking-wider">{item.label}</span>
+                      <h3 className="text-2xl font-black mt-2">{item.title}</h3>
                     </div>
-                  ))}
-                </div>
-                <div className="p-5 grid grid-cols-2 md:grid-cols-4 gap-3 border-b border-stone-100">
-                  {[Eye, MousePointerClick, Users, Sparkles].map((Icon, index) => (
-                    <div key={t.dashboardMock.metrics[index][1]} className="rounded-2xl bg-stone-50 p-3 border border-stone-100">
-                      <Icon className="w-4 h-4 text-gold mb-2" />
-                      <p className="font-black text-xl">{t.dashboardMock.metrics[index][0]}</p>
-                      <p className="text-[10px] uppercase text-gray-400 font-bold">{t.dashboardMock.metrics[index][1]}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="p-5 space-y-4">
-                  <div className="rounded-2xl bg-navy p-4 text-white">
-                    <p className="text-[10px] uppercase tracking-wider text-gold font-black mb-1">{t.dashboardMock.action}</p>
-                    <p className="text-xs text-gray-300 leading-relaxed">{t.dashboardMock.actionText}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-stone-100 p-3">
-                      <p className="text-sm font-black mb-2">{t.dashboardMock.leads}</p>
-                      {['Maria Silva', 'João Pereira'].map((name) => (
-                        <div key={name} className="flex items-center justify-between rounded-xl bg-stone-50 px-3 py-2 mb-2">
-                          <span className="text-xs font-bold truncate">{name}</span>
-                          <span className="text-[10px] text-gold font-black">Hot</span>
+                  <div className="p-5">
+                    <p className="text-sm text-gray-500 leading-relaxed mb-4">{item.subtitle}</p>
+                    <div className="space-y-2 mb-5">
+                      {item.details.map((detail) => (
+                        <div key={detail} className="flex items-center gap-2 text-sm font-bold text-navy">
+                          <Check className="w-4 h-4 text-gold" />
+                          {detail}
                         </div>
                       ))}
                     </div>
-                    <div className="rounded-2xl border border-stone-100 p-3">
-                      <p className="text-sm font-black mb-2">{t.dashboardMock.channels}</p>
-                      {['Instagram', 'WhatsApp'].map((source, i) => (
-                        <div key={source} className="mb-3">
-                          <div className="flex justify-between text-xs font-bold mb-1"><span>{source}</span><span>{18 - i * 6}</span></div>
-                          <div className="h-2 bg-stone-100 rounded-full overflow-hidden"><div className="h-full bg-gold rounded-full" style={{ width: `${88 - i * 24}%` }} /></div>
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-black">
+                      <span className="rounded-xl bg-navy text-white px-3 py-2 text-center">{item.cta}</span>
+                      <span className="rounded-xl bg-stone-100 text-navy px-3 py-2 text-center">Horário + mapa</span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -325,7 +325,7 @@ export default function HomePage() {
               <p className="text-gray-500 text-lg leading-relaxed mb-6">
                 {t.valueText}
               </p>
-              <Link href="/demo" className="inline-flex items-center gap-2 bg-navy text-white px-6 py-3 rounded-full font-bold hover:bg-navy/90 transition-colors">
+              <Link href="/dashboard" className="inline-flex items-center gap-2 bg-navy text-white px-6 py-3 rounded-full font-bold hover:bg-navy/90 transition-colors">
                 {t.demoCta}
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -465,7 +465,6 @@ export default function HomePage() {
           </div>
           <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Vitrine. All rights reserved.</p>
           <div className="flex gap-4">
-            <Link href="/demo" className="text-gray-500 hover:text-gold text-sm transition-colors">{t.footerDemo}</Link>
             <Link href="/dashboard" className="text-gray-500 hover:text-gold text-sm transition-colors">{t.footerDashboard}</Link>
           </div>
         </div>

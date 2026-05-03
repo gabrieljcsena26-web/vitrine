@@ -77,9 +77,9 @@ export const commercialDemos: CommercialDemo[] = [
     slug: 'escritorio',
     variant: 'professional',
     businessName: 'Almeida & Rocha Advocacia',
-    category: 'Escritórios: advocacia, consultoria e freelancers',
-    headline: 'Página profissional para gerar confiança antes da primeira consulta.',
-    subheadline: 'Uma estrutura mais sóbria para advogados, consultores e freelancers: áreas de atuação, processo claro, prova de autoridade e contacto qualificado.',
+    category: 'Clínicas & escritórios: consultas, confiança e autoridade',
+    headline: 'Página premium para serviços que precisam gerar confiança antes da consulta.',
+    subheadline: 'Uma estrutura direta para clínicas, advocacia, consultoria, terapeutas e freelancers: autoridade, áreas de atuação, processo claro e contacto qualificado.',
     whatsappNumber: '+351 916 789 012',
     whatsappMessage: 'Olá! Vi a página da Almeida & Rocha e quero agendar uma consulta.',
     address: 'Avenida da Liberdade 210, Lisboa, Portugal',
@@ -98,7 +98,7 @@ export const commercialDemos: CommercialDemo[] = [
       { name: 'Consultoria preventiva', price: 'mensal', description: 'Acompanhamento recorrente para empresas.' },
       { name: 'Análise contratual', price: 'sob orçamento', description: 'Revisão clara antes da assinatura.' },
     ],
-    benefits: ['Imagem sóbria e confiável', 'Contato qualificado por WhatsApp', 'Áreas de atuação claras', 'FAQ para reduzir dúvidas'],
+    benefits: ['Imagem premium e confiável', 'Contato qualificado por WhatsApp', 'Áreas de atuação claras', 'FAQ para reduzir dúvidas'],
     testimonials: [
       { name: 'Ricardo P.', text: 'A página explicou o processo e marquei consulta com segurança.', rating: 5, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
       { name: 'Helena C.', text: 'Profissional, objetiva e fácil de contactar.', rating: 5, photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop' },
@@ -196,7 +196,8 @@ export function getCommercialDemo(slug: string) {
     comida: 'restauracao',
     restaurante: 'restauracao',
     barbearia: 'salao',
-    estetica: 'clinica',
+    estetica: 'escritorio',
+    clinica: 'escritorio',
     advocacia: 'escritorio',
   }
   const normalizedSlug = aliases[slug] ?? slug

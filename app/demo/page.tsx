@@ -11,9 +11,10 @@ export const metadata = {
 const demoDescriptions: Record<string, string> = {
   restauracao: 'Para restaurantes, cafés, bares, padarias e food trucks com cardápio, QR e pedidos.',
   salao: 'Para salão, barbearia, unhas, beleza e autocuidado com foco em agendamento.',
-  clinica: 'Para clínicas, estética, saúde, terapeutas e serviços especializados.',
-  escritorio: 'Para advocacia, consultoria, freelancers e escritórios que vendem confiança.',
+  escritorio: 'Para clínicas, advocacia, consultoria, terapeutas, freelancers e escritórios que vendem confiança.',
 }
+
+const visibleDemoSlugs = ['restauracao', 'salao', 'escritorio']
 
 export default function DemoHubPage() {
   return (
@@ -47,7 +48,7 @@ export default function DemoHubPage() {
           </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {['Restauração', 'Salão', 'Clínicas', 'Escritórios'].map((label) => (
+            {['Restauração', 'Salão', 'Clínicas & escritórios'].map((label) => (
               <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-black text-white hover:border-gold/40 hover:bg-white/10 transition-all">
                 {label}
               </div>
@@ -58,7 +59,7 @@ export default function DemoHubPage() {
 
       <section className="px-4 pb-24">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
-          {commercialDemos.map((demo) => (
+          {commercialDemos.filter((demo) => visibleDemoSlugs.includes(demo.slug)).map((demo) => (
             <Link key={demo.slug} href={`/demo/${demo.slug}`} className="group rounded-3xl overflow-hidden bg-white text-navy shadow-2xl hover:-translate-y-2 transition-all">
               <div className="relative h-64">
                 <Image src={demo.photos[0]} alt={demo.businessName} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />

@@ -53,16 +53,17 @@ export default function CommercialDemoPage({ demo }: Props) {
         </div>
       </nav>
 
-      <section className={`relative min-h-screen flex items-center overflow-hidden ${demo.theme.primary}`}>
-        <Image src={demo.photos[0]} alt={demo.businessName} fill priority className="object-cover opacity-45" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/20" />
+      <section className={`relative min-h-[86vh] flex items-center overflow-hidden ${demo.theme.primary}`}>
+        <Image src={demo.photos[0]} alt={demo.businessName} fill priority className="object-cover opacity-35" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/35" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
         <div className="relative max-w-6xl mx-auto px-4 py-32 text-white">
-          <div className="max-w-3xl">
+          <div className="max-w-2xl">
             <span className={`inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold ${demo.theme.accent}`}>
               {demo.theme.badge}
             </span>
-            <h1 className="text-5xl md:text-7xl font-black leading-tight mt-6 mb-6">{demo.headline}</h1>
-            <p className="text-xl text-white/75 leading-relaxed mb-8 max-w-2xl">{demo.subheadline}</p>
+            <h1 className="text-4xl md:text-6xl font-black leading-[0.98] mt-6 mb-6 tracking-tight">{demo.headline}</h1>
+            <p className="text-lg md:text-xl text-white/75 leading-relaxed mb-8 max-w-xl">{demo.subheadline}</p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-8 py-4 rounded-full font-black text-lg hover:bg-[#1ebe5d] transition-all hover:scale-105">
                 <MessageCircle className="w-5 h-5" />
@@ -138,13 +139,19 @@ export default function CommercialDemoPage({ demo }: Props) {
 
       {isProfessional && (
         <section className="py-20 bg-slate-50">
-          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-center">
-            <div>
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.8fr_1.2fr] gap-8 items-center">
+            <div className="rounded-[2rem] bg-white border border-slate-100 p-7 shadow-2xl shadow-slate-200/70">
               <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
                 <Scale className="w-4 h-4" /> Confiança profissional
               </span>
-              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Menos ruído, mais autoridade.</h2>
-              <p className="text-gray-500 text-lg leading-relaxed">Para advocacia, consultoria e freelancers, a página precisa explicar áreas, processo e próximos passos com sobriedade.</p>
+              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Clareza, autoridade e consulta.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-5">Para clínicas e escritórios, a landing precisa ser elegante, explicar o valor rápido e levar a pessoa para uma conversa qualificada.</p>
+              <div className="grid grid-cols-2 gap-3 text-sm font-black">
+                <span className="rounded-2xl bg-slate-50 border border-slate-100 p-3">Áreas claras</span>
+                <span className="rounded-2xl bg-slate-50 border border-slate-100 p-3">Prova social</span>
+                <span className="rounded-2xl bg-slate-50 border border-slate-100 p-3">FAQ objetivo</span>
+                <span className="rounded-2xl bg-slate-50 border border-slate-100 p-3">CTA consulta</span>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[

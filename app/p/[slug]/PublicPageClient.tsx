@@ -36,7 +36,7 @@ export interface BusinessData {
   owner_email: string
   phone: string
   lang: string
-  services: { name: string; price: string }[]
+  services: { name: string; price: string; description?: string; photo?: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
   booking_url: string | null

@@ -7,6 +7,8 @@ import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench
 interface Service {
   name: string
   price: string
+  description?: string
+  photo?: string
 }
 
 const STEPS = ['Business details', 'Services & hours', 'Photos', 'Preview']
@@ -27,18 +29,18 @@ const PLANS = [
 
 const DEFAULT_SERVICES: Record<string, Service[]> = {
   food: [
-    { name: 'Chef special', price: '14' },
-    { name: 'Lunch menu', price: '12' },
-    { name: 'House dessert', price: '6' },
+    { name: 'Chef special', price: '14', description: 'Signature dish with your best ingredients' },
+    { name: 'Lunch menu', price: '12', description: 'Daily option for quick decisions' },
+    { name: 'House dessert', price: '6', description: 'Sweet finish customers remember' },
   ],
   technical: [
-    { name: 'Diagnostic visit', price: '35' },
-    { name: 'Repair quote', price: '0' },
-    { name: 'Maintenance service', price: '60' },
+    { name: 'Diagnostic visit', price: '35', description: 'Initial check and clear next steps' },
+    { name: 'Repair quote', price: '0', description: 'Fast quote before starting work' },
+    { name: 'Maintenance service', price: '60', description: 'Preventive service for peace of mind' },
   ],
   service: [
-    { name: 'Haircut', price: '25' },
-    { name: 'Color', price: '65' },
+    { name: 'Haircut', price: '25', description: 'Clean, professional finish' },
+    { name: 'Color', price: '65', description: 'Personalized color service' },
   ],
 }
 
@@ -233,7 +235,9 @@ export default function DashboardPage() {
     }
   }, [])
 
-  const addService = () => setServices([...services, { name: '', price: '' }])
+  const addService = () => setServices([...services, selectedTemplate === 'food'
+    ? { name: '', price: '', description: '', photo: '' }
+    : { name: '', price: '', description: '' }])
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
   const updateService = (i: number, field: keyof Service, val: string) => {
     setServices(services.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
@@ -256,6 +260,18 @@ export default function DashboardPage() {
       .then((dataUrl) => {
         if (dataUrl && dataUrl.startsWith('data:image/')) setter(dataUrl)
         else if (dataUrl && dataUrl.startsWith('http')) setter(dataUrl)
+      })
+      .catch(() => undefined)
+  }
+
+  const handleServicePhoto = (index: number, file: File | null) => {
+    if (!file || !file.type.startsWith('image/')) return
+    compressImage(file)
+      .then((dataUrl) => uploadCompressedImage(dataUrl, file.name))
+      .then((dataUrl) => {
+        if (dataUrl && (dataUrl.startsWith('data:image/') || dataUrl.startsWith('http'))) {
+          setServices((items) => items.map((item, idx) => (idx === index ? { ...item, photo: dataUrl } : item)))
+        }
       })
       .catch(() => undefined)
   }
@@ -637,32 +653,73 @@ export default function DashboardPage() {
                     <Plus className="w-4 h-4" /> {selectedTemplate === 'food' ? 'Add menu item' : 'Add service'}
                   </button>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {services.map((svc, i) => (
-                    <div key={i} className="flex gap-3 items-center">
-                      <input
-                        type="text"
-                        value={svc.name}
-                        onChange={(e) => updateService(i, 'name', e.target.value)}
-                        placeholder={selectedTemplate === 'food' ? 'Menu item name' : 'Service name'}
-                        className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
-                      />
-                      <div className="relative w-28">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
-                        <input
-                          type="number"
-                          value={svc.price}
-                          onChange={(e) => updateService(i, 'price', e.target.value)}
-                          placeholder="0"
-                          className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
-                        />
+                    <div key={i} className="rounded-2xl border border-gray-200 p-4 hover:border-gold/40 transition-colors bg-white">
+                      <div className="grid grid-cols-1 lg:grid-cols-[96px_1fr_auto] gap-4 items-start">
+                        {selectedTemplate === 'food' && (
+                          <div>
+                            {svc.photo ? (
+                              <div className="relative w-24 h-24 rounded-2xl overflow-hidden group bg-stone-100">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={svc.photo} alt={svc.name || 'Menu item'} className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <label className="bg-white text-navy text-[11px] font-bold px-2.5 py-1 rounded-full cursor-pointer hover:bg-gold transition-colors">
+                                    Change
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleServicePhoto(i, e.target.files?.[0] ?? null)} />
+                                  </label>
+                                </div>
+                              </div>
+                            ) : (
+                              <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gold/30 bg-gold/5 hover:bg-gold/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-center">
+                                <Upload className="w-5 h-5 text-gold" />
+                                <span className="text-[11px] text-gold font-bold leading-tight">Dish photo</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleServicePhoto(i, e.target.files?.[0] ?? null)} />
+                              </label>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
+                            <input
+                              type="text"
+                              value={svc.name}
+                              onChange={(e) => updateService(i, 'name', e.target.value)}
+                              placeholder={selectedTemplate === 'food' ? 'Menu item name' : 'Service name'}
+                              className="border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
+                            />
+                            <div className="relative">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                              <input
+                                type="number"
+                                value={svc.price}
+                                onChange={(e) => updateService(i, 'price', e.target.value)}
+                                placeholder="0"
+                                className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
+                              />
+                            </div>
+                          </div>
+                          <input
+                            type="text"
+                            value={svc.description ?? ''}
+                            onChange={(e) => updateService(i, 'description', e.target.value)}
+                            placeholder={selectedTemplate === 'food' ? 'Short detail: ingredients, style or why people love it' : 'Short detail customers should know'}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
+                          />
+                          {selectedTemplate === 'food' && (
+                            <p className="text-xs text-gray-400">This photo appears beside the dish in the menu section. Use bright, close food photos when possible.</p>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => removeService(i)}
+                          className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 p-2"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeService(i)}
-                        className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -715,9 +772,13 @@ export default function DashboardPage() {
 
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-2">Photos</h2>
+              <h2 className="text-2xl font-bold text-navy mb-2">
+                {selectedTemplate === 'food' ? 'Restaurant photos & menu visuals' : 'Photos'}
+              </h2>
               <p className="text-gray-400 text-sm mb-8">
-                Add a photo for each section. Each slot appears in a specific place on your page.
+                {selectedTemplate === 'food'
+                  ? 'Add atmosphere, menu and dish photos. The dish photos from the previous step appear directly in your menu cards.'
+                  : 'Add a photo for each section. Each slot appears in a specific place on your page.'}
               </p>
 
               {/* Hidden file inputs — one per slot */}
@@ -734,13 +795,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-bold text-navy">Hero Photo</h3>
+                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? 'Restaurant hero photo' : 'Hero Photo'}</h3>
                         <span className="bg-gold text-navy text-[10px] font-bold px-2 py-0.5 rounded-full">
                           Full-screen background
                         </span>
                       </div>
                       <p className="text-gray-400 text-xs mb-4">
-                        First thing visitors see — fills the entire screen on arrival. Best: a wide photo of your space or best work.
+                        {selectedTemplate === 'food'
+                          ? 'First impression of your restaurant. Best: warm photo of the dining room, bar, counter or signature table.'
+                          : 'First thing visitors see — fills the entire screen on arrival. Best: a wide photo of your space or best work.'}
                       </p>
                       {heroPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
@@ -761,7 +824,7 @@ export default function DashboardPage() {
                           className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
                         >
                           <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
-                          <span className="text-gray-400 text-sm">Click to upload hero photo</span>
+                          <span className="text-gray-400 text-sm">{selectedTemplate === 'food' ? 'Upload restaurant hero photo' : 'Click to upload hero photo'}</span>
                         </button>
                       )}
                     </div>
@@ -776,13 +839,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-bold text-navy">About Photo</h3>
+                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? 'Menu or signature dish photo' : 'About Photo'}</h3>
                         <span className="bg-navy text-gold text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          About Us section
+                          {selectedTemplate === 'food' ? 'Menu section feature' : 'About Us section'}
                         </span>
                       </div>
                       <p className="text-gray-400 text-xs mb-4">
-                        Shown beside your description in the &ldquo;About Us&rdquo; section. Best: a portrait, team photo, or interior shot.
+                        {selectedTemplate === 'food'
+                          ? 'Shown in the menu area as the main food visual. Best: a clear photo of your menu board, printed menu, main dish or table spread.'
+                          : 'Shown beside your description in the “About Us” section. Best: a portrait, team photo, or interior shot.'}
                       </p>
                       {aboutPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
@@ -803,7 +868,7 @@ export default function DashboardPage() {
                           className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
                         >
                           <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
-                          <span className="text-gray-400 text-sm">Click to upload about photo</span>
+                          <span className="text-gray-400 text-sm">{selectedTemplate === 'food' ? 'Upload menu or dish photo' : 'Click to upload about photo'}</span>
                         </button>
                       )}
                     </div>
@@ -818,13 +883,15 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-bold text-navy">Gallery Photos</h3>
+                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? 'Food & ambience gallery' : 'Gallery Photos'}</h3>
                         <span className="bg-gray-100 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          Portfolio grid
+                          {selectedTemplate === 'food' ? 'Dishes, drinks, space' : 'Portfolio grid'}
                         </span>
                       </div>
                       <p className="text-gray-400 text-xs mb-4">
-                        Shown in the photo grid on your page. Add your best work photos — the more the better!
+                        {selectedTemplate === 'food'
+                          ? 'Shown in the gallery. Add dishes, drinks, team, tables, bar, menu photos and QR menu images.'
+                          : 'Shown in the photo grid on your page. Add your best work photos — the more the better!'}
                       </p>
                       {galleryPhotos.length > 0 && (
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-3">
@@ -863,7 +930,7 @@ export default function DashboardPage() {
                       >
                         <Upload className="w-6 h-6 text-gray-300 mx-auto mb-2" />
                         <p className="text-gray-400 text-sm">
-                          {galleryPhotos.length > 0 ? 'Drag & drop or click to add more' : 'Drag & drop or click to add gallery photos'}
+                          {galleryPhotos.length > 0 ? 'Drag & drop or click to add more' : selectedTemplate === 'food' ? 'Drag & drop food, menu or ambience photos' : 'Drag & drop or click to add gallery photos'}
                         </p>
                         <p className="text-gray-300 text-xs mt-1">JPG, PNG, WEBP</p>
                       </div>

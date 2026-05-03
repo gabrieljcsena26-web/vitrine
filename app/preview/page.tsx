@@ -30,7 +30,7 @@ interface BusinessData {
   whatsappNumber?: string
   whatsappMessage?: string
   lang: string
-  services: { name: string; price: string }[]
+  services: { name: string; price: string; description?: string; photo?: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
 }

@@ -6,18 +6,20 @@ import { safeBookingHref, whatsAppHref } from '@/lib/utils'
 
 interface Props {
   businessName: string
-  services?: { name: string; price: string }[]
+  services?: { name: string; price: string; description?: string; photo?: string }[]
   photos?: string[]
   bookingUrl?: string | null
   whatsappNumber?: string | null
   whatsappMessage?: string | null
 }
 
-const defaultMenu = [
-  { name: 'Chef special', price: '14' },
-  { name: 'Fresh bowl', price: '11' },
-  { name: 'House dessert', price: '6' },
-  { name: 'Signature drink', price: '5' },
+type MenuItem = { name: string; price: string; description?: string; photo?: string }
+
+const defaultMenu: MenuItem[] = [
+  { name: 'Chef special', price: '14', description: 'Signature dish with fresh ingredients' },
+  { name: 'Fresh bowl', price: '11', description: 'Balanced, colorful and quick to choose' },
+  { name: 'House dessert', price: '6', description: 'A sweet finish for the table' },
+  { name: 'Signature drink', price: '5', description: 'House favorite for lunch or dinner' },
 ]
 
 export default function FoodMenuBlock({
@@ -28,8 +30,9 @@ export default function FoodMenuBlock({
   whatsappNumber,
   whatsappMessage,
 }: Props) {
-  const menuItems = services && services.length > 0 ? services : defaultMenu
-  const menuPhoto = photos?.find(Boolean)
+  const menuItems: MenuItem[] = services && services.length > 0 ? services : defaultMenu
+  const firstDishPhoto = menuItems.find((item) => item.photo)?.photo
+  const menuPhoto = firstDishPhoto || photos?.[1] || photos?.[0]
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
 
@@ -107,10 +110,23 @@ export default function FoodMenuBlock({
 
                 <div className="space-y-3">
                   {menuItems.slice(0, 5).map((item, index) => (
-                    <div key={`${item.name}-${index}`} className="flex items-center justify-between gap-4 rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3">
-                      <div>
-                        <p className="font-black text-navy">{item.name || 'Menu item'}</p>
-                        <p className="text-xs text-gray-400">Fresh option from the house menu</p>
+                    <div key={`${item.name}-${index}`} className="flex items-center justify-between gap-4 rounded-2xl border border-stone-100 bg-stone-50 p-3 hover:border-gold/30 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {item.photo && (
+                          <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-200">
+                            <Image
+                              src={item.photo}
+                              alt={item.name || 'Menu item'}
+                              fill
+                              className="object-cover"
+                              unoptimized={item.photo.startsWith('data:')}
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-black text-navy truncate">{item.name || 'Menu item'}</p>
+                          <p className="text-xs text-gray-400 line-clamp-2">{item.description || 'Fresh option from the house menu'}</p>
+                        </div>
                       </div>
                       {item.price && <span className="text-gold font-black whitespace-nowrap">{item.price}€</span>}
                     </div>

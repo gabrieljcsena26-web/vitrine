@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
+import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, MessageCircle, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type Lang = 'pt' | 'es' | 'en' | 'fr'

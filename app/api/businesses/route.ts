@@ -38,6 +38,8 @@ export async function POST(req: NextRequest) {
       primaryColor,
       accentColor,
       mapUrl,
+      menuUrl,
+      menuImageUrl,
       seoTitle,
       seoDescription,
       ogImageUrl,
@@ -111,6 +113,8 @@ export async function POST(req: NextRequest) {
       primary_color: primaryColor || null,
       accent_color: accentColor || null,
       map_url: mapUrl || null,
+      menu_url: menuUrl || null,
+      menu_image_url: menuImageUrl || null,
       seo_title: seoTitle || null,
       seo_description: seoDescription || null,
       og_image_url: ogImageUrl || null,
@@ -136,6 +140,8 @@ export async function POST(req: NextRequest) {
       error.message?.includes('primary_color') ||
       error.message?.includes('accent_color') ||
       error.message?.includes('map_url') ||
+      error.message?.includes('menu_url') ||
+      error.message?.includes('menu_image_url') ||
       error.message?.includes('seo_title') ||
       error.message?.includes('seo_description') ||
       error.message?.includes('og_image_url')
@@ -152,6 +158,8 @@ export async function POST(req: NextRequest) {
         'primary_color',
         'accent_color',
         'map_url',
+        'menu_url',
+        'menu_image_url',
         'seo_title',
         'seo_description',
         'og_image_url',

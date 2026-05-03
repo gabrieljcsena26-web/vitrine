@@ -152,6 +152,8 @@ export default function DashboardPage() {
   const [bookingUrl, setBookingUrl] = useState('')
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [whatsappMessage, setWhatsappMessage] = useState('')
+  const [menuUrl, setMenuUrl] = useState('')
+  const [menuImageUrl, setMenuImageUrl] = useState('')
   const [plan, setPlan] = useState('starter')
   const [lang, setLang] = useState('en')
   const [nameError, setNameError] = useState('')
@@ -177,6 +179,7 @@ export default function DashboardPage() {
   const heroInputRef = useRef<HTMLInputElement>(null)
   const aboutInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const menuImageInputRef = useRef<HTMLInputElement>(null)
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
@@ -215,6 +218,8 @@ export default function DashboardPage() {
         if (data.bookingUrl) setBookingUrl(data.bookingUrl)
         if (data.whatsappNumber) setWhatsappNumber(data.whatsappNumber)
         if (data.whatsappMessage) setWhatsappMessage(data.whatsappMessage)
+        if (data.menuUrl) setMenuUrl(data.menuUrl)
+        if (data.menuImageUrl) setMenuImageUrl(data.menuImageUrl)
         if (data.plan) setPlan(data.plan)
         if (data.lang) setLang(data.lang)
         if (Array.isArray(data.services) && data.services.length) setServices(data.services)
@@ -305,6 +310,8 @@ export default function DashboardPage() {
       bookingUrl,
       whatsappNumber,
       whatsappMessage,
+      menuUrl,
+      menuImageUrl,
       plan,
       lang,
       services,
@@ -355,6 +362,8 @@ export default function DashboardPage() {
           bookingUrl: bookingUrl.trim() || null,
           whatsappNumber: whatsappNumber.trim() || null,
           whatsappMessage: whatsappMessage.trim() || null,
+          menuUrl: menuUrl.trim() || null,
+          menuImageUrl: menuImageUrl.trim() || null,
           plan,
           lang,
           services,
@@ -585,6 +594,40 @@ export default function DashboardPage() {
                     <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessage.length}/500</p>
                   </div>
                 </div>
+                {selectedTemplate === 'food' && (
+                  <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5">
+                    <p className="text-xs font-bold text-gold uppercase tracking-wider mb-2">Full menu</p>
+                    <h3 className="font-bold text-navy mb-2">Complete menu link or image</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Keep the landing clean with your best highlights, and add the full menu here for guests who want to see everything. This will also power a menu QR Code.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-start">
+                      <input
+                        type="text"
+                        value={menuUrl}
+                        onChange={(e) => setMenuUrl(e.target.value)}
+                        placeholder="https://your-restaurant.com/menu or delivery menu link"
+                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => menuImageInputRef.current?.click()}
+                        className="inline-flex items-center justify-center gap-2 bg-white border border-gold/30 text-navy px-4 py-3 rounded-xl font-bold hover:bg-gold/10 transition-colors"
+                      >
+                        <Upload className="w-4 h-4 text-gold" />
+                        Upload menu image
+                      </button>
+                    </div>
+                    <input ref={menuImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setMenuImageUrl)} />
+                    {menuImageUrl && (
+                      <div className="mt-4 rounded-2xl overflow-hidden border border-orange-100 bg-white p-2 max-w-xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={menuImageUrl} alt="Full menu preview" className="w-full h-40 object-cover rounded-xl" />
+                        <button type="button" onClick={() => setMenuImageUrl('')} className="mt-2 text-xs text-red-500 font-bold hover:underline">Remove menu image</button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Page language</label>
                   <p className="text-xs text-gray-400 mb-2">Choose the main language your customers should see first. You can still offer multiple languages on the page.</p>

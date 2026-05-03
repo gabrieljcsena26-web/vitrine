@@ -42,6 +42,8 @@ export interface BusinessData {
   booking_url: string | null
   whatsapp_number: string | null
   whatsapp_message: string | null
+  menu_url?: string | null
+  menu_image_url?: string | null
   benefits?: string[] | null
   testimonials?: Testimonial[] | null
   faqs?: FAQItem[] | null
@@ -119,6 +121,9 @@ export default function PublicPageClient({ business }: Props) {
           bookingUrl={business.booking_url}
           whatsappNumber={business.whatsapp_number}
           whatsappMessage={business.whatsapp_message}
+          menuUrl={business.menu_url}
+          menuImageUrl={business.menu_image_url}
+          lang={lang}
         />
       ) : (
         <>

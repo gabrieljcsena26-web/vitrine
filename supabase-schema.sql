@@ -26,6 +26,8 @@ create table if not exists businesses (
   primary_color     text,
   accent_color      text,
   map_url           text,
+  menu_url          text,
+  menu_image_url    text,
   seo_title         text,
   seo_description   text,
   og_image_url      text,
@@ -58,6 +60,8 @@ create table if not exists page_views (
 -- alter table businesses  add column if not exists primary_color text;
 -- alter table businesses  add column if not exists accent_color text;
 -- alter table businesses  add column if not exists map_url text;
+-- alter table businesses  add column if not exists menu_url text;
+-- alter table businesses  add column if not exists menu_image_url text;
 -- alter table businesses  add column if not exists seo_title text;
 -- alter table businesses  add column if not exists seo_description text;
 -- alter table businesses  add column if not exists og_image_url text;

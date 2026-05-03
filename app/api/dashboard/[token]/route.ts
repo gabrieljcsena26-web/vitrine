@@ -38,7 +38,7 @@ export async function GET(
   const db = createServiceClient()
 
   // Look up business by secret token
-  const baseBusinessSelect = 'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number'
+  const baseBusinessSelect = 'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, menu_url, menu_image_url'
   const businessResult = await db
     .from('businesses')
     .select(`${baseBusinessSelect}, whatsapp_message, plan`)
@@ -48,7 +48,7 @@ export async function GET(
   let business: any = businessResult.data
   let bizError = businessResult.error
 
-  if (bizError && (bizError.message?.includes('whatsapp_message') || bizError.message?.includes('plan'))) {
+  if (bizError && (bizError.message?.includes('whatsapp_message') || bizError.message?.includes('plan') || bizError.message?.includes('menu_url') || bizError.message?.includes('menu_image_url'))) {
     const fallback = await db
       .from('businesses')
       .select(baseBusinessSelect)
@@ -183,6 +183,8 @@ export async function GET(
       bookingUrl: business.booking_url ?? null,
       whatsappNumber: business.whatsapp_number ?? null,
       whatsappMessage: business.whatsapp_message ?? null,
+      menuUrl: business.menu_url ?? null,
+      menuImageUrl: business.menu_image_url ?? null,
       plan,
     },
     pageUsage: {
@@ -222,7 +224,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { bookingUrl, whatsappNumber, whatsappMessage } = body
+  const { bookingUrl, whatsappNumber, whatsappMessage, menuUrl, menuImageUrl } = body
 
   // Validate bookingUrl: only allow http/https URLs or plain email addresses
   if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
@@ -253,21 +255,31 @@ export async function PATCH(
     }
   }
 
+  if (menuUrl !== null && menuUrl !== undefined && menuUrl !== '') {
+    if (!isHttpUrl(String(menuUrl))) {
+      return NextResponse.json({ error: 'menuUrl must be a valid http/https URL' }, { status: 400 })
+    }
+  }
+
   const db = createServiceClient()
 
   const updates: Record<string, string | null> = {}
   if (bookingUrl !== undefined) updates.booking_url = bookingUrl ?? null
   if (whatsappNumber !== undefined) updates.whatsapp_number = whatsappNumber ?? null
   if (whatsappMessage !== undefined) updates.whatsapp_message = whatsappMessage ? String(whatsappMessage).trim() : null
+  if (menuUrl !== undefined) updates.menu_url = menuUrl ? String(menuUrl).trim() : null
+  if (menuImageUrl !== undefined) updates.menu_image_url = menuImageUrl ? String(menuImageUrl).trim() : null
 
   let { error } = await db
     .from('businesses')
     .update(updates)
     .eq('secret_token', token)
 
-  if (error && error.message?.includes('whatsapp_message')) {
+  if (error && (error.message?.includes('whatsapp_message') || error.message?.includes('menu_url') || error.message?.includes('menu_image_url'))) {
     const fallbackUpdates = { ...updates }
-    delete fallbackUpdates.whatsapp_message
+    if (error.message?.includes('whatsapp_message')) delete fallbackUpdates.whatsapp_message
+    if (error.message?.includes('menu_url')) delete fallbackUpdates.menu_url
+    if (error.message?.includes('menu_image_url')) delete fallbackUpdates.menu_image_url
     const fallback = await db
       .from('businesses')
       .update(fallbackUpdates)

@@ -29,6 +29,8 @@ interface BusinessData {
   bookingUrl?: string
   whatsappNumber?: string
   whatsappMessage?: string
+  menuUrl?: string
+  menuImageUrl?: string
   lang: string
   services: { name: string; price: string; description?: string; photo?: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
@@ -113,6 +115,9 @@ export default function PreviewPage() {
           bookingUrl={userData.bookingUrl}
           whatsappNumber={userData.whatsappNumber}
           whatsappMessage={userData.whatsappMessage}
+          menuUrl={userData.menuUrl}
+          menuImageUrl={userData.menuImageUrl}
+          lang={lang}
         />
       ) : (
         <>

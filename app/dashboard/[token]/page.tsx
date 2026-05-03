@@ -39,6 +39,65 @@ const dashboardCopy = {
   },
 } as const
 
+const menuQrCopy = {
+  pt: {
+    title: 'QR Code do menu',
+    hint: 'Use este QR Code em mesas, balcões, flyers ou sacos de entrega para abrir o menu completo direto no telemóvel.',
+    stats: 'As visitas deste QR ficam rastreadas com a origem menu-qr.',
+    creating: 'Criando...',
+    ready: 'QR do menu pronto',
+    create: 'Criar QR do menu',
+    download: 'Baixar QR do menu',
+    copied: 'Link copiado',
+    copy: 'Copiar link do menu',
+    alert: 'Não foi possível criar o QR Code do menu. Tente novamente.',
+    manualCopy: 'Copie este link manualmente:',
+    previewAlt: 'Pré-visualização do QR Code do menu',
+  },
+  en: {
+    title: 'Menu QR Code',
+    hint: 'Use this QR Code on tables, counters, flyers or delivery bags so customers open the full menu directly on mobile.',
+    stats: 'Visits from this menu QR are tracked with the menu-qr source.',
+    creating: 'Creating...',
+    ready: 'Menu QR ready',
+    create: 'Create menu QR',
+    download: 'Download menu QR',
+    copied: 'Link copied',
+    copy: 'Copy menu link',
+    alert: 'Could not create the menu QR Code. Please try again.',
+    manualCopy: 'Copy this link manually:',
+    previewAlt: 'Menu QR Code preview',
+  },
+  es: {
+    title: 'QR Code del menú',
+    hint: 'Usa este QR Code en mesas, mostradores, flyers o bolsas de delivery para abrir el menú completo directo en móvil.',
+    stats: 'Las visitas de este QR quedan rastreadas con la fuente menu-qr.',
+    creating: 'Creando...',
+    ready: 'QR del menú listo',
+    create: 'Crear QR del menú',
+    download: 'Descargar QR del menú',
+    copied: 'Enlace copiado',
+    copy: 'Copiar enlace del menú',
+    alert: 'No se pudo crear el QR Code del menú. Inténtalo de nuevo.',
+    manualCopy: 'Copia este enlace manualmente:',
+    previewAlt: 'Vista previa del QR Code del menú',
+  },
+  fr: {
+    title: 'QR Code du menu',
+    hint: 'Utilisez ce QR Code sur tables, comptoirs, flyers ou sacs de livraison pour ouvrir le menu complet sur mobile.',
+    stats: 'Les visites de ce QR sont suivies avec la source menu-qr.',
+    creating: 'Création...',
+    ready: 'QR du menu prêt',
+    create: 'Créer le QR du menu',
+    download: 'Télécharger le QR du menu',
+    copied: 'Lien copié',
+    copy: 'Copier le lien du menu',
+    alert: 'Impossible de créer le QR Code du menu. Réessayez.',
+    manualCopy: 'Copiez ce lien manuellement :',
+    previewAlt: 'Aperçu du QR Code du menu',
+  },
+} as const
+
 const QR_CHANNEL_NAME = 'Store QR Code'
 
 interface Lead {
@@ -86,6 +145,8 @@ interface DashboardData {
     bookingUrl: string | null
     whatsappNumber: string | null
     whatsappMessage: string | null
+    menuUrl: string | null
+    menuImageUrl: string | null
     plan: string
   }
   pageUsage: {
@@ -195,6 +256,9 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [qrPreviewUrl, setQrPreviewUrl] = useState('')
   const [qrTrackedLink, setQrTrackedLink] = useState('')
   const [qrCopied, setQrCopied] = useState(false)
+  const [menuQrCreating, setMenuQrCreating] = useState(false)
+  const [menuQrPreviewUrl, setMenuQrPreviewUrl] = useState('')
+  const [menuQrCopied, setMenuQrCopied] = useState(false)
   const copyTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Public page URL copy
@@ -372,6 +436,36 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     }
   }
 
+  const menuQrLink = data && typeof window !== 'undefined'
+    ? `${window.location.origin}/p/${data.business.slug}/menu?via=menu-qr`
+    : data
+    ? `/p/${data.business.slug}/menu?via=menu-qr`
+    : ''
+
+  const handleCreateMenuQr = async () => {
+    if (!menuQrLink || !data) return
+    setMenuQrCreating(true)
+    try {
+      const dataUrl = await buildQrDataUrl(menuQrLink)
+      setMenuQrPreviewUrl(dataUrl)
+    } catch {
+      alert(menuQrCopy[dashboardLang].alert)
+    } finally {
+      setMenuQrCreating(false)
+    }
+  }
+
+  const handleCopyMenuQrLink = async () => {
+    if (!menuQrLink) return
+    try {
+      await navigator.clipboard.writeText(menuQrLink)
+      setMenuQrCopied(true)
+      copyTimeoutRef.current = setTimeout(() => setMenuQrCopied(false), 2000)
+    } catch {
+      alert(`${menuQrCopy[dashboardLang].manualCopy}\n\n${menuQrLink}`)
+    }
+  }
+
   const handleCopyPageUrl = async () => {
     if (!data) return
     const url = typeof window !== 'undefined'
@@ -447,8 +541,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   }
 
   const t = dashboardCopy[dashboardLang]
+  const mt = menuQrCopy[dashboardLang]
 
   const { business, pageUsage, stats } = data
+  const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
   const isDemoDashboard = business.ownerEmail === 'test@vitrine.local'
   const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : isDemoDashboard ? demoViewsBySource : []
   const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : isDemoDashboard ? demoRecentEvents : []
@@ -944,6 +1040,59 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               </div>
             </div>
           </div>
+          {isFoodBusiness && (business.menuUrl || business.menuImageUrl) && (
+            <div className="mt-5 rounded-3xl border border-orange-200 bg-gradient-to-br from-orange-50 via-white to-gold/5 p-5 overflow-hidden relative">
+              <div className="relative grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-5 items-center">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
+                    <QrCode className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-black text-navy text-lg">{mt.title}</p>
+                    <p className="text-sm text-gray-500 mt-1 max-w-2xl">
+                      {mt.hint}
+                    </p>
+                    <p className="text-xs text-gold font-bold mt-3">{mt.stats}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 flex-wrap lg:justify-end">
+                  {menuQrPreviewUrl && (
+                    <div className="bg-white rounded-2xl border border-orange-100 p-3 shadow-sm">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={menuQrPreviewUrl} alt={mt.previewAlt} className="w-28 h-28" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-2 min-w-[190px]">
+                    <button
+                      onClick={handleCreateMenuQr}
+                      disabled={menuQrCreating}
+                      className="inline-flex items-center justify-center gap-2 bg-gold text-navy px-4 py-3 rounded-xl text-sm font-black hover:bg-yellow-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <QrCode className="w-4 h-4" />
+                      {menuQrCreating ? mt.creating : menuQrPreviewUrl ? mt.ready : mt.create}
+                    </button>
+                    {menuQrPreviewUrl && (
+                      <>
+                        <button
+                          onClick={() => downloadQrDataUrl(menuQrPreviewUrl, `vitrine-${business.slug}-menu-qr.png`)}
+                          className="inline-flex items-center justify-center gap-2 bg-navy text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-navy/90 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                          {mt.download}
+                        </button>
+                        <button
+                          onClick={handleCopyMenuQrLink}
+                          className="inline-flex items-center justify-center gap-2 bg-white border border-orange-100 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
+                        >
+                          {menuQrCopied ? <><Check className="w-4 h-4 text-green-500" />{mt.copied}</> : <><Copy className="w-4 h-4" />{mt.copy}</>}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>}
 
         {/* ── Block C: Leads list ── */}

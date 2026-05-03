@@ -58,37 +58,40 @@ const homeCopy = {
   },
 } satisfies Record<Lang, any>
 
-const landingPreviews = [
-  {
-    label: 'Restauração',
-    title: 'Menu, QR e pedidos',
-    subtitle: 'Restaurantes, cafés, bares, padarias e food trucks.',
-    image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop',
-    cta: 'Pedir no WhatsApp',
-    details: ['Mais pedidos', 'Cardápio QR', 'Horário aberto'],
-  },
-  {
-    label: 'Salão',
-    title: 'Agenda e beleza',
-    subtitle: 'Salão, barbearia, unhas, estética leve e autocuidado.',
-    image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=900&auto=format&fit=crop',
-    cta: 'Reservar horário',
-    details: ['Serviços', 'Galeria', 'Localização'],
-  },
-  {
-    label: 'Clínicas & escritórios',
-    title: 'Confiança e consulta',
-    subtitle: 'Clínicas, advocacia, consultoria, terapeutas e freelancers.',
-    image: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=900&auto=format&fit=crop',
-    cta: 'Agendar consulta',
-    details: ['Autoridade', 'Processo claro', 'FAQ'],
-  },
-]
+const landingPreviewImages = {
+  food: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop',
+  salon: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=900&auto=format&fit=crop',
+  professional: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?q=80&w=900&auto=format&fit=crop',
+}
+
+const landingPreviewsByLang = {
+  pt: [
+    { label: 'Restauração', title: 'Menu, QR e pedidos', subtitle: 'Restaurantes, cafés, bares, padarias e food trucks.', image: landingPreviewImages.food, cta: 'Pedir no WhatsApp', details: ['Mais pedidos', 'Cardápio QR', 'Horário aberto'], meta: 'Horário + mapa' },
+    { label: 'Salão', title: 'Agenda e beleza', subtitle: 'Salão, barbearia, unhas, estética leve e autocuidado.', image: landingPreviewImages.salon, cta: 'Reservar horário', details: ['Serviços', 'Galeria', 'Localização'], meta: 'Horário + mapa' },
+    { label: 'Clínicas & escritórios', title: 'Confiança e consulta', subtitle: 'Clínicas, advocacia, consultoria, terapeutas e freelancers.', image: landingPreviewImages.professional, cta: 'Agendar consulta', details: ['Autoridade', 'Processo claro', 'FAQ'], meta: 'Horário + mapa' },
+  ],
+  en: [
+    { label: 'Food', title: 'Menu, QR and orders', subtitle: 'Restaurants, cafés, bars, bakeries and food trucks.', image: landingPreviewImages.food, cta: 'Order on WhatsApp', details: ['Best sellers', 'QR menu', 'Open hours'], meta: 'Hours + map' },
+    { label: 'Salon', title: 'Beauty and bookings', subtitle: 'Hair salons, barbers, nails, light aesthetics and self-care.', image: landingPreviewImages.salon, cta: 'Book a time', details: ['Services', 'Gallery', 'Location'], meta: 'Hours + map' },
+    { label: 'Clinics & offices', title: 'Trust and consultation', subtitle: 'Clinics, law, consulting, therapists and freelancers.', image: landingPreviewImages.professional, cta: 'Book a consultation', details: ['Authority', 'Clear process', 'FAQ'], meta: 'Hours + map' },
+  ],
+  es: [
+    { label: 'Restauración', title: 'Menú, QR y pedidos', subtitle: 'Restaurantes, cafés, bares, panaderías y food trucks.', image: landingPreviewImages.food, cta: 'Pedir por WhatsApp', details: ['Más pedidos', 'Menú QR', 'Horario abierto'], meta: 'Horario + mapa' },
+    { label: 'Salón', title: 'Agenda y belleza', subtitle: 'Salón, barbería, uñas, estética ligera y autocuidado.', image: landingPreviewImages.salon, cta: 'Reservar horario', details: ['Servicios', 'Galería', 'Ubicación'], meta: 'Horario + mapa' },
+    { label: 'Clínicas y oficinas', title: 'Confianza y consulta', subtitle: 'Clínicas, abogacía, consultoría, terapeutas y freelancers.', image: landingPreviewImages.professional, cta: 'Agendar consulta', details: ['Autoridad', 'Proceso claro', 'FAQ'], meta: 'Horario + mapa' },
+  ],
+  fr: [
+    { label: 'Restauration', title: 'Menu, QR et commandes', subtitle: 'Restaurants, cafés, bars, boulangeries et food trucks.', image: landingPreviewImages.food, cta: 'Commander sur WhatsApp', details: ['Plus demandés', 'Menu QR', 'Horaires ouverts'], meta: 'Horaires + carte' },
+    { label: 'Salon', title: 'Beauté et réservations', subtitle: 'Salon, barbier, ongles, esthétique légère et soin personnel.', image: landingPreviewImages.salon, cta: 'Réserver un horaire', details: ['Services', 'Galerie', 'Adresse'], meta: 'Horaires + carte' },
+    { label: 'Cliniques et bureaux', title: 'Confiance et consultation', subtitle: 'Cliniques, droit, conseil, thérapeutes et freelances.', image: landingPreviewImages.professional, cta: 'Prendre rendez-vous', details: ['Autorité', 'Processus clair', 'FAQ'], meta: 'Horaires + carte' },
+  ],
+} satisfies Record<Lang, Array<{ label: string; title: string; subtitle: string; image: string; cta: string; details: string[]; meta: string }>>
 
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('pt')
   const t = homeCopy[lang]
   const mock = t.dashboardMock
+  const landingPreviews = landingPreviewsByLang[lang]
   const starterFeatures = {
     pt: ['1 página publicada', 'Preview com suas fotos', 'QR Code da página', 'Relatório a cada 14 dias', 'Dashboard básico'],
     en: ['1 published page', 'Preview with your photos', 'Page QR Code', 'Report every 14 days', 'Basic dashboard'],
@@ -154,6 +157,12 @@ export default function HomePage() {
         ['QR + dashboard', 'Utilisez le QR en boutique, sur tables, flyers ou sacs et suivez visites, clics, leads et canaux forts.'],
       ],
     },
+  }[lang]
+  const trustStats = {
+    pt: [['5★', 'Confiança'], ['Leads', 'Contactos'], ['QR', 'Rastreio']],
+    en: [['5★', 'Trust'], ['Leads', 'Contacts'], ['QR', 'Tracking']],
+    es: [['5★', 'Confianza'], ['Leads', 'Contactos'], ['QR', 'Rastreo']],
+    fr: [['5★', 'Confiance'], ['Leads', 'Contacts'], ['QR', 'Suivi']],
   }[lang]
 
   return (
@@ -337,7 +346,7 @@ export default function HomePage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[11px] font-black">
                       <span className="rounded-xl bg-navy text-white px-3 py-2 text-center">{item.cta}</span>
-                      <span className="rounded-xl bg-stone-100 text-navy px-3 py-2 text-center">Horário + mapa</span>
+                      <span className="rounded-xl bg-stone-100 text-navy px-3 py-2 text-center">{item.meta}</span>
                     </div>
                   </div>
                 </div>
@@ -358,11 +367,7 @@ export default function HomePage() {
             <h2 className="text-4xl md:text-5xl font-black mt-3 mb-5">{credibility.title}</h2>
             <p className="text-gray-500 text-lg leading-relaxed mb-6">{credibility.text}</p>
             <div className="grid grid-cols-3 gap-3 max-w-lg">
-              {[
-                ['5★', 'Trust'],
-                ['Leads', 'Contacts'],
-                ['QR', 'Tracking'],
-              ].map(([value, label]) => (
+              {trustStats.map(([value, label]) => (
                 <div key={label} className="rounded-2xl bg-white border border-gold/20 p-4 shadow-sm">
                   <p className="text-2xl font-black text-navy">{value}</p>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{label}</p>

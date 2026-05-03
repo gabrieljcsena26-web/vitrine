@@ -68,6 +68,47 @@ async function findOwnerPages(db: ReturnType<typeof createServiceClient>, ownerE
   return []
 }
 
+async function getOwnerPageStats(db: ReturnType<typeof createServiceClient>, businessIds: string[], since: string | null) {
+  const statsByPage: Record<string, { totalViews: number; bookingClicks: number; whatsappClicks: number; totalLeads: number; leadsThisWeek: number }> = {}
+  for (const id of businessIds) {
+    statsByPage[id] = { totalViews: 0, bookingClicks: 0, whatsappClicks: 0, totalLeads: 0, leadsThisWeek: 0 }
+  }
+
+  if (businessIds.length === 0) return statsByPage
+
+  let ownerViewsQuery = db
+    .from('page_views')
+    .select('business_id, event_type')
+    .in('business_id', businessIds)
+  if (since) ownerViewsQuery = ownerViewsQuery.gte('visited_at', since)
+  const { data: ownerViews } = await ownerViewsQuery
+
+  for (const view of ownerViews ?? []) {
+    const pageStats = statsByPage[view.business_id]
+    if (!pageStats) continue
+    if (view.event_type === 'booking_click') pageStats.bookingClicks += 1
+    else if (view.event_type === 'whatsapp_click') pageStats.whatsappClicks += 1
+    else pageStats.totalViews += 1
+  }
+
+  let ownerLeadsQuery = db
+    .from('leads')
+    .select('business_id, submitted_at')
+    .in('business_id', businessIds)
+  if (since) ownerLeadsQuery = ownerLeadsQuery.gte('submitted_at', since)
+  const { data: ownerLeads } = await ownerLeadsQuery
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+
+  for (const lead of ownerLeads ?? []) {
+    const pageStats = statsByPage[lead.business_id]
+    if (!pageStats) continue
+    pageStats.totalLeads += 1
+    if (new Date(lead.submitted_at).getTime() >= oneWeekAgo) pageStats.leadsThisWeek += 1
+  }
+
+  return statsByPage
+}
+
 // GET /api/dashboard/[token] — return stats for the owner dashboard
 export async function GET(
   req: NextRequest,
@@ -102,6 +143,7 @@ export async function GET(
     .eq('owner_email', business.owner_email)
 
   const ownerPages = await findOwnerPages(db, business.owner_email)
+  const ownerPageStats = await getOwnerPageStats(db, ownerPages.map((page) => page.id).filter(Boolean), since)
 
   // Total page views
   let totalViewsQuery = db
@@ -235,6 +277,7 @@ export async function GET(
       menuUrl: page.menu_url ?? null,
       plan: normalizePlan(page.plan || plan),
       isCurrent: page.id === business.id,
+      stats: ownerPageStats[page.id] ?? { totalViews: 0, bookingClicks: 0, whatsappClicks: 0, totalLeads: 0, leadsThisWeek: 0 },
     })),
     stats: {
       totalViews: totalViews ?? 0,

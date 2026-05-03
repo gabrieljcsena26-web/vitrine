@@ -104,6 +104,7 @@ const pageCollectionCopy = {
     eyebrow: 'Coleção Pro',
     title: 'Suas landing pages no mesmo painel',
     subtitle: 'Abra cada página para ver o link público, foco comercial e ações rápidas sem misturar informações.',
+    choose: 'Escolha uma landing para ver os números dela',
     current: 'Atual',
     live: 'Online',
     openDetails: 'Abrir detalhes',
@@ -119,6 +120,7 @@ const pageCollectionCopy = {
     eyebrow: 'Pro collection',
     title: 'Your landing pages in one panel',
     subtitle: 'Open each page to see the public link, commercial focus and quick actions without mixing information.',
+    choose: 'Choose a landing page to see its numbers',
     current: 'Current',
     live: 'Live',
     openDetails: 'Open details',
@@ -134,6 +136,7 @@ const pageCollectionCopy = {
     eyebrow: 'Colección Pro',
     title: 'Tus landing pages en un mismo panel',
     subtitle: 'Abre cada página para ver el enlace público, el enfoque comercial y acciones rápidas sin mezclar información.',
+    choose: 'Elige una landing para ver sus números',
     current: 'Actual',
     live: 'Online',
     openDetails: 'Abrir detalles',
@@ -149,6 +152,7 @@ const pageCollectionCopy = {
     eyebrow: 'Collection Pro',
     title: 'Vos landing pages dans un seul panneau',
     subtitle: 'Ouvrez chaque page pour voir le lien public, l’objectif commercial et les actions rapides sans mélanger les informations.',
+    choose: 'Choisissez une landing pour voir ses chiffres',
     current: 'Actuelle',
     live: 'En ligne',
     openDetails: 'Ouvrir les détails',
@@ -209,6 +213,13 @@ interface OwnerPageSummary {
   menuUrl: string | null
   plan: string
   isCurrent?: boolean
+  stats?: {
+    totalViews: number
+    bookingClicks: number
+    whatsappClicks: number
+    totalLeads: number
+    leadsThisWeek: number
+  }
 }
 
 interface DashboardData {
@@ -322,7 +333,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [range, setRange] = useState('30d')
   const [activeSection, setActiveSection] = useState<'overview' | 'leads' | 'channels' | 'settings'>('overview')
   const [dashboardLang, setDashboardLang] = useState<DashboardLang>('pt')
-  const [expandedPageId, setExpandedPageId] = useState('')
+  const [selectedPageId, setSelectedPageId] = useState('')
 
   // Campaign link creator
   const [campaignName, setCampaignName] = useState('')
@@ -381,6 +392,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       }
       const json = await res.json()
       setData(json)
+      setSelectedPageId((current) => current || json.business.id)
       const channelsRes = await fetch(`/api/dashboard/${t}/channels`)
       if (channelsRes.ok) {
         const channelsJson = await channelsRes.json()
@@ -623,9 +635,35 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const mt = menuQrCopy[dashboardLang]
   const pt = pageCollectionCopy[dashboardLang]
 
-  const { business, pageUsage, stats } = data
+  const { business: currentBusiness, pageUsage } = data
+  const ownerPages = (data.pages && data.pages.length > 0 ? data.pages : [{
+    id: currentBusiness.id,
+    slug: currentBusiness.slug,
+    ownerName: currentBusiness.ownerName,
+    category: currentBusiness.category,
+    createdAt: currentBusiness.createdAt,
+    bookingUrl: currentBusiness.bookingUrl,
+    whatsappNumber: currentBusiness.whatsappNumber,
+    menuUrl: currentBusiness.menuUrl,
+    plan: currentBusiness.plan,
+    isCurrent: true,
+    stats: data.stats,
+  }]) as OwnerPageSummary[]
+  const selectedPage = ownerPages.find((page) => page.id === selectedPageId) ?? ownerPages.find((page) => page.isCurrent) ?? ownerPages[0]
+  const business = {
+    ...currentBusiness,
+    id: selectedPage?.id ?? currentBusiness.id,
+    slug: selectedPage?.slug ?? currentBusiness.slug,
+    ownerName: selectedPage?.ownerName ?? currentBusiness.ownerName,
+    category: selectedPage?.category ?? currentBusiness.category,
+    createdAt: selectedPage?.createdAt ?? currentBusiness.createdAt,
+    bookingUrl: selectedPage?.bookingUrl ?? currentBusiness.bookingUrl,
+    whatsappNumber: selectedPage?.whatsappNumber ?? currentBusiness.whatsappNumber,
+    menuUrl: selectedPage?.menuUrl ?? currentBusiness.menuUrl,
+  }
+  const stats = selectedPage?.stats ?? data.stats
   const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
-  const isDemoDashboard = business.ownerEmail === 'test@vitrine.local'
+  const isDemoDashboard = currentBusiness.ownerEmail === 'test@vitrine.local'
   const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : isDemoDashboard ? demoViewsBySource : []
   const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : isDemoDashboard ? demoRecentEvents : []
   const leads = data.leads.length > 0 ? data.leads : isDemoDashboard ? demoLeads : []
@@ -643,21 +681,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const isProPlan = pageUsage.plan === 'pro'
   const reportLabel = isProPlan ? t.proReport : t.starterReport
   const pageLimitLabel = pageUsage.pageLimit
-  const newPageHref = `/dashboard?new=1&ownerEmail=${encodeURIComponent(business.ownerEmail)}&plan=${encodeURIComponent(pageUsage.plan)}`
-  const ownerPages = (data.pages && data.pages.length > 0 ? data.pages : [{
-    id: business.id,
-    slug: business.slug,
-    ownerName: business.ownerName,
-    category: business.category,
-    createdAt: business.createdAt,
-    bookingUrl: business.bookingUrl,
-    whatsappNumber: business.whatsappNumber,
-    menuUrl: business.menuUrl,
-    plan: business.plan,
-    isCurrent: true,
-  }]) as OwnerPageSummary[]
+  const newPageHref = `/dashboard?new=1&ownerEmail=${encodeURIComponent(currentBusiness.ownerEmail)}&plan=${encodeURIComponent(pageUsage.plan)}`
   const showProPageCollection = isProPlan && ownerPages.length > 1
-  const activeExpandedPageId = expandedPageId || ownerPages.find((page) => page.isCurrent)?.id || ownerPages[0]?.id
   const now = new Date()
   const weekdayLabel = now.toLocaleDateString(undefined, { weekday: 'long' })
   const lastUpdatedLabel = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -879,114 +904,52 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
         </div>
 
         {showProPageCollection && (
-          <div className="bg-gradient-to-br from-white via-stone-50 to-amber-50/70 rounded-3xl shadow-sm border border-gold/20 p-5 md:p-6 mb-6 overflow-hidden relative">
-            <div className="absolute -right-16 -top-16 w-44 h-44 bg-gold/20 rounded-full blur-3xl" />
-            <div className="absolute -left-20 -bottom-20 w-52 h-52 bg-navy/5 rounded-full blur-3xl" />
-            <div className="relative flex items-start justify-between gap-4 flex-wrap mb-5">
-              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-navy text-white px-3 py-1.5 text-[11px] font-black uppercase tracking-wider mb-3">
-                  <Layers className="w-3.5 h-3.5 text-gold" />
-                  {pt.eyebrow}
+          <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-3 mb-6">
+            <div className="flex items-center justify-between gap-3 flex-wrap mb-3 px-1">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-9 h-9 rounded-2xl bg-navy text-gold flex items-center justify-center flex-shrink-0">
+                  <Layers className="w-4 h-4" />
                 </div>
-                <h2 className="text-2xl md:text-3xl font-black text-navy">{pt.title}</h2>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">{pt.subtitle}</p>
+                <div className="min-w-0">
+                  <p className="text-xs font-black uppercase tracking-wider text-gold">{pt.eyebrow} · {ownerPages.length} {t.pagesUsed}</p>
+                  <h2 className="text-sm md:text-base font-black text-navy truncate">{pt.choose}</h2>
+                </div>
               </div>
-              <div className="rounded-2xl bg-white/80 border border-white shadow-sm px-4 py-3 text-right">
-                <p className="text-2xl font-black text-navy">{ownerPages.length}</p>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">{t.pagesUsed}</p>
-              </div>
+              <p className="text-xs text-gray-400 max-w-md">{pt.subtitle}</p>
             </div>
-
-            <div className="relative space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {ownerPages.map((page, index) => {
-                const isExpanded = activeExpandedPageId === page.id
-                const publicPageUrl = typeof window !== 'undefined'
-                  ? `${window.location.origin}/p/${page.slug}`
-                  : `/p/${page.slug}`
-                const mainAction = page.bookingUrl ? pt.booking : page.whatsappNumber ? pt.whatsapp : page.menuUrl ? pt.menu : pt.live
-
+                const isSelected = page.id === business.id
+                const pageStats = page.stats ?? { totalViews: 0, bookingClicks: 0, whatsappClicks: 0, totalLeads: 0, leadsThisWeek: 0 }
                 return (
-                  <div key={page.id} className="rounded-2xl bg-white/90 border border-stone-200/70 shadow-sm overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedPageId(isExpanded ? '' : page.id)}
-                      className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-stone-50/80 transition-colors"
-                      aria-expanded={isExpanded}
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black ${page.isCurrent ? 'bg-navy text-gold' : 'bg-stone-100 text-navy'}`}>
-                          {String(index + 1).padStart(2, '0')}
+                  <button
+                    key={page.id}
+                    type="button"
+                    onClick={() => setSelectedPageId(page.id)}
+                    className={`rounded-2xl border p-3 text-left transition-all ${
+                      isSelected
+                        ? 'border-gold/50 bg-gold/10 shadow-sm ring-1 ring-gold/20'
+                        : 'border-stone-100 bg-stone-50 hover:bg-white hover:border-gold/30'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black ${isSelected ? 'bg-navy text-gold' : 'bg-white text-navy'}`}>
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-black text-navy truncate">{page.ownerName}</p>
+                          {page.isCurrent && <span className="rounded-full bg-gold/15 text-navy border border-gold/20 px-2 py-0.5 text-[9px] font-black uppercase">{pt.current}</span>}
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-black text-navy truncate">{page.ownerName}</h3>
-                            {page.isCurrent && (
-                              <span className="rounded-full bg-gold/15 text-navy border border-gold/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                                {pt.current}
-                              </span>
-                            )}
-                            <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider">
-                              {pt.live}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-400 truncate">{page.category || 'Landing page'} · /p/{page.slug}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="hidden md:inline-flex text-xs font-bold text-gray-400">{pt.openDetails}</span>
-                        <ChevronDown className={`w-5 h-5 text-navy transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="border-t border-stone-100 p-4 md:p-5 bg-gradient-to-br from-stone-50 to-white">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.created}</p>
-                            <p className="font-bold text-navy">{new Date(page.createdAt).toLocaleDateString()}</p>
-                          </div>
-                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.mainAction}</p>
-                            <p className="font-bold text-navy">{mainAction}</p>
-                          </div>
-                          <div className="rounded-2xl bg-white border border-stone-100 p-4">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400 mb-1">{pt.publicLink}</p>
-                            <p className="font-mono text-xs text-navy/70 truncate">{publicPageUrl}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <a
-                            href={`/p/${page.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-navy text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-navy/90 transition-colors"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            {t.openPage}
-                          </a>
-                          {page.isCurrent ? (
-                            <button
-                              type="button"
-                              onClick={handleCopyPageUrl}
-                              className="inline-flex items-center gap-2 bg-white border border-stone-200 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
-                            >
-                              {pageUrlCopied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                              {pageUrlCopied ? t.copied : t.copyPage}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => navigator.clipboard?.writeText(publicPageUrl)}
-                              className="inline-flex items-center gap-2 bg-white border border-stone-200 text-navy px-4 py-2.5 rounded-xl text-sm font-bold hover:border-gold/40 transition-colors"
-                            >
-                              <Copy className="w-4 h-4" />
-                              {t.copyPage}
-                            </button>
-                          )}
+                        <p className="text-[11px] text-gray-400 truncate">{page.category || 'Landing page'} · /p/{page.slug}</p>
+                        <div className="mt-2 flex items-center gap-3 text-[11px] font-bold text-gray-500">
+                          <span>{pageStats.totalViews} {t.visits}</span>
+                          <span>{pageStats.totalLeads} {t.leadsLabel}</span>
                         </div>
                       </div>
-                    )}
-                  </div>
+                      <ChevronDown className={`w-4 h-4 text-navy transition-transform ${isSelected ? '-rotate-90' : ''}`} />
+                    </div>
+                  </button>
                 )
               })}
             </div>

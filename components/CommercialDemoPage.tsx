@@ -1,6 +1,9 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Clock, Mail, MapPin, MessageCircle, Phone, QrCode, Scale, Star, Utensils } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Clock, HeartPulse, Mail, MapPin, MessageCircle, Phone, QrCode, Scale, Star, Utensils } from 'lucide-react'
 import type { CommercialDemo } from '@/lib/demo-pages'
 import { whatsAppHref } from '@/lib/utils'
 
@@ -9,14 +12,26 @@ interface Props {
 }
 
 export default function CommercialDemoPage({ demo }: Props) {
+  const [activeMenuItem, setActiveMenuItem] = useState(0)
   const whatsappHref = whatsAppHref(demo.whatsappNumber, demo.whatsappMessage) ?? '#contact'
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`
   const isFood = demo.variant === 'food'
   const isProfessional = demo.variant === 'professional'
-  const serviceLabel = isFood ? 'Cardápio' : isProfessional ? 'Áreas' : 'Serviços'
-  const serviceTitle = isFood ? 'Destaques do menu para decisão rápida' : isProfessional ? 'Áreas de atuação com confiança' : 'Ofertas claras para decisão rápida'
+  const isClinic = demo.variant === 'clinic'
+  const serviceLabel = isFood ? 'Cardápio' : isProfessional ? 'Áreas' : isClinic ? 'Tratamentos' : 'Serviços'
+  const serviceTitle = isFood ? 'Destaques do menu para decisão rápida' : isProfessional ? 'Áreas de atuação com confiança' : isClinic ? 'Tratamentos explicados antes da marcação' : 'Ofertas claras para decisão rápida'
   const primaryCta = isFood ? 'Pedir pelo WhatsApp' : isProfessional ? 'Agendar consulta' : 'Pedir pelo WhatsApp'
   const secondaryCta = isFood ? 'Ver cardápio' : isProfessional ? 'Ver áreas' : 'Ver serviços'
+  const activeDish = demo.services[activeMenuItem] ?? demo.services[0]
+  const activeDishPhoto = activeDish?.photo ?? demo.photos[(activeMenuItem % Math.max(demo.photos.length, 1))] ?? demo.photos[0]
+
+  useEffect(() => {
+    if (!isFood || demo.services.length <= 1) return
+    const interval = window.setInterval(() => {
+      setActiveMenuItem((value) => (value + 1) % demo.services.length)
+    }, 3200)
+    return () => window.clearInterval(interval)
+  }, [demo.services.length, isFood])
 
   return (
     <main className="bg-white text-navy">
@@ -62,14 +77,14 @@ export default function CommercialDemoPage({ demo }: Props) {
       </section>
 
       {isFood && (
-        <section className="py-20 bg-[#fffaf0]">
+        <section id="services" className="py-20 bg-[#fffaf0]">
           <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-center">
             <div>
               <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
                 <QrCode className="w-4 h-4" /> Cardápio + QR Code
               </span>
-              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Uma estrutura feita para negócios de comida.</h2>
-              <p className="text-gray-500 text-lg leading-relaxed mb-6">A landing mostra os pratos principais, enquanto o QR leva para o menu completo. Ideal para mesa, balcão, flyer, sacola e Instagram.</p>
+              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Mais pedidos / Highlights</h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-6">A foto principal muda conforme o cliente passa pelos destaques do cardápio. Fica visual, rápido e perfeito para decidir pelo telemóvel.</p>
               <div className="grid grid-cols-2 gap-3">
                 {['QR de mesa', 'Menu completo', 'Pedido WhatsApp', 'Fotos de pratos'].map((item) => (
                   <div key={item} className="rounded-2xl bg-white border border-orange-100 p-4 font-black text-navy shadow-sm hover:-translate-y-1 hover:border-gold/40 transition-all">
@@ -81,22 +96,34 @@ export default function CommercialDemoPage({ demo }: Props) {
             <div className="rounded-[2rem] bg-white border border-orange-100 shadow-2xl shadow-orange-100/60 p-5">
               <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-4">
                 <div className="relative min-h-[320px] rounded-3xl overflow-hidden">
-                  <Image src={demo.photos[1]} alt="Menu visual" fill className="object-cover" />
+                  <Image key={activeDishPhoto} src={activeDishPhoto} alt={activeDish?.name ?? 'Menu highlight'} fill className="object-cover transition-opacity duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   <div className="absolute left-4 bottom-4 text-white">
                     <Utensils className="w-7 h-7 text-gold mb-2" />
-                    <p className="text-2xl font-black">Menu visual</p>
+                    <p className="text-2xl font-black">{activeDish?.name}</p>
+                    <p className="text-sm text-white/75 max-w-xs mt-1">{activeDish?.description}</p>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {demo.services.map((item) => (
-                    <div key={item.name} className="rounded-2xl bg-stone-50 border border-stone-100 p-4 hover:border-gold/40 transition-colors">
-                      <div className="flex justify-between gap-3">
-                        <p className="font-black text-navy">{item.name}</p>
-                        <p className="font-black text-gold whitespace-nowrap">{item.price}</p>
+                  <p className="text-xs text-gold font-black uppercase tracking-wider">Mais pedidos</p>
+                  {demo.services.map((item, index) => (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onMouseEnter={() => setActiveMenuItem(index)}
+                      onFocus={() => setActiveMenuItem(index)}
+                      onClick={() => setActiveMenuItem(index)}
+                      className={`w-full text-left rounded-2xl border p-4 transition-all ${
+                        activeMenuItem === index
+                          ? 'bg-navy text-white border-navy shadow-lg shadow-navy/10'
+                          : 'bg-stone-50 text-navy border-stone-100 hover:border-gold/40 hover:bg-gold/5'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-black">{item.name}</p>
+                        <span className={`h-2.5 w-2.5 rounded-full ${activeMenuItem === index ? 'bg-gold' : 'bg-stone-300'}`} />
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{item.description}</p>
-                    </div>
+                    </button>
                   ))}
                   <div className="rounded-2xl bg-navy text-white p-4 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-gold text-navy flex items-center justify-center"><QrCode className="w-6 h-6" /></div>
@@ -136,6 +163,35 @@ export default function CommercialDemoPage({ demo }: Props) {
         </section>
       )}
 
+      {isClinic && (
+        <section className="py-20 bg-rose-50/70">
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-8 items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
+                <HeartPulse className="w-4 h-4" /> Clínicas e serviços especializados
+              </span>
+              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Confiança antes da avaliação.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed">A estrutura deixa claro o cuidado, os tratamentos, os próximos passos e o canal de marcação. Ideal para estética, saúde, terapeutas e personal trainers.</p>
+            </div>
+            <div className="rounded-[2rem] bg-white border border-rose-100 p-5 shadow-2xl shadow-rose-100/70">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  ['Avaliação', 'Explica o primeiro contacto e reduz insegurança.'],
+                  ['Tratamento', 'Mostra opções com descrição simples e confiável.'],
+                  ['Acompanhamento', 'Reforça cuidado, retorno e relação contínua.'],
+                ].map(([title, text], index) => (
+                  <div key={title} className="rounded-3xl border border-rose-100 bg-rose-50/60 p-5 hover:-translate-y-1 hover:border-gold/40 transition-all">
+                    <span className="inline-flex w-9 h-9 rounded-2xl bg-navy text-gold items-center justify-center font-black text-sm mb-4">{index + 1}</span>
+                    <h3 className="font-black text-navy text-lg">{title}</h3>
+                    <p className="text-sm text-gray-500 mt-2 leading-relaxed">{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           {[
@@ -168,23 +224,25 @@ export default function CommercialDemoPage({ demo }: Props) {
         </div>
       </section>
 
-      <section id="services" className="py-24 bg-navy text-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-14">
-            <span className="text-gold uppercase tracking-wider text-sm font-bold">{serviceLabel}</span>
-            <h2 className="text-4xl font-black mt-2">{serviceTitle}</h2>
+      {!isFood && (
+        <section id="services" className="py-24 bg-navy text-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="text-center mb-14">
+              <span className="text-gold uppercase tracking-wider text-sm font-bold">{serviceLabel}</span>
+              <h2 className="text-4xl font-black mt-2">{serviceTitle}</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {demo.services.map((service) => (
+                <article key={service.name} className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:border-gold/40 transition-colors">
+                  <p className="text-xl font-black mb-2">{service.name}</p>
+                  <p className="text-gray-400 text-sm leading-relaxed mb-5">{service.description}</p>
+                  <p className="text-gold text-2xl font-black">{service.price}</p>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {demo.services.map((service) => (
-              <article key={service.name} className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:border-gold/40 transition-colors">
-                <p className="text-xl font-black mb-2">{service.name}</p>
-                <p className="text-gray-400 text-sm leading-relaxed mb-5">{service.description}</p>
-                <p className="text-gold text-2xl font-black">{service.price}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section id="gallery" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-4">

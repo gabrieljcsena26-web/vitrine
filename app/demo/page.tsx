@@ -5,7 +5,14 @@ import { commercialDemos } from '@/lib/demo-pages'
 
 export const metadata = {
   title: 'Commercial demos — Vitrine',
-  description: 'Explore ready-to-sell landing page demos for food businesses, barbershops, cleaning companies, beauty clinics and professional services.',
+  description: 'Explore focused landing page demos for food businesses, salons, clinics and professional offices.',
+}
+
+const demoDescriptions: Record<string, string> = {
+  restauracao: 'Para restaurantes, cafés, bares, padarias e food trucks com cardápio, QR e pedidos.',
+  salao: 'Para salão, barbearia, unhas, beleza e autocuidado com foco em agendamento.',
+  clinica: 'Para clínicas, estética, saúde, terapeutas e serviços especializados.',
+  escritorio: 'Para advocacia, consultoria, freelancers e escritórios que vendem confiança.',
 }
 
 export default function DemoHubPage() {
@@ -25,23 +32,32 @@ export default function DemoHubPage() {
         </div>
       </nav>
 
-      <section className="relative py-24 px-4 overflow-hidden">
+      <section className="relative py-20 px-4 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.18),transparent_32%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.08),transparent_28%)]" />
-        <div className="relative max-w-6xl mx-auto text-center">
+        <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-end">
+          <div>
           <span className="inline-flex rounded-full border border-gold/20 bg-gold/10 px-4 py-2 text-gold text-sm font-bold uppercase tracking-wider">
-            Sales-ready examples
+            Modelos por segmento
           </span>
-          <h1 className="text-5xl md:text-7xl font-black leading-tight mt-6 mb-6">
-            Demos comerciais com estruturas diferentes para cada tipo de negócio.
+          <h1 className="text-4xl md:text-5xl font-black leading-tight mt-6 mb-5">
+            Escolha o ambiente. Veja a estrutura certa.
           </h1>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Veja como a Vitrine muda o formato para comida com cardápio e QR, barbearia, limpeza, estética e serviços profissionais como advocacia ou consultoria.
+          <p className="text-lg text-gray-400 max-w-2xl">
+            Menos páginas genéricas. Cada demo mostra um caminho de conversão diferente: pedido, agendamento, consulta ou contacto profissional.
           </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {['Restauração', 'Salão', 'Clínicas', 'Escritórios'].map((label) => (
+              <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-black text-white hover:border-gold/40 hover:bg-white/10 transition-all">
+                {label}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       <section className="px-4 pb-24">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
           {commercialDemos.map((demo) => (
             <Link key={demo.slug} href={`/demo/${demo.slug}`} className="group rounded-3xl overflow-hidden bg-white text-navy shadow-2xl hover:-translate-y-2 transition-all">
               <div className="relative h-64">
@@ -53,7 +69,7 @@ export default function DemoHubPage() {
                 </div>
               </div>
               <div className="p-6">
-                <p className="text-gray-500 leading-relaxed mb-5">{demo.subheadline}</p>
+                <p className="text-gray-500 leading-relaxed mb-5">{demoDescriptions[demo.slug] ?? demo.subheadline}</p>
                 <span className="inline-flex items-center gap-2 text-gold font-black group-hover:gap-3 transition-all">
                   Ver demo
                   <ArrowRight className="w-4 h-4" />

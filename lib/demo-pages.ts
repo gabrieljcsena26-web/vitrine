@@ -1,6 +1,6 @@
 export interface CommercialDemo {
-  slug: 'barbearia' | 'limpeza' | 'estetica' | 'comida' | 'advocacia'
-  variant?: 'standard' | 'food' | 'professional'
+  slug: 'restauracao' | 'salao' | 'clinica' | 'escritorio'
+  variant?: 'standard' | 'food' | 'professional' | 'clinic'
   businessName: string
   category: string
   headline: string
@@ -16,7 +16,7 @@ export interface CommercialDemo {
     accent: string
   }
   photos: string[]
-  services: { name: string; price: string; description: string }[]
+  services: { name: string; price: string; description: string; photo?: string }[]
   benefits: string[]
   testimonials: { name: string; text: string; rating: number; photo: string }[]
   faqs: { question: string; answer: string }[]
@@ -35,10 +35,10 @@ const defaultHours = [
 
 export const commercialDemos: CommercialDemo[] = [
   {
-    slug: 'comida',
+    slug: 'restauracao',
     variant: 'food',
     businessName: 'Mesa Viva Kitchen',
-    category: 'Comida & cardápio QR',
+    category: 'Restauração: restaurantes, bares e cafés',
     headline: 'Cardápio bonito, pedido rápido e QR Code direto para o menu.',
     subheadline: 'Uma estrutura feita para negócios de comida: destaques visuais, menu completo, WhatsApp, QR de mesa e fotos que dão vontade de pedir.',
     whatsappNumber: '+351 915 678 901',
@@ -54,10 +54,10 @@ export const commercialDemos: CommercialDemo[] = [
       'https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=1200&auto=format&fit=crop',
     ],
     services: [
-      { name: 'Menu executivo', price: '12€', description: 'Prato do dia, bebida e sobremesa em decisão rápida.' },
-      { name: 'Burger artesanal', price: '14€', description: 'Carne premium, pão brioche e molho da casa.' },
-      { name: 'Bowl fresco', price: '11€', description: 'Opção leve, colorida e perfeita para almoço.' },
-      { name: 'Sobremesa da casa', price: '6€', description: 'Final doce para aumentar o ticket médio.' },
+      { name: 'Menu executivo', price: '12€', description: 'Prato do dia, bebida e sobremesa em decisão rápida.', photo: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=1200&auto=format&fit=crop' },
+      { name: 'Burger artesanal', price: '14€', description: 'Carne premium, pão brioche e molho da casa.', photo: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1200&auto=format&fit=crop' },
+      { name: 'Bowl fresco', price: '11€', description: 'Opção leve, colorida e perfeita para almoço.', photo: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1200&auto=format&fit=crop' },
+      { name: 'Sobremesa da casa', price: '6€', description: 'Final doce para aumentar o ticket médio.', photo: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=1200&auto=format&fit=crop' },
     ],
     benefits: ['QR Code para mesas e flyers', 'Menu completo separado da landing', 'Pedido direto pelo WhatsApp', 'Fotos de pratos em destaque'],
     testimonials: [
@@ -74,10 +74,10 @@ export const commercialDemos: CommercialDemo[] = [
     hours: defaultHours,
   },
   {
-    slug: 'advocacia',
+    slug: 'escritorio',
     variant: 'professional',
     businessName: 'Almeida & Rocha Advocacia',
-    category: 'Advocacia & consultoria',
+    category: 'Escritórios: advocacia, consultoria e freelancers',
     headline: 'Página profissional para gerar confiança antes da primeira consulta.',
     subheadline: 'Uma estrutura mais sóbria para advogados, consultores e freelancers: áreas de atuação, processo claro, prova de autoridade e contacto qualificado.',
     whatsappNumber: '+351 916 789 012',
@@ -113,87 +113,50 @@ export const commercialDemos: CommercialDemo[] = [
     hours: defaultHours,
   },
   {
-    slug: 'barbearia',
-    businessName: 'Barbearia Dom Corte',
-    category: 'Barbearia premium',
-    headline: 'Corte, barba e estilo com marcação rápida pelo WhatsApp.',
-    subheadline: 'Uma landing page pensada para transformar visitas do Instagram e Google em agendamentos reais.',
+    slug: 'salao',
+    businessName: 'Studio Aurora Salon',
+    category: 'Salão: beleza, barbearia e estética leve',
+    headline: 'Agenda cheia com uma página elegante para beleza e autocuidado.',
+    subheadline: 'Estrutura ideal para salão, barbearia, manicure, estética leve e profissionais de beleza que querem reservas rápidas.',
     whatsappNumber: '+351 912 345 678',
-    whatsappMessage: 'Olá! Vi a página da Barbearia Dom Corte e quero agendar um corte.',
+    whatsappMessage: 'Olá! Vi a página do Studio Aurora e quero agendar um horário.',
     address: 'Rua Augusta 120, Lisboa, Portugal',
-    email: 'agenda@domcorte.pt',
+    email: 'agenda@studioaurora.pt',
     phone: '+351 912 345 678',
-    theme: { badge: 'Premium grooming', primary: 'bg-stone-950', accent: 'text-amber-400' },
+    theme: { badge: 'Beauty booking', primary: 'bg-rose-950', accent: 'text-rose-100' },
     photos: [
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1622287162716-f311baa1a2b8?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1400&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=1200&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=1200&auto=format&fit=crop',
     ],
     services: [
-      { name: 'Corte masculino', price: '25€', description: 'Corte personalizado com acabamento profissional.' },
-      { name: 'Barba completa', price: '18€', description: 'Toalha quente, navalha e hidratação.' },
-      { name: 'Corte + barba', price: '38€', description: 'Pacote completo para sair pronto.' },
-      { name: 'Sobrancelha', price: '8€', description: 'Detalhe rápido para completar o visual.' },
+      { name: 'Corte & styling', price: '35€', description: 'Acabamento profissional para valorizar o visual.' },
+      { name: 'Coloração', price: '65€', description: 'Cor personalizada com cuidado e orientação.' },
+      { name: 'Manicure premium', price: '28€', description: 'Detalhe, higiene e acabamento elegante.' },
+      { name: 'Tratamento facial', price: '45€', description: 'Sessão leve para hidratação e brilho.' },
     ],
-    benefits: ['Marcação rápida pelo WhatsApp', 'Ambiente premium e pontual', 'Serviços claros com preço visível', 'Ideal para clientes recorrentes'],
+    benefits: ['Reservas rápidas pelo WhatsApp', 'Visual premium para beleza', 'Serviços claros com preço visível', 'Ideal para clientes recorrentes'],
     testimonials: [
-      { name: 'Miguel R.', text: 'Marquei pelo WhatsApp e fui atendido no horário. Corte impecável.', rating: 5, photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop' },
-      { name: 'André S.', text: 'A página é simples, bonita e consegui ver preços antes de ir.', rating: 4, photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop' },
-      { name: 'João P.', text: 'Barba muito bem feita e atendimento profissional.', rating: 5, photo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Mariana R.', text: 'Marquei pelo WhatsApp e já fui com o serviço escolhido.', rating: 5, photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Beatriz S.', text: 'A página passa cuidado e confiança antes de agendar.', rating: 5, photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop' },
+      { name: 'Sofia P.', text: 'Consegui ver preços, fotos e horários em poucos segundos.', rating: 5, photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=200&auto=format&fit=crop' },
     ],
     faqs: [
       { question: 'Preciso marcar horário?', answer: 'Sim. O ideal é enviar mensagem pelo WhatsApp para garantir disponibilidade.' },
-      { question: 'Aceitam pagamento por cartão?', answer: 'Sim, pagamentos por cartão e dinheiro podem ser confirmados diretamente com a barbearia.' },
-      { question: 'Quanto tempo demora corte e barba?', answer: 'Em média 45 a 60 minutos, dependendo do serviço escolhido.' },
+      { question: 'Serve para salão e barbearia?', answer: 'Sim, a estrutura funciona para cabelo, barba, unhas, estética leve e beleza.' },
+      { question: 'Posso mostrar fotos dos serviços?', answer: 'Sim, a galeria ajuda clientes a confiar antes de agendar.' },
       { question: 'Atendem sem marcação?', answer: 'Quando há vaga sim, mas marcação pelo WhatsApp é recomendada.' },
     ],
     hours: defaultHours,
   },
   {
-    slug: 'limpeza',
-    businessName: 'Brilho Total Limpezas',
-    category: 'Empresa de limpeza',
-    headline: 'Limpeza residencial, escritórios e pós-obra com orçamento rápido.',
-    subheadline: 'Uma página direta para receber pedidos de orçamento, mostrar confiança e captar contactos qualificados.',
-    whatsappNumber: '+351 913 456 789',
-    whatsappMessage: 'Olá! Vi a página da Brilho Total e quero pedir um orçamento de limpeza.',
-    address: 'Avenida da República 88, Porto, Portugal',
-    email: 'orcamentos@brilhototal.pt',
-    phone: '+351 913 456 789',
-    theme: { badge: 'Trusted cleaning', primary: 'bg-sky-950', accent: 'text-cyan-300' },
-    photos: [
-      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=1400&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1585421514738-01798e348b17?q=80&w=1200&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1563453392212-326f5e854473?q=80&w=1200&auto=format&fit=crop',
-    ],
-    services: [
-      { name: 'Limpeza residencial', price: 'desde 49€', description: 'Casas e apartamentos com equipa profissional.' },
-      { name: 'Limpeza pós-obra', price: 'sob orçamento', description: 'Remoção de pó, resíduos e limpeza profunda.' },
-      { name: 'Escritórios', price: 'mensal', description: 'Planos recorrentes para empresas locais.' },
-      { name: 'Alojamento local', price: 'por visita', description: 'Preparação rápida para novos hóspedes.' },
-    ],
-    benefits: ['Orçamento rápido pelo WhatsApp', 'Equipa treinada e confiável', 'Produtos e materiais organizados', 'Planos únicos ou recorrentes'],
-    testimonials: [
-      { name: 'Carla M.', text: 'Pedi orçamento pela página e responderam muito rápido.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
-      { name: 'Rui A.', text: 'Excelente para o nosso escritório. Serviço consistente.', rating: 4, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
-      { name: 'Sofia L.', text: 'Contratei pós-obra e ficou tudo pronto no prazo.', rating: 5, photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
-    ],
-    faqs: [
-      { question: 'Como peço orçamento?', answer: 'Clique no WhatsApp e envie morada, tipo de limpeza e tamanho aproximado do espaço.' },
-      { question: 'Levam produtos de limpeza?', answer: 'Sim, pode ser combinado de acordo com o serviço contratado.' },
-      { question: 'Fazem limpeza recorrente?', answer: 'Sim, existem planos semanais, quinzenais e mensais.' },
-      { question: 'Atendem empresas?', answer: 'Sim, escritórios, lojas, clínicas e alojamentos locais.' },
-    ],
-    hours: defaultHours,
-  },
-  {
-    slug: 'estetica',
+    slug: 'clinica',
+    variant: 'clinic',
     businessName: 'Clínica Bella Pele',
-    category: 'Clínica de estética',
-    headline: 'Tratamentos estéticos com avaliação rápida e atendimento cuidadoso.',
-    subheadline: 'Uma landing page elegante para gerar confiança, mostrar tratamentos e receber marcações qualificadas.',
+    category: 'Clínicas: estética, saúde e serviços especializados',
+    headline: 'Tratamentos e consultas com uma experiência digital que passa confiança.',
+    subheadline: 'Estrutura indicada para clínicas, personal trainers, terapeutas, estética avançada e serviços que precisam explicar valor antes da marcação.',
     whatsappNumber: '+351 914 567 890',
     whatsappMessage: 'Olá! Vi a página da Clínica Bella Pele e quero marcar uma avaliação.',
     address: 'Rua do Salitre 45, Lisboa, Portugal',
@@ -229,5 +192,13 @@ export const commercialDemos: CommercialDemo[] = [
 ]
 
 export function getCommercialDemo(slug: string) {
-  return commercialDemos.find((demo) => demo.slug === slug)
+  const aliases: Record<string, CommercialDemo['slug']> = {
+    comida: 'restauracao',
+    restaurante: 'restauracao',
+    barbearia: 'salao',
+    estetica: 'clinica',
+    advocacia: 'escritorio',
+  }
+  const normalizedSlug = aliases[slug] ?? slug
+  return commercialDemos.find((demo) => demo.slug === normalizedSlug)
 }

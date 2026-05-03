@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { ThumbsUp, Upload, FileText, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Eye, Users, MousePointerClick, Sparkles, ChevronLeft, ChevronRight, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
+import { ThumbsUp, Zap, Check, ArrowRight, BarChart3, Globe2, MessageCircle, CalendarDays, Eye, Users, MousePointerClick, Sparkles, ShieldCheck, Star, Store, QrCode } from 'lucide-react'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type Lang = 'pt' | 'es' | 'en' | 'fr'
@@ -26,7 +26,7 @@ const homeCopy = {
       ['Base de SEO local', 'Metadados, sitemap e estrutura para negócio local.'],
       ['Dashboard simples', 'Veja visitas, leads, canais e próxima ação recomendada.'],
     ],
-    previewEyebrow: 'Prévia da página', previewTitle: 'Qualquer negócio pode virar uma Vitrine bonita e fácil de compartilhar.', previewText: 'No setup você escolhe o tipo de negócio, adiciona suas fotos e monta uma página acolhedora para salão, barbearia, negócios de comida com cardápio, limpeza, estética, fitness e muito mais.',
+    previewEyebrow: 'Demos por segmento', previewTitle: 'Veja modelos para restauração, salão, clínicas e escritórios.', previewText: 'Cada estrutura muda para o objetivo certo: pedido, agendamento, consulta ou contacto profissional.',
     previewCards: [['Foto principal', 'Primeira impressão'], ['Sobre o negócio', 'História e confiança'], ['Serviços', 'Ofertas claras'], ['Galeria', 'Prova visual']],
     processEyebrow: 'Processo simples', processTitle: 'Como funciona',
     steps: [['01', 'Crie sua página', 'Use o setup guiado para montar a estrutura principal.'], ['02', 'Adicione seu negócio', 'Preencha informações, fotos, serviços e horários.'], ['03', 'Compartilhe o link', 'Publique no Instagram, WhatsApp, Google e materiais com QR Code.']],
@@ -58,54 +58,9 @@ const homeCopy = {
   },
 } satisfies Record<Lang, any>
 
-const previewSlides = [
-  {
-    name: 'Beauty Studio',
-    label: 'Salon',
-    photos: [
-      'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=900&auto=format&fit=crop',
-    ],
-  },
-  {
-    name: 'Barber House',
-    label: 'Barbershop',
-    photos: [
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1512690459411-b9245aed614b?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=900&auto=format&fit=crop',
-    ],
-  },
-  {
-    name: 'Fresh Home',
-    label: 'Home Cleaning',
-    photos: [
-      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1527515637462-cff94eecc1ac?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1563453392212-326f5e854473?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=900&auto=format&fit=crop',
-    ],
-  },
-  {
-    name: 'Mesa Local',
-    label: 'Food & menu',
-    photos: [
-      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=900&auto=format&fit=crop',
-    ],
-  },
-]
-
 export default function HomePage() {
   const [lang, setLang] = useState<Lang>('pt')
-  const [activePreview, setActivePreview] = useState(0)
   const t = homeCopy[lang]
-  const preview = previewSlides[activePreview]
   const starterFeatures = {
     pt: ['1 página publicada', 'Preview com suas fotos', 'QR Code da página', 'Relatório a cada 14 dias', 'Dashboard básico'],
     en: ['1 published page', 'Preview with your photos', 'Page QR Code', 'Report every 14 days', 'Basic dashboard'],
@@ -386,95 +341,6 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Visual demo */}
-      <section className="py-20 px-4 bg-gradient-to-b from-navy via-slate-950 to-navy text-white border-y border-white/10">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-10 items-center">
-            <div>
-              <span className="text-gold font-semibold text-sm uppercase tracking-wider">{t.previewEyebrow}</span>
-              <h2 className="text-4xl md:text-5xl font-black mt-2 mb-5">{t.previewTitle}</h2>
-              <p className="text-gray-500 text-lg leading-relaxed mb-6">
-                {t.previewText}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {t.previewCards.map(([title, desc]: string[]) => (
-                  <div key={title} className="rounded-2xl bg-white/5 border border-white/10 p-4 hover:border-gold/30 transition-colors">
-                    <p className="font-bold text-white">{title}</p>
-                    <p className="text-sm text-gray-400 mt-1">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative rounded-[2rem] border border-white/10 bg-white/10 p-4 shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <div>
-                  <p className="text-xs text-gold font-black uppercase tracking-wider">{preview.label}</p>
-                  <h3 className="text-2xl font-black text-white">{preview.name}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActivePreview((value) => (value === 0 ? previewSlides.length - 1 : value - 1))}
-                    className="w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-gold hover:text-navy transition-colors flex items-center justify-center"
-                    aria-label="Previous business preview"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActivePreview((value) => (value + 1) % previewSlides.length)}
-                    className="w-10 h-10 rounded-full bg-white/10 border border-white/10 hover:bg-gold hover:text-navy transition-colors flex items-center justify-center"
-                    aria-label="Next business preview"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {preview.photos.map((src, index) => (
-                <div key={src} className={`rounded-3xl overflow-hidden shadow-2xl shadow-black/30 border border-white/10 ${index === 0 ? 'row-span-2 h-96' : 'h-44'}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={src} alt={`${preview.name} preview ${index + 1}`} className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" />
-                </div>
-              ))}
-              </div>
-              <div className="flex justify-center gap-2 mt-4">
-                {previewSlides.map((slide, index) => (
-                  <button
-                    key={slide.name}
-                    type="button"
-                    onClick={() => setActivePreview(index)}
-                    className={`h-2.5 rounded-full transition-all ${activePreview === index ? 'w-8 bg-gold' : 'w-2.5 bg-white/30 hover:bg-white/60'}`}
-                    aria-label={`Show ${slide.name}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-24 px-4 bg-white text-navy">
-        <div className="max-w-4xl mx-auto text-center">
-          <span className="text-gold font-semibold text-sm uppercase tracking-wider">{t.processEyebrow}</span>
-          <h2 className="text-4xl font-bold mt-2 mb-16">{t.processTitle}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {t.steps.map(([step, title, desc]: string[], i: number) => (
-              <div key={i} className="relative rounded-3xl bg-stone-50 border border-stone-100 p-8 shadow-sm">
-                <div className="text-gold/25 font-black text-7xl absolute -top-5 left-1/2 -translate-x-1/2 select-none">
-                  {step}
-                </div>
-                <div className="relative pt-8">
-                  <h3 className="text-navy font-black text-xl mb-3">{title}</h3>
-                  <p className="text-gray-500">{desc}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

@@ -14,13 +14,20 @@ interface Props {
 }
 
 const defaultTestimonials: Testimonial[] = [
-  { name: 'Local customer', text: 'Very professional service, quick response and easy booking.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
-  { name: 'Happy client', text: 'The whole experience was simple, clear and reliable from start to finish.', rating: 4, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
-  { name: 'Returning customer', text: 'Great attention to detail and a friendly team. Highly recommended.', rating: 5, photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
+  { name: 'Mariana Costa', text: 'Very professional service, quick response and easy booking.', rating: 5, photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop' },
+  { name: 'Daniel Martins', text: 'The whole experience was simple, clear and reliable from start to finish.', rating: 4, photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop' },
+  { name: 'Sofia Almeida', text: 'Great attention to detail and a friendly team. Highly recommended.', rating: 5, photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&auto=format&fit=crop' },
 ]
 
+const GENERIC_NAMES = ['local customer', 'happy client', 'returning customer']
+
 export default function Testimonials({ testimonials, showDefaults = false }: Props) {
-  const realItems = testimonials?.filter((item) => item.name && item.text) ?? []
+  const realItems = testimonials
+    ?.filter((item) => item.name && item.text)
+    .map((item, index) => GENERIC_NAMES.includes(item.name.toLowerCase())
+      ? { ...item, name: defaultTestimonials[index % defaultTestimonials.length].name }
+      : item)
+    ?? []
   const items = realItems.length ? realItems : showDefaults ? defaultTestimonials : []
 
   if (items.length === 0) return null

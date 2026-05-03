@@ -16,6 +16,9 @@ interface Props {
   bookingUrl?: string | null
   whatsappNumber?: string | null
   whatsappMessage?: string | null
+  primaryActionLabel?: string
+  browseActionLabel?: string
+  browseActionHref?: string
 }
 
 export default function Hero({
@@ -28,13 +31,22 @@ export default function Hero({
   bookingUrl,
   whatsappNumber,
   whatsappMessage,
+  primaryActionLabel,
+  browseActionLabel,
+  browseActionHref = '#services',
 }: Props) {
   const [leadAction, setLeadAction] = useState<{
     label: string
     href: string
     eventType: 'booking_click' | 'whatsapp_click'
   } | null>(null)
-  const bgSrc = heroPhoto || 'https://picsum.photos/seed/salon1/1920/1080'
+  const normalizedCategory = String(category ?? '').toLowerCase()
+  const defaultHero = normalizedCategory.includes('restaurant') || normalizedCategory.includes('café') || normalizedCategory.includes('cafe') || normalizedCategory.includes('bar') || normalizedCategory.includes('food') || normalizedCategory.includes('bakery')
+    ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1920&auto=format&fit=crop'
+    : normalizedCategory.includes('cleaning') || normalizedCategory.includes('auto') || normalizedCategory.includes('mechanic')
+    ? 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?q=80&w=1920&auto=format&fit=crop'
+    : 'https://picsum.photos/seed/salon1/1920/1080'
+  const bgSrc = heroPhoto || defaultHero
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
 
@@ -76,7 +88,7 @@ export default function Hero({
             className="inline-flex items-center justify-center gap-2 bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/30"
           >
             <CalendarDays className="w-5 h-5" />
-            {t.hero.bookNow}
+            {primaryActionLabel ?? t.hero.bookNow}
           </a>
           {whatsappHref && (
             <a
@@ -92,10 +104,10 @@ export default function Hero({
             </a>
           )}
           <a
-            href="#services"
+            href={browseActionHref}
             className="inline-flex items-center justify-center bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all"
           >
-            {t.hero.seeServices}
+            {browseActionLabel ?? t.hero.seeServices}
           </a>
         </div>
       </div>

@@ -14,8 +14,8 @@ const STEPS = ['Business details', 'Services & hours', 'Photos', 'Preview']
 const CATEGORIES = [
   'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
   'Tattoo Studio', 'Massage Therapy', 'Makeup Artist', 'Personal Trainer',
-  'Restaurant', 'Café', 'Home Cleaning', 'Auto Detailing', 'Pet Grooming',
-  'Dental Clinic', 'Yoga Studio', 'Other',
+  'Restaurant', 'Café', 'Bar', 'Food Truck', 'Bakery', 'Home Cleaning',
+  'Auto Detailing', 'Mechanic', 'Pet Grooming', 'Dental Clinic', 'Yoga Studio', 'Other',
 ]
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -24,6 +24,35 @@ const PLANS = [
   { id: 'starter', name: 'Starter', pages: '1 page', description: 'Best for one business page' },
   { id: 'pro', name: 'Pro', pages: '3 pages', description: 'For multiple services or locations' },
 ]
+
+const DEFAULT_SERVICES: Record<string, Service[]> = {
+  food: [
+    { name: 'Chef special', price: '14' },
+    { name: 'Lunch menu', price: '12' },
+    { name: 'House dessert', price: '6' },
+  ],
+  technical: [
+    { name: 'Diagnostic visit', price: '35' },
+    { name: 'Repair quote', price: '0' },
+    { name: 'Maintenance service', price: '60' },
+  ],
+  service: [
+    { name: 'Haircut', price: '25' },
+    { name: 'Color', price: '65' },
+  ],
+}
+
+function getTemplateForCategory(category: string) {
+  const value = category.toLowerCase()
+  if (['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => value.includes(item))) return 'food'
+  if (['cleaning', 'auto', 'mechanic', 'detailing', 'repair'].some((item) => value.includes(item))) return 'technical'
+  return 'service'
+}
+
+function isDefaultServiceList(items: Service[]) {
+  const names = items.map((item) => item.name).join('|')
+  return Object.values(DEFAULT_SERVICES).some((list) => list.map((item) => item.name).join('|') === names)
+}
 
 // Configuration
 const GENERATION_DURATION_MS = 2000 // Simulated page generation time
@@ -188,6 +217,13 @@ export default function DashboardPage() {
   const removeService = (i: number) => setServices(services.filter((_, idx) => idx !== i))
   const updateService = (i: number, field: keyof Service, val: string) => {
     setServices(services.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
+  }
+  const handleCategoryChange = (nextCategory: string) => {
+    setCategory(nextCategory)
+    const template = getTemplateForCategory(nextCategory)
+    if (services.length === 0 || isDefaultServiceList(services)) {
+      setServices(DEFAULT_SERVICES[template])
+    }
   }
   const toggleDay = (i: number) => {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
@@ -406,7 +442,7 @@ export default function DashboardPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                   <select
                     value={category}
-                    onChange={(e) => setCategory(e.target.value)}
+                    onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
                   >
                     {CATEGORIES.map((c) => (
@@ -457,6 +493,9 @@ export default function DashboardPage() {
                   />
                 </div>
                 <div className="rounded-2xl border border-gold/30 bg-gold/5 p-5">
+                  <p className="text-xs font-bold text-gold uppercase tracking-wider mb-2">
+                    Layout adapts automatically
+                  </p>
                   <h3 className="font-bold text-navy mb-2">Customer action buttons</h3>
                   <p className="text-sm text-gray-500 mb-4">
                     Add your WhatsApp number and booking link now. These become the main buttons at the top of your landing page.

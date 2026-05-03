@@ -19,6 +19,7 @@ import ContactActions from '@/components/ContactActions'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
+import FoodMenuBlock from '@/components/FoodMenuBlock'
 
 export interface FAQItem {
   question: string
@@ -51,6 +52,14 @@ interface Props {
   business: BusinessData
 }
 
+const FOOD_CATEGORIES = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria']
+
+function getPageTemplate(category?: string | null) {
+  const normalized = String(category ?? '').toLowerCase()
+  if (FOOD_CATEGORIES.some((item) => normalized.includes(item))) return 'food'
+  return 'service'
+}
+
 export default function PublicPageClient({ business }: Props) {
   const searchParams = useSearchParams()
   const via = searchParams.get('via') ?? undefined
@@ -58,6 +67,7 @@ export default function PublicPageClient({ business }: Props) {
     ? business.lang as Language
     : 'en'
   const [lang, setLang] = useState<Language>(initialLang)
+  const pageTemplate = getPageTemplate(business.category)
 
   useEffect(() => {
     fetch('/api/track-visit', {
@@ -92,6 +102,9 @@ export default function PublicPageClient({ business }: Props) {
         bookingUrl={business.booking_url}
         whatsappNumber={business.whatsapp_number}
         whatsappMessage={business.whatsapp_message}
+        primaryActionLabel={pageTemplate === 'food' ? 'Reserve or order' : undefined}
+        browseActionLabel={pageTemplate === 'food' ? 'View menu' : undefined}
+        browseActionHref={pageTemplate === 'food' ? '#menu' : '#services'}
       />
       <About
         t={t}
@@ -101,8 +114,21 @@ export default function PublicPageClient({ business }: Props) {
         businessName={business.owner_name}
         aboutPhoto={business.photos?.[1]}
       />
-      <Benefits businessName={business.owner_name} benefits={business.benefits} />
-      <Services t={t} services={business.services ?? []} />
+      {pageTemplate === 'food' ? (
+        <FoodMenuBlock
+          businessName={business.owner_name}
+          services={business.services ?? []}
+          photos={business.photos ?? []}
+          bookingUrl={business.booking_url}
+          whatsappNumber={business.whatsapp_number}
+          whatsappMessage={business.whatsapp_message}
+        />
+      ) : (
+        <>
+          <Benefits businessName={business.owner_name} benefits={business.benefits} />
+          <Services t={t} services={business.services ?? []} />
+        </>
+      )}
       <Gallery t={t} photos={business.photos ?? []} />
       <Testimonials testimonials={business.testimonials} />
       <Hours t={t} hours={business.hours ?? []} businessName={business.owner_name} />

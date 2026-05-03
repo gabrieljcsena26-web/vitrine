@@ -17,6 +17,7 @@ import ContactActions from '@/components/ContactActions'
 import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
+import FoodMenuBlock from '@/components/FoodMenuBlock'
 
 interface BusinessData {
   businessName: string
@@ -32,6 +33,14 @@ interface BusinessData {
   services: { name: string; price: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
+}
+
+const FOOD_CATEGORIES = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria']
+
+function getPageTemplate(category?: string | null) {
+  const normalized = String(category ?? '').toLowerCase()
+  if (FOOD_CATEGORIES.some((item) => normalized.includes(item))) return 'food'
+  return 'service'
 }
 
 export default function PreviewPage() {
@@ -66,6 +75,7 @@ export default function PreviewPage() {
   if (loading || !userData) return null
 
   const t = translations[lang]
+  const pageTemplate = getPageTemplate(userData.category)
 
   return (
     <main className="bg-white">
@@ -95,8 +105,21 @@ export default function PreviewPage() {
         businessName={userData.businessName}
         aboutPhoto={userData.photos?.[1]}
       />
-      <Benefits businessName={userData.businessName} />
-      <Services t={t} services={userData.services} />
+      {pageTemplate === 'food' ? (
+        <FoodMenuBlock
+          businessName={userData.businessName}
+          services={userData.services}
+          photos={userData.photos}
+          bookingUrl={userData.bookingUrl}
+          whatsappNumber={userData.whatsappNumber}
+          whatsappMessage={userData.whatsappMessage}
+        />
+      ) : (
+        <>
+          <Benefits businessName={userData.businessName} />
+          <Services t={t} services={userData.services} />
+        </>
+      )}
       <Gallery t={t} photos={userData.photos} />
       <Testimonials showDefaults />
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />

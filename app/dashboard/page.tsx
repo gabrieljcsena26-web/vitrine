@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils } from 'lucide-react'
 
 interface Service {
   name: string
@@ -47,6 +47,24 @@ function getTemplateForCategory(category: string) {
   if (['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => value.includes(item))) return 'food'
   if (['cleaning', 'auto', 'mechanic', 'detailing', 'repair'].some((item) => value.includes(item))) return 'technical'
   return 'service'
+}
+
+const TEMPLATE_DETAILS = {
+  service: {
+    title: 'Services & appointments page',
+    description: 'Best for salons, clinics, beauty, fitness and other appointment-based businesses.',
+    badge: 'Booking focused',
+  },
+  food: {
+    title: 'Food, menu & orders page',
+    description: 'Best for restaurants, cafés, bars and food trucks. The preview includes a menu section and order-friendly actions.',
+    badge: 'Menu focused',
+  },
+  technical: {
+    title: 'Quote & trust page',
+    description: 'Best for mechanics, cleaning, repairs and practical services where customers need trust and a fast quote.',
+    badge: 'Quote focused',
+  },
 }
 
 function isDefaultServiceList(items: Service[]) {
@@ -160,6 +178,8 @@ export default function DashboardPage() {
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
+  const selectedTemplate = getTemplateForCategory(category)
+  const selectedTemplateDetails = TEMPLATE_DETAILS[selectedTemplate]
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -449,6 +469,20 @@ export default function DashboardPage() {
                       <option key={c}>{c}</option>
                     ))}
                   </select>
+                  <div className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 to-white p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-navy text-gold flex items-center justify-center flex-shrink-0">
+                        {selectedTemplate === 'food' ? <Utensils className="w-5 h-5" /> : selectedTemplate === 'technical' ? <Wrench className="w-5 h-5" /> : <CalendarDays className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <span className="inline-flex rounded-full bg-gold/20 text-gold px-2.5 py-1 text-[10px] font-black uppercase tracking-wider mb-2">
+                          {selectedTemplateDetails.badge}
+                        </span>
+                        <p className="font-black text-navy">{selectedTemplateDetails.title}</p>
+                        <p className="text-sm text-gray-500 mt-1">{selectedTemplateDetails.description}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Short description</label>
@@ -581,17 +615,26 @@ export default function DashboardPage() {
 
           {step === 1 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-6">Services & Opening Hours</h2>
+              <h2 className="text-2xl font-bold text-navy mb-2">
+                {selectedTemplate === 'food' ? 'Menu items & Opening Hours' : 'Services & Opening Hours'}
+              </h2>
+              <p className="text-sm text-gray-500 mb-6">
+                {selectedTemplate === 'food'
+                  ? 'Add your menu highlights here. They appear as food choices in the restaurant-style landing page.'
+                  : selectedTemplate === 'technical'
+                  ? 'Add the main services or quote options customers can request.'
+                  : 'Add the services customers can view before booking or contacting you.'}
+              </p>
 
               {/* Services */}
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-800">Services</h3>
+                  <h3 className="font-semibold text-gray-800">{selectedTemplate === 'food' ? 'Menu highlights' : 'Services'}</h3>
                   <button
                     onClick={addService}
                     className="flex items-center gap-1 text-gold text-sm font-medium hover:text-yellow-600 transition-colors"
                   >
-                    <Plus className="w-4 h-4" /> Add service
+                    <Plus className="w-4 h-4" /> {selectedTemplate === 'food' ? 'Add menu item' : 'Add service'}
                   </button>
                 </div>
                 <div className="space-y-3">
@@ -601,7 +644,7 @@ export default function DashboardPage() {
                         type="text"
                         value={svc.name}
                         onChange={(e) => updateService(i, 'name', e.target.value)}
-                        placeholder="Service name"
+                        placeholder={selectedTemplate === 'food' ? 'Menu item name' : 'Service name'}
                         className="flex-1 border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
                       />
                       <div className="relative w-28">

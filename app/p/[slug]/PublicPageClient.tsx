@@ -102,9 +102,6 @@ export default function PublicPageClient({ business }: Props) {
         bookingUrl={business.booking_url}
         whatsappNumber={business.whatsapp_number}
         whatsappMessage={business.whatsapp_message}
-        primaryActionLabel={pageTemplate === 'food' ? 'Reserve or order' : undefined}
-        browseActionLabel={pageTemplate === 'food' ? 'View menu' : undefined}
-        browseActionHref={pageTemplate === 'food' ? '#menu' : '#services'}
       />
       <About
         t={t}

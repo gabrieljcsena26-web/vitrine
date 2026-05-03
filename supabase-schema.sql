@@ -93,6 +93,15 @@ create table if not exists channels (
   unique (business_id, slug)
 );
 
+-- ─── Email reports ────────────────────────────────────────────────────────────
+create table if not exists email_reports (
+  id            uuid primary key default gen_random_uuid(),
+  business_id   uuid not null references businesses(id) on delete cascade,
+  report_type   text not null,
+  period_days   integer not null,
+  sent_at       timestamptz default now()
+);
+
 -- ─── Developer/admin settings ─────────────────────────────────────────────────
 create table if not exists dev_settings (
   key          text primary key,
@@ -107,6 +116,7 @@ create index if not exists leads_business_submitted_idx on leads (business_id, s
 create index if not exists businesses_owner_email_idx on businesses (owner_email);
 create index if not exists businesses_slug_idx on businesses (slug);
 create index if not exists channels_business_slug_idx on channels (business_id, slug);
+create index if not exists email_reports_business_type_idx on email_reports (business_id, report_type, sent_at desc);
 
 -- ─── Row Level Security ────────────────────────────────────────────────────────
 -- Public pages can insert views and leads; reads are only via service role key.
@@ -115,6 +125,7 @@ alter table page_views  enable row level security;
 alter table leads       enable row level security;
 alter table channels    enable row level security;
 alter table dev_settings enable row level security;
+alter table email_reports enable row level security;
 
 -- Anyone can insert a page view (tracked from the public page)
 create policy "insert page views" on page_views for insert with check (true);

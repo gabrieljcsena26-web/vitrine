@@ -18,6 +18,7 @@ import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
 import FoodMenuBlock from '@/components/FoodMenuBlock'
+import PreviewWatermark from '@/components/PreviewWatermark'
 
 interface BusinessData {
   businessName: string
@@ -81,6 +82,7 @@ export default function PreviewPage() {
 
   return (
     <main className="bg-white">
+      <PreviewWatermark lang={lang} businessName={userData.businessName} />
       <Navbar
         t={t}
         lang={lang}

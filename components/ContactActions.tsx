@@ -12,6 +12,7 @@ interface Props {
   whatsappMessage?: string | null
   businessId?: string
   via?: string
+  showForm?: boolean
 }
 
 export default function ContactActions({
@@ -21,6 +22,7 @@ export default function ContactActions({
   whatsappMessage,
   businessId,
   via,
+  showForm = true,
 }: Props) {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
@@ -33,7 +35,7 @@ export default function ContactActions({
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
 
-  if (!bookingHref && !whatsappHref) return null
+  if (!bookingHref && !whatsappHref && !showForm) return null
 
   const submitLead = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,7 +65,7 @@ export default function ContactActions({
   return (
     <section id="contact" className="py-20 bg-navy">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-start">
+        <div className={`grid grid-cols-1 ${showForm ? 'lg:grid-cols-[0.9fr_1.1fr]' : ''} gap-10 items-start`}>
           <div className="text-center lg:text-left lg:pt-4">
             <span className="text-gold font-semibold text-sm uppercase tracking-wider">
               {t.contact.title}
@@ -110,6 +112,7 @@ export default function ContactActions({
             </div>
           </div>
 
+          {showForm && (
           <div className="bg-white/5 border border-white/10 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-black/10">
             {submitted ? (
               <div className="text-center py-10">
@@ -173,6 +176,7 @@ export default function ContactActions({
               </form>
             )}
           </div>
+          )}
         </div>
       </div>
       {leadAction && (

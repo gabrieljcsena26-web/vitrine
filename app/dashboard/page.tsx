@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2 } from 'lucide-react'
 
 interface Service {
   name: string
@@ -12,6 +12,7 @@ interface Service {
 }
 
 type SetupLang = 'pt' | 'en' | 'es' | 'fr'
+type ContactMethod = 'whatsapp' | 'booking' | 'email'
 
 const LANGUAGE_OPTIONS: { code: SetupLang; label: string }[] = [
   { code: 'pt', label: 'Português' },
@@ -29,8 +30,8 @@ const setupCopy = {
     businessName: 'Nome do negócio *', businessNamePlaceholder: 'Ex.: Divino Café', nameRequired: 'O nome do negócio é obrigatório.',
     category: 'Categoria *', shortDescription: 'Descrição curta', descriptionPlaceholder: 'Explique o que torna o negócio especial, quem atende e por que o cliente deve escolher você.',
     address: 'Morada', addressPlaceholder: 'Rua, cidade, país', phone: 'Telefone', email: 'Email',
-    actionEyebrow: 'Botões de conversão', actionTitle: 'Como o cliente vai falar com você', actionText: 'WhatsApp e agendamento viram botões principais no topo da landing. Quanto mais direto, mais leads.',
-    whatsapp: 'Número do WhatsApp', booking: 'Link de agendamento ou calendário', whatsappMessage: 'Mensagem pronta do WhatsApp',
+    actionEyebrow: 'Forma de contacto', actionTitle: 'Escolha como os clientes podem contactar o negócio', actionText: 'Selecione apenas os canais que fazem sentido. A landing mostra só os botões escolhidos e mantém a experiência limpa.',
+    whatsapp: 'WhatsApp', whatsappHint: 'Número para receber pedidos, reservas ou dúvidas diretamente no WhatsApp.', booking: 'Link', bookingHint: 'Plataforma usada para agendamentos, reservas, menu, orçamento ou mais informações.', emailContact: 'Email', emailHint: 'Email público do estabelecimento e email para receber o link privado do dashboard.', whatsappMessage: 'Mensagem pronta do WhatsApp', whatsappMessageInfo: 'Quando o visitante toca no botão de WhatsApp, a conversa já começa com esta mensagem preenchida. Isso facilita o pedido e reduz fricção.',
     menuEyebrow: 'Menu completo', menuTitle: 'Link ou imagem do cardápio', menuText: 'Deixe a landing limpa com os destaques e adicione aqui o menu completo. Também serve para QR Code de menu.', uploadMenu: 'Enviar imagem do menu', removeMenu: 'Remover imagem do menu',
     plan: 'Plano', planNote: 'Pode testar sem publicar: a prévia sempre mostra marca d’água até escolher/publicar o plano final.',
     servicesTitle: 'Serviços e horários', foodServicesTitle: 'Destaques do menu e horários', servicesText: 'Adicione o que o cliente precisa ver antes de chamar ou agendar.', foodServicesText: 'Adicione os pratos principais. Eles aparecem como destaques na landing de restauração.', technicalServicesText: 'Adicione serviços, orçamento ou opções rápidas que o cliente pode pedir.',
@@ -47,17 +48,17 @@ const setupCopy = {
     home: 'Home', stepLabels: ['Business', 'Services', 'Photos', 'Preview'], back: 'Back', continue: 'Continue', welcome: 'Guided setup', headerHint: 'Page and setup language',
     step0Title: 'Let’s build your Vitrine', step0Text: 'Add the essentials. Vitrine organizes the landing page, CTAs, hours, photos and a watermarked preview while you are testing.', infoTitle: 'Start simple. Adjust later.', infoText: 'Choose the initial language in the header. It translates this setup and defines the first language customers see.',
     businessName: 'Business name *', businessNamePlaceholder: 'e.g. Divino Café', nameRequired: 'Business name is required.', category: 'Category *', shortDescription: 'Short description', descriptionPlaceholder: 'Describe what makes your business special, who you serve and why customers should choose you.', address: 'Address', addressPlaceholder: 'Street, city, country', phone: 'Phone', email: 'Email',
-    actionEyebrow: 'Conversion buttons', actionTitle: 'How customers contact you', actionText: 'WhatsApp and booking become the main buttons at the top of the landing page. More direct means more leads.', whatsapp: 'WhatsApp number', booking: 'Booking or calendar URL', whatsappMessage: 'Pre-filled WhatsApp message',
+    actionEyebrow: 'Contact options', actionTitle: 'Choose how customers can contact the business', actionText: 'Select only the channels that make sense. The landing page shows only the chosen buttons and stays clean.', whatsapp: 'WhatsApp', whatsappHint: 'Number for requests, bookings or questions directly on WhatsApp.', booking: 'Link', bookingHint: 'Platform used for scheduling, booking, menu, quote requests or more information.', emailContact: 'Email', emailHint: 'Public business email and email used to receive the private dashboard link.', whatsappMessage: 'Pre-filled WhatsApp message', whatsappMessageInfo: 'When a visitor taps the WhatsApp button, the conversation starts with this message already filled in. This makes the request easier.',
     menuEyebrow: 'Full menu', menuTitle: 'Complete menu link or image', menuText: 'Keep the landing clean with highlights and add the full menu here. It also powers a menu QR Code.', uploadMenu: 'Upload menu image', removeMenu: 'Remove menu image', plan: 'Plan', planNote: 'You can test without publishing: the preview always shows a watermark until the final plan/page is published.',
     servicesTitle: 'Services & hours', foodServicesTitle: 'Menu highlights & hours', servicesText: 'Add what customers need to see before contacting or booking.', foodServicesText: 'Add your main dishes. They appear as highlights in the food landing page.', technicalServicesText: 'Add services, quote options or quick requests customers can make.', menuHighlights: 'Menu highlights', services: 'Services', addMenuItem: 'Add item', addService: 'Add service', serviceName: 'Service name', menuItemName: 'Menu item name', price: 'Price', serviceDescription: 'Short detail customers should know', foodDescription: 'Ingredients, style or why people love it', dishPhoto: 'Dish photo', dishHint: 'This photo appears beside the dish. Use bright, close photos.', hours: 'Opening hours', closed: 'Closed',
     photosTitle: 'Photos', foodPhotosTitle: 'Food business photos & menu visuals', photosText: 'Each photo goes into a specific section. Good photos build trust.', foodPhotosText: 'Add atmosphere, menu and dish photos. Dish photos from the previous step appear in menu cards.', heroPhoto: 'Hero photo', foodHeroPhoto: 'Food business hero photo', heroBadge: 'Main background', heroHint: 'First image customers see. Use a wide photo of your space, team or best work.', foodHeroHint: 'First impression: dining room, counter, food truck, display or signature table.', uploadHero: 'Upload hero photo', aboutPhoto: 'About photo', foodAboutPhoto: 'Menu or signature dish photo', aboutBadge: 'About section', foodAboutBadge: 'Menu feature', aboutHint: 'Shown next to your description. Use a portrait, team or interior photo.', foodAboutHint: 'Shown in the menu block. Use a main dish, printed menu or table spread.', uploadAbout: 'Upload about photo', uploadFoodAbout: 'Upload menu or dish photo', gallery: 'Gallery', foodGallery: 'Food & ambience gallery', galleryBadge: 'Visual grid', foodGalleryBadge: 'Dishes, drinks, space', galleryHint: 'Show your best work. More visual proof helps.', foodGalleryHint: 'Add dishes, drinks, team, tables, counter and menu images.', dragMore: 'Drag & drop or click to add more', dragGallery: 'Drag & drop or click to add gallery photos', dragFood: 'Drag & drop food, menu or ambience photos', fileTypes: 'JPG, PNG, WEBP', change: 'Change', remove: 'Remove',
     previewTitle: 'Your Vitrine is ready to preview', previewText: 'See how it looks before publishing. The preview has a watermark so it is clear this is still a test.', pageUrl: 'Your page URL', previewPage: 'Watermarked preview', generate: 'Publish my page', generating: 'Publishing...', successTitle: 'Page published successfully!', successText: 'Your page is live and ready to share.', liveAt: 'Your page is live at:', viewPage: 'View page', copyLink: 'Copy link', copied: 'Copied!', dashboard: 'Your private dashboard:', saveDashboard: 'Save this link — it gives access to leads and stats.', shareHint: 'Share on Instagram, WhatsApp or Google to get more customers!',
   },
   es: {
-    home: 'Inicio', stepLabels: ['Negocio', 'Servicios', 'Fotos', 'Vista previa'], back: 'Volver', continue: 'Continuar', welcome: 'Setup guiado', headerHint: 'Idioma de la página y setup', step0Title: 'Vamos a montar tu Vitrine', step0Text: 'Completa lo esencial. Vitrine organiza la landing, CTAs, horarios, fotos y una vista previa con marca de agua mientras pruebas.', infoTitle: 'Empieza simple. Ajusta después.', infoText: 'Elige el idioma inicial arriba. Traduce este setup y define el primer idioma que verá el cliente.', businessName: 'Nombre del negocio *', businessNamePlaceholder: 'Ej.: Divino Café', nameRequired: 'El nombre del negocio es obligatorio.', category: 'Categoría *', shortDescription: 'Descripción corta', descriptionPlaceholder: 'Explica qué hace especial tu negocio, a quién atiendes y por qué elegirte.', address: 'Dirección', addressPlaceholder: 'Calle, ciudad, país', phone: 'Teléfono', email: 'Email', actionEyebrow: 'Botones de conversión', actionTitle: 'Cómo te contacta el cliente', actionText: 'WhatsApp y reservas aparecen como botones principales. Más directo significa más leads.', whatsapp: 'Número de WhatsApp', booking: 'Link de reserva o calendario', whatsappMessage: 'Mensaje listo para WhatsApp', menuEyebrow: 'Menú completo', menuTitle: 'Link o imagen del menú', menuText: 'Mantén la landing limpia con destacados y agrega aquí el menú completo. También sirve para QR.', uploadMenu: 'Subir imagen del menú', removeMenu: 'Quitar imagen del menú', plan: 'Plan', planNote: 'Puedes probar sin publicar: la vista previa siempre muestra marca de agua hasta publicar el plan final.', servicesTitle: 'Servicios y horarios', foodServicesTitle: 'Destacados del menú y horarios', servicesText: 'Agrega lo que el cliente necesita ver antes de contactar o reservar.', foodServicesText: 'Agrega tus platos principales. Aparecen como destacados en la landing de comida.', technicalServicesText: 'Agrega servicios, presupuestos u opciones rápidas.', menuHighlights: 'Destacados del menú', services: 'Servicios', addMenuItem: 'Agregar item', addService: 'Agregar servicio', serviceName: 'Nombre del servicio', menuItemName: 'Nombre del plato/item', price: 'Precio', serviceDescription: 'Detalle corto para el cliente', foodDescription: 'Ingredientes, estilo o por qué gusta', dishPhoto: 'Foto del plato', dishHint: 'Esta foto aparece junto al plato. Usa fotos claras y cercanas.', hours: 'Horarios', closed: 'Cerrado', photosTitle: 'Fotos', foodPhotosTitle: 'Fotos del espacio y menú', photosText: 'Cada foto entra en una sección específica. Buenas fotos generan confianza.', foodPhotosText: 'Agrega ambiente, menú y platos. Las fotos del paso anterior aparecen en los cards.', heroPhoto: 'Foto principal', foodHeroPhoto: 'Foto principal del restaurante', heroBadge: 'Fondo principal', heroHint: 'Primera imagen que ve el cliente. Usa una foto amplia.', foodHeroHint: 'Primera impresión: sala, barra, food truck, vitrina o mesa.', uploadHero: 'Subir foto principal', aboutPhoto: 'Foto sobre el negocio', foodAboutPhoto: 'Foto de menú o plato firma', aboutBadge: 'Sección sobre', foodAboutBadge: 'Destacado del menú', aboutHint: 'Aparece junto a la descripción. Usa retrato, equipo o interior.', foodAboutHint: 'Aparece en el bloque del menú. Usa plato principal o menú.', uploadAbout: 'Subir foto sobre', uploadFoodAbout: 'Subir foto de menú/plato', gallery: 'Galería', foodGallery: 'Galería de comida y ambiente', galleryBadge: 'Grid visual', foodGalleryBadge: 'Platos, bebidas, espacio', galleryHint: 'Muestra tus mejores trabajos.', foodGalleryHint: 'Agrega platos, bebidas, equipo, mesas y menú.', dragMore: 'Arrastra o haz clic para agregar más', dragGallery: 'Arrastra o haz clic para subir fotos', dragFood: 'Arrastra fotos de comida, menú o ambiente', fileTypes: 'JPG, PNG, WEBP', change: 'Cambiar', remove: 'Quitar', previewTitle: 'Tu Vitrine está lista para vista previa', previewText: 'Mira cómo queda antes de publicar. La vista previa tiene marca de agua porque aún es una prueba.', pageUrl: 'URL de tu página', previewPage: 'Vista previa con marca de agua', generate: 'Publicar mi página', generating: 'Publicando...', successTitle: '¡Página publicada con éxito!', successText: 'Tu página está online y lista para compartir.', liveAt: 'Tu página está online en:', viewPage: 'Ver página', copyLink: 'Copiar link', copied: '¡Copiado!', dashboard: 'Tu dashboard privado:', saveDashboard: 'Guarda este link — da acceso a leads y estadísticas.', shareHint: 'Comparte en Instagram, WhatsApp o Google para conseguir más clientes.',
+    home: 'Inicio', stepLabels: ['Negocio', 'Servicios', 'Fotos', 'Vista previa'], back: 'Volver', continue: 'Continuar', welcome: 'Setup guiado', headerHint: 'Idioma de la página y setup', step0Title: 'Vamos a montar tu Vitrine', step0Text: 'Completa lo esencial. Vitrine organiza la landing, CTAs, horarios, fotos y una vista previa con marca de agua mientras pruebas.', infoTitle: 'Empieza simple. Ajusta después.', infoText: 'Elige el idioma inicial arriba. Traduce este setup y define el primer idioma que verá el cliente.', businessName: 'Nombre del negocio *', businessNamePlaceholder: 'Ej.: Divino Café', nameRequired: 'El nombre del negocio es obligatorio.', category: 'Categoría *', shortDescription: 'Descripción corta', descriptionPlaceholder: 'Explica qué hace especial tu negocio, a quién atiendes y por qué elegirte.', address: 'Dirección', addressPlaceholder: 'Calle, ciudad, país', phone: 'Teléfono', email: 'Email', actionEyebrow: 'Opciones de contacto', actionTitle: 'Elige cómo los clientes pueden contactar el negocio', actionText: 'Selecciona solo los canales necesarios. La landing muestra solo los botones elegidos y se mantiene limpia.', whatsapp: 'WhatsApp', whatsappHint: 'Número para recibir pedidos, reservas o dudas directamente por WhatsApp.', booking: 'Link', bookingHint: 'Plataforma usada para reservas, agenda, menú, presupuesto o más información.', emailContact: 'Email', emailHint: 'Email público del negocio y email para recibir el link privado del dashboard.', whatsappMessage: 'Mensaje listo de WhatsApp', whatsappMessageInfo: 'Cuando el visitante toca el botón de WhatsApp, la conversación empieza con este mensaje ya escrito.', menuEyebrow: 'Menú completo', menuTitle: 'Link o imagen del menú', menuText: 'Mantén la landing limpia con destacados y agrega aquí el menú completo. También sirve para QR.', uploadMenu: 'Subir imagen del menú', removeMenu: 'Quitar imagen del menú', plan: 'Plan', planNote: 'Puedes probar sin publicar: la vista previa siempre muestra marca de agua hasta publicar el plan final.', servicesTitle: 'Servicios y horarios', foodServicesTitle: 'Destacados del menú y horarios', servicesText: 'Agrega lo que el cliente necesita ver antes de contactar o reservar.', foodServicesText: 'Agrega tus platos principales. Aparecen como destacados en la landing de comida.', technicalServicesText: 'Agrega servicios, presupuestos u opciones rápidas.', menuHighlights: 'Destacados del menú', services: 'Servicios', addMenuItem: 'Agregar item', addService: 'Agregar servicio', serviceName: 'Nombre del servicio', menuItemName: 'Nombre del plato/item', price: 'Precio', serviceDescription: 'Detalle corto para el cliente', foodDescription: 'Ingredientes, estilo o por qué gusta', dishPhoto: 'Foto del plato', dishHint: 'Esta foto aparece junto al plato. Usa fotos claras y cercanas.', hours: 'Horarios', closed: 'Cerrado', photosTitle: 'Fotos', foodPhotosTitle: 'Fotos del espacio y menú', photosText: 'Cada foto entra en una sección específica. Buenas fotos generan confianza.', foodPhotosText: 'Agrega ambiente, menú y platos. Las fotos del paso anterior aparecen en los cards.', heroPhoto: 'Foto principal', foodHeroPhoto: 'Foto principal del restaurante', heroBadge: 'Fondo principal', heroHint: 'Primera imagen que ve el cliente. Usa una foto amplia.', foodHeroHint: 'Primera impresión: sala, barra, food truck, vitrina o mesa.', uploadHero: 'Subir foto principal', aboutPhoto: 'Foto sobre el negocio', foodAboutPhoto: 'Foto de menú o plato firma', aboutBadge: 'Sección sobre', foodAboutBadge: 'Destacado del menú', aboutHint: 'Aparece junto a la descripción. Usa retrato, equipo o interior.', foodAboutHint: 'Aparece en el bloque del menú. Usa plato principal o menú.', uploadAbout: 'Subir foto sobre', uploadFoodAbout: 'Subir foto de menú/plato', gallery: 'Galería', foodGallery: 'Galería de comida y ambiente', galleryBadge: 'Grid visual', foodGalleryBadge: 'Platos, bebidas, espacio', galleryHint: 'Muestra tus mejores trabajos.', foodGalleryHint: 'Agrega platos, bebidas, equipo, mesas y menú.', dragMore: 'Arrastra o haz clic para agregar más', dragGallery: 'Arrastra o haz clic para subir fotos', dragFood: 'Arrastra fotos de comida, menú o ambiente', fileTypes: 'JPG, PNG, WEBP', change: 'Cambiar', remove: 'Quitar', previewTitle: 'Tu Vitrine está lista para vista previa', previewText: 'Mira cómo queda antes de publicar. La vista previa tiene marca de agua porque aún es una prueba.', pageUrl: 'URL de tu página', previewPage: 'Vista previa con marca de agua', generate: 'Publicar mi página', generating: 'Publicando...', successTitle: '¡Página publicada con éxito!', successText: 'Tu página está online y lista para compartir.', liveAt: 'Tu página está online en:', viewPage: 'Ver página', copyLink: 'Copiar link', copied: '¡Copiado!', dashboard: 'Tu dashboard privado:', saveDashboard: 'Guarda este link — da acceso a leads y estadísticas.', shareHint: 'Comparte en Instagram, WhatsApp o Google para conseguir más clientes.',
   },
   fr: {
-    home: 'Accueil', stepLabels: ['Entreprise', 'Services', 'Photos', 'Aperçu'], back: 'Retour', continue: 'Continuer', welcome: 'Setup guidé', headerHint: 'Langue page et setup', step0Title: 'Créons votre Vitrine', step0Text: 'Ajoutez l’essentiel. Vitrine organise la landing, CTAs, horaires, photos et un aperçu filigrané pendant le test.', infoTitle: 'Commencez simple. Ajustez ensuite.', infoText: 'Choisissez la langue initiale en haut. Elle traduit ce setup et définit la première langue vue par le client.', businessName: 'Nom de l’entreprise *', businessNamePlaceholder: 'Ex. Divino Café', nameRequired: 'Le nom est obligatoire.', category: 'Catégorie *', shortDescription: 'Description courte', descriptionPlaceholder: 'Expliquez ce qui rend votre entreprise spéciale et pourquoi vous choisir.', address: 'Adresse', addressPlaceholder: 'Rue, ville, pays', phone: 'Téléphone', email: 'Email', actionEyebrow: 'Boutons de conversion', actionTitle: 'Comment le client vous contacte', actionText: 'WhatsApp et réservation deviennent les boutons principaux. Plus direct = plus de leads.', whatsapp: 'Numéro WhatsApp', booking: 'Lien réservation ou calendrier', whatsappMessage: 'Message WhatsApp prérempli', menuEyebrow: 'Menu complet', menuTitle: 'Lien ou image du menu', menuText: 'Gardez la landing claire avec les highlights et ajoutez ici le menu complet. Sert aussi au QR.', uploadMenu: 'Envoyer image du menu', removeMenu: 'Supprimer image du menu', plan: 'Plan', planNote: 'Vous pouvez tester sans publier : l’aperçu affiche un filigrane jusqu’à publication finale.', servicesTitle: 'Services et horaires', foodServicesTitle: 'Highlights menu et horaires', servicesText: 'Ajoutez ce que le client doit voir avant de contacter ou réserver.', foodServicesText: 'Ajoutez vos plats principaux. Ils apparaissent comme highlights.', technicalServicesText: 'Ajoutez services, devis ou demandes rapides.', menuHighlights: 'Highlights du menu', services: 'Services', addMenuItem: 'Ajouter item', addService: 'Ajouter service', serviceName: 'Nom du service', menuItemName: 'Nom du plat/item', price: 'Prix', serviceDescription: 'Détail court pour le client', foodDescription: 'Ingrédients, style ou pourquoi il plaît', dishPhoto: 'Photo du plat', dishHint: 'Cette photo apparaît près du plat. Utilisez des photos claires.', hours: 'Horaires', closed: 'Fermé', photosTitle: 'Photos', foodPhotosTitle: 'Photos espace et menu', photosText: 'Chaque photo entre dans une section précise. Les bonnes photos créent la confiance.', foodPhotosText: 'Ajoutez ambiance, menu et plats. Les photos du pas précédent apparaissent dans les cartes.', heroPhoto: 'Photo principale', foodHeroPhoto: 'Photo principale restaurant', heroBadge: 'Fond principal', heroHint: 'Première image vue par le client. Utilisez une photo large.', foodHeroHint: 'Première impression : salle, comptoir, food truck, vitrine ou table.', uploadHero: 'Envoyer photo principale', aboutPhoto: 'Photo à propos', foodAboutPhoto: 'Photo menu ou plat signature', aboutBadge: 'Section à propos', foodAboutBadge: 'Highlight menu', aboutHint: 'Affichée près de la description. Portrait, équipe ou intérieur.', foodAboutHint: 'Affichée dans le bloc menu. Plat principal ou menu.', uploadAbout: 'Envoyer photo à propos', uploadFoodAbout: 'Envoyer photo menu/plat', gallery: 'Galerie', foodGallery: 'Galerie plats et ambiance', galleryBadge: 'Grille visuelle', foodGalleryBadge: 'Plats, boissons, espace', galleryHint: 'Montrez vos meilleurs travaux.', foodGalleryHint: 'Ajoutez plats, boissons, équipe, tables et menu.', dragMore: 'Glissez ou cliquez pour ajouter plus', dragGallery: 'Glissez ou cliquez pour envoyer des photos', dragFood: 'Glissez photos de plats, menu ou ambiance', fileTypes: 'JPG, PNG, WEBP', change: 'Changer', remove: 'Supprimer', previewTitle: 'Votre Vitrine est prête pour aperçu', previewText: 'Voyez le résultat avant publication. L’aperçu a un filigrane car c’est encore un test.', pageUrl: 'URL de votre page', previewPage: 'Aperçu avec filigrane', generate: 'Publier ma page', generating: 'Publication...', successTitle: 'Page publiée avec succès !', successText: 'Votre page est en ligne et prête à partager.', liveAt: 'Votre page est en ligne sur :', viewPage: 'Voir page', copyLink: 'Copier lien', copied: 'Copié !', dashboard: 'Votre dashboard privé :', saveDashboard: 'Gardez ce lien — accès aux leads et statistiques.', shareHint: 'Partagez sur Instagram, WhatsApp ou Google pour obtenir plus de clients.',
+    home: 'Accueil', stepLabels: ['Entreprise', 'Services', 'Photos', 'Aperçu'], back: 'Retour', continue: 'Continuer', welcome: 'Setup guidé', headerHint: 'Langue page et setup', step0Title: 'Créons votre Vitrine', step0Text: 'Ajoutez l’essentiel. Vitrine organise la landing, CTAs, horaires, photos et un aperçu filigrané pendant le test.', infoTitle: 'Commencez simple. Ajustez ensuite.', infoText: 'Choisissez la langue initiale en haut. Elle traduit ce setup et définit la première langue vue par le client.', businessName: 'Nom de l’entreprise *', businessNamePlaceholder: 'Ex. Divino Café', nameRequired: 'Le nom est obligatoire.', category: 'Catégorie *', shortDescription: 'Description courte', descriptionPlaceholder: 'Expliquez ce qui rend votre entreprise spéciale et pourquoi vous choisir.', address: 'Adresse', addressPlaceholder: 'Rue, ville, pays', phone: 'Téléphone', email: 'Email', actionEyebrow: 'Options de contact', actionTitle: 'Choisissez comment les clients peuvent contacter l’entreprise', actionText: 'Sélectionnez seulement les canaux utiles. La landing affiche uniquement les boutons choisis et reste claire.', whatsapp: 'WhatsApp', whatsappHint: 'Numéro pour recevoir demandes, réservations ou questions directement sur WhatsApp.', booking: 'Lien', bookingHint: 'Plateforme utilisée pour réservation, agenda, menu, devis ou plus d’informations.', emailContact: 'Email', emailHint: 'Email public de l’entreprise et email pour recevoir le lien privé du dashboard.', whatsappMessage: 'Message WhatsApp prérempli', whatsappMessageInfo: 'Quand un visiteur touche le bouton WhatsApp, la conversation commence avec ce message déjà écrit.', menuEyebrow: 'Menu complet', menuTitle: 'Lien ou image du menu', menuText: 'Gardez la landing claire avec les highlights et ajoutez ici le menu complet. Sert aussi au QR.', uploadMenu: 'Envoyer image du menu', removeMenu: 'Supprimer image du menu', plan: 'Plan', planNote: 'Vous pouvez tester sans publier : l’aperçu affiche un filigrane jusqu’à publication finale.', servicesTitle: 'Services et horaires', foodServicesTitle: 'Highlights menu et horaires', servicesText: 'Ajoutez ce que le client doit voir avant de contacter ou réserver.', foodServicesText: 'Ajoutez vos plats principaux. Ils apparaissent comme highlights.', technicalServicesText: 'Ajoutez services, devis ou demandes rapides.', menuHighlights: 'Highlights du menu', services: 'Services', addMenuItem: 'Ajouter item', addService: 'Ajouter service', serviceName: 'Nom du service', menuItemName: 'Nom du plat/item', price: 'Prix', serviceDescription: 'Détail court pour le client', foodDescription: 'Ingrédients, style ou pourquoi il plaît', dishPhoto: 'Photo du plat', dishHint: 'Cette photo apparaît près du plat. Utilisez des photos claires.', hours: 'Horaires', closed: 'Fermé', photosTitle: 'Photos', foodPhotosTitle: 'Photos espace et menu', photosText: 'Chaque photo entre dans une section précise. Les bonnes photos créent la confiance.', foodPhotosText: 'Ajoutez ambiance, menu et plats. Les photos du pas précédent apparaissent dans les cartes.', heroPhoto: 'Photo principale', foodHeroPhoto: 'Photo principale restaurant', heroBadge: 'Fond principal', heroHint: 'Première image vue par le client. Utilisez une photo large.', foodHeroHint: 'Première impression : salle, comptoir, food truck, vitrine ou table.', uploadHero: 'Envoyer photo principale', aboutPhoto: 'Photo à propos', foodAboutPhoto: 'Photo menu ou plat signature', aboutBadge: 'Section à propos', foodAboutBadge: 'Highlight menu', aboutHint: 'Affichée près de la description. Portrait, équipe ou intérieur.', foodAboutHint: 'Affichée dans le bloc menu. Plat principal ou menu.', uploadAbout: 'Envoyer photo à propos', uploadFoodAbout: 'Envoyer photo menu/plat', gallery: 'Galerie', foodGallery: 'Galerie plats et ambiance', galleryBadge: 'Grille visuelle', foodGalleryBadge: 'Plats, boissons, espace', galleryHint: 'Montrez vos meilleurs travaux.', foodGalleryHint: 'Ajoutez plats, boissons, équipe, tables et menu.', dragMore: 'Glissez ou cliquez pour ajouter plus', dragGallery: 'Glissez ou cliquez pour envoyer des photos', dragFood: 'Glissez photos de plats, menu ou ambiance', fileTypes: 'JPG, PNG, WEBP', change: 'Changer', remove: 'Supprimer', previewTitle: 'Votre Vitrine est prête pour aperçu', previewText: 'Voyez le résultat avant publication. L’aperçu a un filigrane car c’est encore un test.', pageUrl: 'URL de votre page', previewPage: 'Aperçu avec filigrane', generate: 'Publier ma page', generating: 'Publication...', successTitle: 'Page publiée avec succès !', successText: 'Votre page est en ligne et prête à partager.', liveAt: 'Votre page est en ligne sur :', viewPage: 'Voir page', copyLink: 'Copier lien', copied: 'Copié !', dashboard: 'Votre dashboard privé :', saveDashboard: 'Gardez ce lien — accès aux leads et statistiques.', shareHint: 'Partagez sur Instagram, WhatsApp ou Google pour obtenir plus de clients.',
   },
 } as const
 
@@ -240,6 +241,7 @@ export default function DashboardPage() {
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [contactMethods, setContactMethods] = useState<ContactMethod[]>(['whatsapp'])
   const [bookingUrl, setBookingUrl] = useState('')
   const [whatsappNumber, setWhatsappNumber] = useState('')
   const [whatsappMessage, setWhatsappMessage] = useState('')
@@ -279,6 +281,13 @@ export default function DashboardPage() {
   const steps = t.stepLabels
   const selectedTemplateDetails = TEMPLATE_COPY[lang][selectedTemplate]
   const categoryLabel = (value: string) => (lang === 'pt' ? CATEGORY_LABELS_PT[value] ?? value : value)
+  const contactMethodSelected = (method: ContactMethod) => contactMethods.includes(method)
+  const toggleContactMethod = (method: ContactMethod) => {
+    setContactMethods((items) => {
+      if (items.includes(method)) return items.length === 1 ? items : items.filter((item) => item !== method)
+      return [...items, method]
+    })
+  }
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -308,6 +317,7 @@ export default function DashboardPage() {
         if (data.description) setDescription(data.description)
         if (data.address) setAddress(data.address)
         if (data.email) setEmail(data.email)
+        if (Array.isArray(data.contactMethods) && data.contactMethods.length) setContactMethods(data.contactMethods.filter((item: string) => ['whatsapp', 'booking', 'email'].includes(item)) as ContactMethod[])
         if (data.phone) setPhone(data.phone)
         if (data.bookingUrl) setBookingUrl(data.bookingUrl)
         if (data.whatsappNumber) setWhatsappNumber(data.whatsappNumber)
@@ -404,6 +414,7 @@ export default function DashboardPage() {
       bookingUrl,
       whatsappNumber,
       whatsappMessage,
+      contactMethods,
       menuUrl,
       menuImageUrl,
       plan,
@@ -441,6 +452,7 @@ export default function DashboardPage() {
     saveBusinessData()
     setIsGenerating(true)
     setGenerateError('')
+    const ownerEmail = email.trim() || `owner-${pageSlug}@vitrine.local`
     try {
       const res = await fetch('/api/businesses', {
         method: 'POST',
@@ -451,13 +463,14 @@ export default function DashboardPage() {
           category,
           description,
           address,
-          email,
+          email: ownerEmail,
           phone,
-          bookingUrl: bookingUrl.trim() || null,
-          whatsappNumber: whatsappNumber.trim() || null,
-          whatsappMessage: whatsappMessage.trim() || null,
+          whatsappNumber: contactMethodSelected('whatsapp') ? whatsappNumber.trim() || null : null,
+          whatsappMessage: contactMethodSelected('whatsapp') ? whatsappMessage.trim() || null : null,
+          bookingUrl: contactMethodSelected('booking') ? bookingUrl.trim() || null : null,
           menuUrl: menuUrl.trim() || null,
           menuImageUrl: menuImageUrl.trim() || null,
+          socialLinks: { contactMethods },
           plan,
           lang,
           services,
@@ -619,19 +632,7 @@ export default function DashboardPage() {
                       <Globe2 className="w-4 h-4" />
                       {t.headerHint}
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {LANGUAGE_OPTIONS.map((option) => (
-                        <button
-                          key={option.code}
-                          type="button"
-                          onClick={() => setLang(option.code)}
-                          title={option.label}
-                          className={`rounded-full px-3 py-1.5 text-xs font-black uppercase transition-all ${lang === option.code ? 'bg-gold text-navy' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                        >
-                          {option.code}
-                        </button>
-                      ))}
-                    </div>
+                    <p className="text-sm text-gray-300 leading-relaxed">{t.infoText}</p>
                   </div>
                 </div>
               </div>
@@ -714,57 +715,109 @@ export default function DashboardPage() {
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.email}</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="hello@yourbusiness.com"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
-                  />
-                </div>
-                <div className="rounded-2xl border border-gold/30 bg-gold/5 p-5">
-                  <p className="text-xs font-bold text-gold uppercase tracking-wider mb-2">
+                <div className="rounded-[1.75rem] border border-gold/30 bg-gradient-to-br from-[#fffaf0] to-white p-5 shadow-sm">
+                  <p className="text-xs font-black text-gold uppercase tracking-wider mb-2">
                     {t.actionEyebrow}
                   </p>
-                  <h3 className="font-bold text-navy mb-2">{t.actionTitle}</h3>
-                  <p className="text-sm text-gray-500 mb-4">
+                  <h3 className="font-black text-navy text-xl mb-2">{t.actionTitle}</h3>
+                  <p className="text-sm text-gray-500 mb-5 leading-relaxed">
                     {t.actionText}
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.whatsapp}</label>
-                      <input
-                        type="tel"
-                        value={whatsappNumber}
-                        onChange={(e) => setWhatsappNumber(e.target.value)}
-                        placeholder="+55 11 99999-9999"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t.booking}</label>
-                      <input
-                        type="text"
-                        value={bookingUrl}
-                        onChange={(e) => setBookingUrl(e.target.value)}
-                        placeholder="https://calendly.com/yourname"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                      />
-                    </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                    {[
+                      { id: 'whatsapp' as ContactMethod, icon: MessageCircle, title: t.whatsapp, hint: t.whatsappHint },
+                      { id: 'booking' as ContactMethod, icon: Link2, title: t.booking, hint: t.bookingHint },
+                      { id: 'email' as ContactMethod, icon: Mail, title: t.emailContact, hint: t.emailHint },
+                    ].map((method) => {
+                      const Icon = method.icon
+                      const selected = contactMethodSelected(method.id)
+                      return (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => toggleContactMethod(method.id)}
+                          className={`group text-left rounded-2xl border p-4 transition-all ${
+                            selected
+                              ? 'border-gold bg-gold/10 ring-2 ring-gold/20 shadow-lg shadow-gold/10'
+                              : 'border-stone-200 bg-white hover:border-gold/40 hover:-translate-y-0.5'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${selected ? 'bg-gold text-navy' : 'bg-navy/5 text-navy group-hover:bg-gold/10'}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-black text-navy">{method.title}</p>
+                                {selected && <Check className="w-4 h-4 text-gold" />}
+                              </div>
+                              <div className="flex items-start gap-1.5 mt-2 text-xs text-gray-500 leading-relaxed">
+                                <Info className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
+                                <span>{method.hint}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t.whatsappMessage}</label>
-                    <textarea
-                      rows={2}
-                      maxLength={500}
-                      value={whatsappMessage}
-                      onChange={(e) => setWhatsappMessage(e.target.value)}
-                      placeholder="Olá! Vim pela sua página e gostaria de agendar um horário."
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white resize-none"
-                    />
-                    <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessage.length}/500</p>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {contactMethodSelected('whatsapp') && (
+                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsapp}</label>
+                        <input
+                          type="tel"
+                          value={whatsappNumber}
+                          onChange={(e) => setWhatsappNumber(e.target.value)}
+                          placeholder="+351 912 345 678"
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                        />
+                        <div className="mt-4 rounded-2xl bg-navy/5 p-4">
+                          <div className="flex items-start gap-2 mb-2">
+                            <Info className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-600 leading-relaxed">{t.whatsappMessageInfo}</p>
+                          </div>
+                          <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsappMessage}</label>
+                          <textarea
+                            rows={2}
+                            maxLength={500}
+                            value={whatsappMessage}
+                            onChange={(e) => setWhatsappMessage(e.target.value)}
+                            placeholder="Olá! Vim pela página e gostaria de saber mais."
+                            className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white resize-none"
+                          />
+                          <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessage.length}/500</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {contactMethodSelected('booking') && (
+                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.booking}</label>
+                        <input
+                          type="text"
+                          value={bookingUrl}
+                          onChange={(e) => setBookingUrl(e.target.value)}
+                          placeholder="https://calendly.com/yourname"
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                        />
+                      </div>
+                    )}
+
+                    {contactMethodSelected('email') && (
+                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.emailContact}</label>
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="hello@yourbusiness.com"
+                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
                 {selectedTemplate === 'food' && (

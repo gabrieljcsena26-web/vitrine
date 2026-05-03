@@ -17,7 +17,11 @@ const DEFAULT_IMAGES = [
 ]
 
 export default function Gallery({ t, photos: userPhotos }: Props) {
-  const displayPhotos = userPhotos && userPhotos.length > 0 ? userPhotos : DEFAULT_IMAGES
+  const validUserPhotos = (userPhotos ?? []).filter((photo) => (
+    typeof photo === 'string' &&
+    (photo.startsWith('data:image/') || photo.startsWith('http://') || photo.startsWith('https://'))
+  ))
+  const displayPhotos = validUserPhotos.length > 0 ? validUserPhotos : DEFAULT_IMAGES
 
   return (
     <section id="gallery" className="py-24 bg-gray-50">

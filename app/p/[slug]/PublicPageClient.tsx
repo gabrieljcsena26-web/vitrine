@@ -44,6 +44,7 @@ export interface BusinessData {
   whatsapp_message: string | null
   menu_url?: string | null
   menu_image_url?: string | null
+  social_links?: { contactMethods?: ('whatsapp' | 'booking' | 'email')[] } | null
   benefits?: string[] | null
   testimonials?: Testimonial[] | null
   faqs?: FAQItem[] | null
@@ -80,6 +81,13 @@ export default function PublicPageClient({ business }: Props) {
   }, [business.id, via])
 
   const t = translations[lang]
+  const contactMethods = business.social_links?.contactMethods?.length
+    ? business.social_links.contactMethods
+    : ['whatsapp', 'booking', 'email']
+  const showWhatsapp = contactMethods.includes('whatsapp')
+  const showBooking = contactMethods.includes('booking')
+  const showEmail = contactMethods.includes('email')
+  const publicEmail = showEmail && !business.owner_email.endsWith('@vitrine.local') ? business.owner_email : undefined
 
   return (
     <main className="bg-white">
@@ -88,9 +96,9 @@ export default function PublicPageClient({ business }: Props) {
         lang={lang}
         setLang={setLang}
         businessName={business.owner_name}
-        bookingUrl={business.booking_url}
-        whatsappNumber={business.whatsapp_number}
-        whatsappMessage={business.whatsapp_message}
+        bookingUrl={showBooking ? business.booking_url : undefined}
+        whatsappNumber={showWhatsapp ? business.whatsapp_number : undefined}
+        whatsappMessage={showWhatsapp ? business.whatsapp_message : undefined}
         businessId={business.id}
         via={via}
       />
@@ -101,14 +109,14 @@ export default function PublicPageClient({ business }: Props) {
         heroPhoto={business.photos?.[0]}
         businessId={business.id}
         via={via}
-        bookingUrl={business.booking_url}
-        whatsappNumber={business.whatsapp_number}
-        whatsappMessage={business.whatsapp_message}
+        bookingUrl={showBooking ? business.booking_url : undefined}
+        whatsappNumber={showWhatsapp ? business.whatsapp_number : undefined}
+        whatsappMessage={showWhatsapp ? business.whatsapp_message : undefined}
       />
       <About
         t={t}
         address={business.address}
-        email={business.owner_email}
+        email={publicEmail}
         description={business.description}
         businessName={business.owner_name}
         aboutPhoto={business.photos?.[1]}
@@ -118,9 +126,9 @@ export default function PublicPageClient({ business }: Props) {
           businessName={business.owner_name}
           services={business.services ?? []}
           photos={business.photos ?? []}
-          bookingUrl={business.booking_url}
-          whatsappNumber={business.whatsapp_number}
-          whatsappMessage={business.whatsapp_message}
+          bookingUrl={showBooking ? business.booking_url : undefined}
+          whatsappNumber={showWhatsapp ? business.whatsapp_number : undefined}
+          whatsappMessage={showWhatsapp ? business.whatsapp_message : undefined}
           menuUrl={business.menu_url}
           menuImageUrl={business.menu_image_url}
           lang={lang}
@@ -136,18 +144,19 @@ export default function PublicPageClient({ business }: Props) {
       <Hours t={t} hours={business.hours ?? []} businessName={business.owner_name} />
       <LocationMap address={business.address} mapUrl={business.map_url} businessName={business.owner_name} />
       <FAQ items={business.faqs} />
-      {business.booking_url || business.whatsapp_number ? (
+      {(showBooking && business.booking_url) || (showWhatsapp && business.whatsapp_number) ? (
         <ContactActions
           t={t}
-          bookingUrl={business.booking_url}
-          whatsappNumber={business.whatsapp_number}
-          whatsappMessage={business.whatsapp_message}
+          bookingUrl={showBooking ? business.booking_url : undefined}
+          whatsappNumber={showWhatsapp ? business.whatsapp_number : undefined}
+          whatsappMessage={showWhatsapp ? business.whatsapp_message : undefined}
           businessId={business.id}
           via={via}
+          showForm={showEmail}
         />
-      ) : (
+      ) : showEmail ? (
         <ContactForm t={t} businessId={business.id} via={via} />
-      )}
+      ) : null}
       <ChatbotWidget
         t={t}
         businessInfo={{
@@ -155,12 +164,12 @@ export default function PublicPageClient({ business }: Props) {
           category: business.category,
           description: business.description,
           address: business.address,
-          email: business.owner_email,
+          email: publicEmail,
           phone: business.phone,
           hours: business.hours ?? [],
           services: business.services ?? [],
-          bookingUrl: business.booking_url ?? undefined,
-          whatsappNumber: business.whatsapp_number ?? undefined,
+          bookingUrl: showBooking ? business.booking_url ?? undefined : undefined,
+          whatsappNumber: showWhatsapp ? business.whatsapp_number ?? undefined : undefined,
         }}
       />
       <Footer t={t} businessName={business.owner_name} />

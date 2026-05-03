@@ -70,6 +70,13 @@ export default async function PublicPage({ params }: PageProps) {
 
   if (!business) notFound()
 
+  const contactMethods = business.social_links?.contactMethods?.length
+    ? business.social_links.contactMethods
+    : ['whatsapp', 'booking', 'email']
+  const publicEmail = contactMethods.includes('email') && !business.owner_email.endsWith('@vitrine.local')
+    ? business.owner_email
+    : undefined
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
@@ -79,7 +86,7 @@ export default async function PublicPage({ params }: PageProps) {
     image: business.photos?.filter((photo) => typeof photo === 'string' && photo.startsWith('http')).slice(0, 5),
     address: business.address,
     telephone: business.phone || business.whatsapp_number || undefined,
-    email: business.owner_email,
+    email: publicEmail,
     priceRange: business.services?.some((service) => service.price) ? '€€' : undefined,
     openingHours: business.hours?.filter((hour) => hour.open).map((hour) => `${hour.day} ${hour.from}-${hour.to}`),
   }

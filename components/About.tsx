@@ -5,8 +5,8 @@ import { MapPin, Mail } from 'lucide-react'
 
 interface Props {
   t: Translations
-  address: string
-  email: string
+  address?: string | null
+  email?: string | null
   description?: string
   businessName?: string
   aboutPhoto?: string
@@ -47,18 +47,22 @@ export default function About({ t, address, email, description, businessName, ab
               {description || t.about.description}
             </p>
             <div className="space-y-4">
-              <div className="flex items-center gap-3 text-gray-600">
-                <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-gold" />
+              {address && (
+                <div className="flex items-center gap-3 text-gray-600">
+                  <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-gold" />
+                  </div>
+                  <span>{address}</span>
                 </div>
-                <span>{address}</span>
-              </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-5 h-5 text-gold" />
+              )}
+              {email && (
+                <div className="flex items-center gap-3 text-gray-600">
+                  <div className="w-10 h-10 bg-gold/10 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-5 h-5 text-gold" />
+                  </div>
+                  <span>{email}</span>
                 </div>
-                <span>{email}</span>
-              </div>
+              )}
             </div>
           </div>
         </div>

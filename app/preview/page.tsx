@@ -30,6 +30,7 @@ interface BusinessData {
   bookingUrl?: string
   whatsappNumber?: string
   whatsappMessage?: string
+  contactMethods?: ('whatsapp' | 'booking' | 'email')[]
   menuUrl?: string
   menuImageUrl?: string
   lang: string
@@ -79,6 +80,10 @@ export default function PreviewPage() {
 
   const t = translations[lang]
   const pageTemplate = getPageTemplate(userData.category)
+  const contactMethods = userData.contactMethods?.length ? userData.contactMethods : ['whatsapp', 'booking', 'email']
+  const showWhatsapp = contactMethods.includes('whatsapp')
+  const showBooking = contactMethods.includes('booking')
+  const showEmail = contactMethods.includes('email')
 
   return (
     <main className="bg-white">
@@ -88,23 +93,23 @@ export default function PreviewPage() {
         lang={lang}
         setLang={setLang}
         businessName={userData.businessName}
-        bookingUrl={userData.bookingUrl}
-        whatsappNumber={userData.whatsappNumber}
-        whatsappMessage={userData.whatsappMessage}
+        bookingUrl={showBooking ? userData.bookingUrl : undefined}
+        whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
+        whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}
       />
       <Hero
         t={t}
         businessName={userData.businessName}
         category={userData.category}
         heroPhoto={userData.photos?.[0]}
-        bookingUrl={userData.bookingUrl}
-        whatsappNumber={userData.whatsappNumber}
-        whatsappMessage={userData.whatsappMessage}
+        bookingUrl={showBooking ? userData.bookingUrl : undefined}
+        whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
+        whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}
       />
       <About
         t={t}
         address={userData.address}
-        email={userData.email}
+        email={showEmail ? userData.email : undefined}
         description={userData.description}
         businessName={userData.businessName}
         aboutPhoto={userData.photos?.[1]}
@@ -114,9 +119,9 @@ export default function PreviewPage() {
           businessName={userData.businessName}
           services={userData.services}
           photos={userData.photos}
-          bookingUrl={userData.bookingUrl}
-          whatsappNumber={userData.whatsappNumber}
-          whatsappMessage={userData.whatsappMessage}
+          bookingUrl={showBooking ? userData.bookingUrl : undefined}
+          whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
+          whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}
           menuUrl={userData.menuUrl}
           menuImageUrl={userData.menuImageUrl}
           lang={lang}
@@ -132,16 +137,17 @@ export default function PreviewPage() {
       <Hours t={t} hours={userData.hours} businessName={userData.businessName} />
       <LocationMap address={userData.address} businessName={userData.businessName} />
       <FAQ />
-      {userData.bookingUrl || userData.whatsappNumber ? (
+      {(showBooking && userData.bookingUrl) || (showWhatsapp && userData.whatsappNumber) ? (
         <ContactActions
           t={t}
-          bookingUrl={userData.bookingUrl}
-          whatsappNumber={userData.whatsappNumber}
-          whatsappMessage={userData.whatsappMessage}
+          bookingUrl={showBooking ? userData.bookingUrl : undefined}
+          whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
+          whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}
+          showForm={showEmail}
         />
-      ) : (
+      ) : showEmail ? (
         <ContactForm t={t} />
-      )}
+      ) : null}
       <ChatbotWidget
         t={t}
         businessInfo={{
@@ -153,8 +159,8 @@ export default function PreviewPage() {
           phone: userData.phone,
           hours: userData.hours,
           services: userData.services,
-          bookingUrl: userData.bookingUrl,
-          whatsappNumber: userData.whatsappNumber,
+          bookingUrl: showBooking ? userData.bookingUrl : undefined,
+          whatsappNumber: showWhatsapp ? userData.whatsappNumber : undefined,
         }}
       />
       <Footer t={t} businessName={userData.businessName} />

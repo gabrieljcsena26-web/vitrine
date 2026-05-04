@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { isHttpUrl, isEmail } from '@/lib/utils'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 
 const PLAN_LIMITS: Record<string, number> = {
   starter: 1,
@@ -115,6 +116,11 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
+  const limited = rateLimit(rateLimitKey(req, 'dashboard-get', token), { limit: 120, windowMs: 60_000 })
+  if (!limited.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+  }
+
   const range = req.nextUrl.searchParams.get('range') ?? '30d'
   const rangeDays = range === '7d' ? 7 : range === '90d' ? 90 : range === 'all' ? null : 30
   const since = rangeDays ? new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString() : null
@@ -304,6 +310,11 @@ export async function PATCH(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
+
+  const limited = rateLimit(rateLimitKey(req, 'dashboard-patch', token), { limit: 30, windowMs: 60_000 })
+  if (!limited.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+  }
 
   if (!token) {
     return NextResponse.json({ error: 'Token is required' }, { status: 400 })

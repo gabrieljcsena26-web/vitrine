@@ -1,15 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Scissors, Mail, ArrowRight, CheckCircle, FlaskConical } from 'lucide-react'
+import { Scissors, Mail, ArrowRight, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
-  const [testLoading, setTestLoading] = useState(false)
   const [lastToken, setLastToken] = useState('')
 
   useEffect(() => {
@@ -35,28 +32,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
       setSent(true)
-    }
-  }
-
-  const handleTestLogin = async () => {
-    setTestLoading(true)
-    try {
-      const res = await fetch('/api/dashboard/test-login', { method: 'POST' })
-      if (!res.ok) throw new Error('Test login failed')
-      const json = await res.json()
-      if (json.token) {
-        try {
-          localStorage.setItem('vitrine_dashboard_token', json.token)
-          localStorage.setItem('vitrine_dashboard_slug', json.slug)
-        } catch {
-          // localStorage unavailable — ignore
-        }
-        router.push(`/dashboard/${json.token}`)
-      }
-    } catch {
-      alert('Could not open the test dashboard. Check Supabase environment variables and try again.')
-    } finally {
-      setTestLoading(false)
     }
   }
 
@@ -147,21 +122,6 @@ export default function LoginPage() {
                 </form>
 
                 <div className="mt-6 pt-6 border-t border-slate-100 text-center">
-                  <button
-                    type="button"
-                    onClick={handleTestLogin}
-                    disabled={testLoading}
-                    className="w-full mb-4 bg-navy text-white py-3 rounded-xl font-bold text-sm hover:bg-navy/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {testLoading ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <FlaskConical className="w-4 h-4" />
-                        Open test dashboard
-                      </>
-                    )}
-                  </button>
                   {lastToken && (
                     <Link
                       href={`/dashboard/${lastToken}`}
@@ -173,7 +133,7 @@ export default function LoginPage() {
                   <p className="text-sm text-slate-500">
                     Don&apos;t have a page yet?{' '}
                     <Link href="/dashboard" className="text-gold font-semibold hover:underline">
-                      Create a demo page →
+                      Create your page →
                     </Link>
                   </p>
                 </div>

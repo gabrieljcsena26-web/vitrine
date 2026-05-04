@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { generateCampaignSlug, getBaseUrl } from '@/lib/utils'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 
 // GET/POST /api/dashboard/[token]/channels — owner tracking channels
 export async function GET(
@@ -50,6 +51,11 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
+  const limited = rateLimit(rateLimitKey(req, 'dashboard-channel', token), { limit: 30, windowMs: 60_000 })
+  if (!limited.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+  }
+
   const { name } = await req.json()
   const channelName = String(name ?? '').trim().slice(0, 80)
   const channelSlug = generateCampaignSlug(channelName)

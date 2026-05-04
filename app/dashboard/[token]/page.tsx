@@ -256,48 +256,6 @@ interface DashboardData {
   leads: Lead[]
 }
 
-const demoViewsBySource: ViewsBySource[] = [
-  { source: 'instagram-bio', count: 4 },
-  { source: 'google-profile', count: 3 },
-  { source: 'whatsapp-status', count: 3 },
-  { source: 'flyer-qr', count: 2 },
-  { source: 'Direct', count: 3 },
-]
-
-const demoRecentEvents: RecentEvent[] = [
-  { id: 'demo-activity-1', source: 'instagram-bio', eventType: 'whatsapp_click', visitedAt: new Date(Date.now() - 7 * 60 * 1000).toISOString() },
-  { id: 'demo-activity-2', source: 'google-profile', eventType: 'booking_click', visitedAt: new Date(Date.now() - 20 * 60 * 1000).toISOString() },
-  { id: 'demo-activity-3', source: 'whatsapp-status', eventType: 'visit', visitedAt: new Date(Date.now() - 38 * 60 * 1000).toISOString() },
-  { id: 'demo-activity-4', source: 'flyer-qr', eventType: 'booking_click', visitedAt: new Date(Date.now() - 76 * 60 * 1000).toISOString() },
-]
-
-const demoLeads: Lead[] = [
-  {
-    id: 'demo-lead-1',
-    visitor_name: 'Maria Silva',
-    visitor_email: 'maria@example.com',
-    message: 'Hi! I saw your page on Instagram and would like to book a consultation this week.',
-    via: 'instagram-bio',
-    submitted_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'demo-lead-2',
-    visitor_name: 'João Pereira',
-    visitor_email: 'joao@example.com',
-    message: 'I came from Google and want to know available times for Saturday.',
-    via: 'google-profile',
-    submitted_at: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'demo-lead-3',
-    visitor_name: 'Ana Costa',
-    visitor_email: 'ana@example.com',
-    message: 'Can you send me more information about the premium service?',
-    via: 'whatsapp-status',
-    submitted_at: new Date(Date.now() - 52 * 60 * 1000).toISOString(),
-  },
-]
-
 const SOURCE_LABELS: Record<string, string> = {
   instagram: 'Instagram',
   'instagram-bio': 'Instagram Bio',
@@ -663,10 +621,9 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   }
   const stats = selectedPage?.stats ?? data.stats
   const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
-  const isDemoDashboard = currentBusiness.ownerEmail === 'test@vitrine.local'
-  const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : isDemoDashboard ? demoViewsBySource : []
-  const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : isDemoDashboard ? demoRecentEvents : []
-  const leads = data.leads.length > 0 ? data.leads : isDemoDashboard ? demoLeads : []
+  const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : []
+  const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : []
+  const leads = data.leads.length > 0 ? data.leads : []
   const maxViews = viewsBySource[0]?.count ?? 1
   const totalClicks = stats.bookingClicks + stats.whatsappClicks
   const conversionRate = stats.totalViews > 0

@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import Link from 'next/link'
 import {
-  BarChart3, Check, Database, ExternalLink, Eye, Lock, LogOut,
-  RefreshCw, Save, Scissors, Settings, ShieldCheck, Users,
+  BarChart3, Check, CreditCard, Database, ExternalLink, Eye, Lock, LogOut,
+  Mail, RefreshCw, Save, Scissors, Settings, ShieldCheck, TrendingUp, Users,
 } from 'lucide-react'
 
 interface AdminBusiness {
@@ -14,7 +14,25 @@ interface AdminBusiness {
   owner_name: string | null
   owner_email: string | null
   plan: string | null
+  subscription_status?: string | null
   created_at: string
+}
+
+interface RecentLead {
+  id: string
+  visitor_name: string | null
+  visitor_email: string | null
+  via: string | null
+  submitted_at: string
+  business: AdminBusiness | null
+}
+
+interface RecentReport {
+  id: string
+  report_type: string
+  period_days: number
+  sent_at: string
+  business: AdminBusiness | null
 }
 
 interface DevSetting {
@@ -28,15 +46,21 @@ interface OverviewData {
     businesses: number
     leads: number
     events: number
+    leads30d: number
+    events30d: number
+    proOrActive: number
   }
+  planBreakdown: Record<string, number>
   businesses: AdminBusiness[]
+  recentLeads: RecentLead[]
+  recentReports: RecentReport[]
   settings: DevSetting[]
 }
 
 const defaultControlSettings = {
-  betaMode: true,
+  betaMode: false,
   defaultPlan: 'starter',
-  internalNote: 'Use this console to test pages, monitor activity and keep launch controls saved in Supabase.',
+  internalNote: 'Painel privado do dono para acompanhar clientes, planos, leads, relatórios e operação da Vitrine.',
 }
 
 export default function AdminPage() {
@@ -152,9 +176,9 @@ export default function AdminPage() {
           <div className="w-12 h-12 bg-gold rounded-2xl flex items-center justify-center mb-5">
             <Lock className="w-6 h-6 text-navy" />
           </div>
-          <h1 className="text-3xl font-black mb-2">Developer login</h1>
+          <h1 className="text-3xl font-black mb-2">Owner login</h1>
           <p className="text-gray-500 text-sm mb-6">
-            Private control panel for testing, launch checks and saved internal settings.
+            Private founder dashboard for clients, billing status, leads and reports.
           </p>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -163,10 +187,10 @@ export default function AdminPage() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="Enter developer password"
+                placeholder="Enter owner password"
                 className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold text-sm"
               />
-              <p className="text-xs text-gray-400 mt-2">Local development fallback password is dev when no environment password is set.</p>
+              <p className="text-xs text-gray-400 mt-2">In production, set VITRINE_OWNER_PASSWORD and VITRINE_OWNER_SESSION_SECRET in Vercel.</p>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
             <button
@@ -174,7 +198,7 @@ export default function AdminPage() {
               disabled={loginLoading || !password.trim()}
               className="w-full bg-gold text-navy rounded-xl px-4 py-3 font-black hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loginLoading ? 'Opening...' : 'Open developer console'}
+              {loginLoading ? 'Opening...' : 'Open owner dashboard'}
             </button>
           </form>
           <Link href="/" className="block text-center text-sm text-gray-400 hover:text-navy mt-5">
@@ -193,7 +217,7 @@ export default function AdminPage() {
             <div className="w-7 h-7 bg-gold rounded-full flex items-center justify-center">
               <Scissors className="w-3.5 h-3.5 text-navy" />
             </div>
-            <span className="text-white font-bold">Vitrine Admin</span>
+            <span className="text-white font-bold">Vitrine Owner</span>
           </Link>
           <div className="flex items-center gap-2">
             <button
@@ -220,18 +244,18 @@ export default function AdminPage() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-3 py-1 mb-4">
                 <ShieldCheck className="w-4 h-4 text-gold" />
-                <span className="text-gold text-xs font-bold uppercase tracking-wider">Private developer console</span>
+                <span className="text-gold text-xs font-bold uppercase tracking-wider">Private owner dashboard</span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-black mb-2">Launch control</h1>
+              <h1 className="text-3xl md:text-4xl font-black mb-2">Founder control center</h1>
               <p className="text-gray-300 max-w-2xl">
-                Monitor pages, test the product flow and keep internal launch settings saved in Supabase.
+                Monitor customers, client pages, plans, leads, reports and platform growth from one private place.
               </p>
             </div>
             <Link
-              href="/login"
+              href="/billing"
               className="inline-flex items-center gap-2 bg-gold text-navy px-4 py-2.5 rounded-xl font-bold hover:bg-yellow-400 transition-colors text-sm"
             >
-              Open test login
+              Open billing page
               <ExternalLink className="w-4 h-4" />
             </Link>
           </div>
@@ -239,13 +263,26 @@ export default function AdminPage() {
 
         {error && <p className="mb-6 text-sm text-red-600 bg-red-50 border border-red-100 rounded-2xl px-4 py-3">{error}</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
           <AdminStat icon={<Database className="w-5 h-5" />} label="Pages created" value={overview?.stats.businesses ?? 0} />
           <AdminStat icon={<Users className="w-5 h-5" />} label="Leads captured" value={overview?.stats.leads ?? 0} />
           <AdminStat icon={<Eye className="w-5 h-5" />} label="Tracked events" value={overview?.stats.events ?? 0} />
+          <AdminStat icon={<TrendingUp className="w-5 h-5" />} label="Leads 30 days" value={overview?.stats.leads30d ?? 0} />
+          <AdminStat icon={<BarChart3 className="w-5 h-5" />} label="Events 30 days" value={overview?.stats.events30d ?? 0} />
+          <AdminStat icon={<CreditCard className="w-5 h-5" />} label="Pro / active" value={overview?.stats.proOrActive ?? 0} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {['starter', 'pro', 'trial'].map((plan) => (
+            <div key={plan} className="rounded-3xl bg-white border border-stone-200/70 p-5 shadow-sm">
+              <p className="text-xs font-black uppercase tracking-wider text-gray-400">{plan}</p>
+              <p className="text-3xl font-black text-navy mt-2">{overview?.planBreakdown?.[plan] ?? 0}</p>
+              <p className="text-sm text-gray-400 mt-1">clientes/páginas neste estado</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-6 mb-6">
           <section className="bg-white rounded-3xl border border-stone-200/70 shadow-sm p-6">
             <div className="flex items-center gap-2 mb-5">
               <Settings className="w-5 h-5 text-gold" />
@@ -254,8 +291,8 @@ export default function AdminPage() {
             <div className="space-y-5">
               <label className="flex items-center justify-between gap-4 rounded-2xl bg-stone-50 border border-stone-100 p-4">
                 <div>
-                  <p className="font-bold text-navy">Beta mode</p>
-                  <p className="text-sm text-gray-400">Internal flag saved for launch discipline.</p>
+                  <p className="font-bold text-navy">Production controls</p>
+                  <p className="text-sm text-gray-400">Keep this off for public launch unless you want beta messaging internally.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -266,7 +303,7 @@ export default function AdminPage() {
               </label>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Default plan for tests</label>
+                <label className="block text-sm font-bold text-gray-700 mb-1.5">Default plan for new customers</label>
                 <select
                   value={controlSettings.defaultPlan}
                   onChange={(event) => setControlSettings((current) => ({ ...current, defaultPlan: event.target.value }))}
@@ -292,7 +329,7 @@ export default function AdminPage() {
                 disabled={saveLoading}
                 className="inline-flex items-center gap-2 bg-gold text-navy px-5 py-3 rounded-xl font-black hover:bg-yellow-400 transition-colors disabled:opacity-50"
               >
-                {saved ? <><Check className="w-4 h-4" />Saved in Supabase</> : <><Save className="w-4 h-4" />Save controls</>}
+                {saved ? <><Check className="w-4 h-4" />Saved in Supabase</> : <><Save className="w-4 h-4" />Save owner controls</>}
               </button>
 
               {controlSetting && (
@@ -307,9 +344,9 @@ export default function AdminPage() {
             <div className="flex items-center justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-xl font-black text-navy">Recent pages</h2>
-                <p className="text-sm text-gray-400 mt-1">Latest businesses created in the database.</p>
+                <p className="text-sm text-gray-400 mt-1">Latest customers created in the platform.</p>
               </div>
-              <Link href="/dashboard" className="text-sm font-bold text-gold hover:underline">Create demo</Link>
+              <Link href="/dashboard" className="text-sm font-bold text-gold hover:underline">Create page</Link>
             </div>
             {overview?.businesses.length ? (
               <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
@@ -317,7 +354,7 @@ export default function AdminPage() {
                   <div key={business.id} className="rounded-2xl border border-stone-100 bg-stone-50/70 p-4 flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <p className="font-black text-navy truncate">{business.owner_name ?? 'Unnamed business'}</p>
-                      <p className="text-xs text-gray-400 break-all">{business.owner_email ?? 'No email'} · {business.plan ?? 'starter'}</p>
+                      <p className="text-xs text-gray-400 break-all">{business.owner_email ?? 'No email'} · {business.plan ?? 'starter'} · {business.subscription_status ?? 'no billing'}</p>
                       <p className="text-xs text-gray-400 mt-1">Created {new Date(business.created_at).toLocaleDateString()}</p>
                     </div>
                     <a
@@ -337,6 +374,61 @@ export default function AdminPage() {
                 <BarChart3 className="w-8 h-8 text-stone-300 mx-auto mb-3" />
                 <p className="text-gray-400 text-sm">No pages found yet.</p>
               </div>
+            )}
+          </section>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <section className="bg-white rounded-3xl border border-stone-200/70 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <Mail className="w-5 h-5 text-gold" />
+              <div>
+                <h2 className="text-xl font-black text-navy">Recent leads from customers</h2>
+                <p className="text-sm text-gray-400">Real leads captured across client pages.</p>
+              </div>
+            </div>
+            {overview?.recentLeads?.length ? (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {overview.recentLeads.map((lead) => (
+                  <div key={lead.id} className="rounded-2xl bg-stone-50 border border-stone-100 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-black text-navy truncate">{lead.visitor_name ?? 'Unnamed lead'}</p>
+                        <p className="text-xs text-gray-400 break-all">{lead.visitor_email || 'no email'} · {lead.via || 'direct'}</p>
+                      </div>
+                      <span className="text-[11px] text-gray-400 flex-shrink-0">{new Date(lead.submitted_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">Client: {lead.business?.owner_name ?? 'Unknown page'}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-stone-200 p-8 text-center text-sm text-gray-400">No customer leads yet.</p>
+            )}
+          </section>
+
+          <section className="bg-white rounded-3xl border border-stone-200/70 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <BarChart3 className="w-5 h-5 text-gold" />
+              <div>
+                <h2 className="text-xl font-black text-navy">Email report activity</h2>
+                <p className="text-sm text-gray-400">Onboarding, weekly Pro and 14-day Starter reports sent.</p>
+              </div>
+            </div>
+            {overview?.recentReports?.length ? (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                {overview.recentReports.map((report) => (
+                  <div key={report.id} className="rounded-2xl bg-stone-50 border border-stone-100 p-4 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-black text-navy capitalize">{report.report_type}</p>
+                      <p className="text-xs text-gray-400">{report.period_days} days · {report.business?.owner_name ?? 'Unknown page'}</p>
+                    </div>
+                    <span className="text-[11px] text-gray-400 flex-shrink-0">{new Date(report.sent_at).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-stone-200 p-8 text-center text-sm text-gray-400">No report emails logged yet.</p>
             )}
           </section>
         </div>

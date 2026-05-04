@@ -35,6 +35,12 @@ create table if not exists businesses (
   whatsapp_number   text,
   whatsapp_message  text,
   plan              text default 'starter',
+  subscription_status text default 'trial',
+  billing_provider text,
+  billing_customer_id text,
+  billing_subscription_id text,
+  trial_started_at timestamptz default now(),
+  published_at timestamptz,
   created_at        timestamptz default now()
 );
 
@@ -52,6 +58,12 @@ create table if not exists page_views (
 -- alter table businesses  add column if not exists whatsapp_number text;
 -- alter table businesses  add column if not exists whatsapp_message text;
 -- alter table businesses  add column if not exists plan text default 'starter';
+-- alter table businesses  add column if not exists subscription_status text default 'trial';
+-- alter table businesses  add column if not exists billing_provider text;
+-- alter table businesses  add column if not exists billing_customer_id text;
+-- alter table businesses  add column if not exists billing_subscription_id text;
+-- alter table businesses  add column if not exists trial_started_at timestamptz default now();
+-- alter table businesses  add column if not exists published_at timestamptz;
 -- alter table businesses  add column if not exists benefits jsonb;
 -- alter table businesses  add column if not exists testimonials jsonb;
 -- alter table businesses  add column if not exists faqs jsonb;
@@ -114,6 +126,7 @@ create index if not exists page_views_business_event_idx on page_views (business
 create index if not exists page_views_business_via_idx on page_views (business_id, via);
 create index if not exists leads_business_submitted_idx on leads (business_id, submitted_at desc);
 create index if not exists businesses_owner_email_idx on businesses (owner_email);
+create index if not exists businesses_billing_customer_idx on businesses (billing_customer_id);
 create index if not exists businesses_slug_idx on businesses (slug);
 create index if not exists channels_business_slug_idx on channels (business_id, slug);
 create index if not exists email_reports_business_type_idx on email_reports (business_id, report_type, sent_at desc);

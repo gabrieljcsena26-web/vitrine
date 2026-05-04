@@ -1,23 +1,31 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 
-const COOKIE_NAME = 'vitrine_dev_session'
+const COOKIE_NAME = 'vitrine_owner_session'
 
 function getSecret() {
-  return process.env.VITRINE_DEV_SESSION_SECRET || process.env.VITRINE_DEV_PASSWORD || 'local-dev-secret'
+  if (process.env.VITRINE_OWNER_SESSION_SECRET) return process.env.VITRINE_OWNER_SESSION_SECRET
+  if (process.env.VITRINE_OWNER_PASSWORD) return process.env.VITRINE_OWNER_PASSWORD
+  if (process.env.VITRINE_DEV_SESSION_SECRET) return process.env.VITRINE_DEV_SESSION_SECRET
+  if (process.env.VITRINE_DEV_PASSWORD) return process.env.VITRINE_DEV_PASSWORD
+  return process.env.NODE_ENV !== 'production' ? 'local-dev-secret' : ''
 }
 
 export function getAdminPassword() {
-  return process.env.VITRINE_DEV_PASSWORD || (process.env.NODE_ENV !== 'production' ? 'dev' : '')
+  return process.env.VITRINE_OWNER_PASSWORD || process.env.VITRINE_DEV_PASSWORD || (process.env.NODE_ENV !== 'production' ? 'dev' : '')
 }
 
 export function createAdminToken() {
-  return createHmac('sha256', getSecret()).update('vitrine-developer-console').digest('hex')
+  const secret = getSecret()
+  if (!secret) return ''
+  return createHmac('sha256', secret).update('vitrine-owner-console').digest('hex')
 }
 
 export async function setAdminCookie() {
+  const token = createAdminToken()
+  if (!token) throw new Error('Developer session secret is not configured.')
   const cookieStore = await cookies()
-  cookieStore.set(COOKIE_NAME, createAdminToken(), {
+  cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -36,6 +44,7 @@ export async function isAdminAuthenticated() {
   const value = cookieStore.get(COOKIE_NAME)?.value
   if (!value) return false
   const expected = createAdminToken()
+  if (!expected) return false
   const left = Buffer.from(value)
   const right = Buffer.from(expected)
   if (left.length !== right.length) return false

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 
 const ALLOWED_STATUSES = new Set(['new', 'contacted', 'won', 'lost'])
 
@@ -9,6 +10,11 @@ export async function PATCH(
   { params }: { params: Promise<{ token: string; leadId: string }> }
 ) {
   const { token, leadId } = await params
+  const limited = rateLimit(rateLimitKey(req, 'dashboard-lead', token), { limit: 60, windowMs: 60_000 })
+  if (!limited.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+  }
+
   const { status } = await req.json()
   const nextStatus = String(status ?? '').toLowerCase()
 

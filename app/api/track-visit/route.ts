@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
+
+const MAX_SOURCE_LENGTH = 120
 
 // POST /api/track-visit — log a page view or click event for a business
 // Body: { businessId: string, via?: string, eventType?: 'visit' | 'booking_click' | 'whatsapp_click' }
 export async function POST(req: NextRequest) {
   try {
-    const { businessId, via, eventType } = await req.json()
+    const limited = rateLimit(rateLimitKey(req, 'track-visit'), { limit: 120, windowMs: 60_000 })
+    if (!limited.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+    }
 
-    if (!businessId) {
+    const { businessId, via, eventType } = await req.json()
+    const cleanBusinessId = String(businessId ?? '').trim()
+    const cleanVia = via ? String(via).trim().slice(0, MAX_SOURCE_LENGTH) : null
+
+    if (!cleanBusinessId) {
       return NextResponse.json({ error: 'businessId is required' }, { status: 400 })
     }
 
@@ -16,8 +26,8 @@ export async function POST(req: NextRequest) {
 
     const db = createServiceClient()
     const { error } = await db.from('page_views').insert({
-      business_id: businessId,
-      via: via || null,
+      business_id: cleanBusinessId,
+      via: cleanVia,
       event_type: resolvedType,
     })
 

@@ -1,33 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { Resend } from 'resend'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
+import { isEmail } from '@/lib/utils'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
+const MAX_NAME_LENGTH = 120
+const MAX_EMAIL_LENGTH = 254
+const MAX_MESSAGE_LENGTH = 2000
+const MAX_SOURCE_LENGTH = 120
 
 // POST /api/submit-lead — save a lead and notify the owner
 // Body: { businessId, visitorName, visitorEmail, message, via? }
 export async function POST(req: NextRequest) {
   try {
-    const { businessId, visitorName, visitorEmail, message, via, interest } = await req.json()
+    const limited = rateLimit(rateLimitKey(req, 'submit-lead'), { limit: 12, windowMs: 60_000 })
+    if (!limited.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+    }
 
-    if (!businessId || !visitorName || !message) {
+    const { businessId, visitorName, visitorEmail, message, via, interest } = await req.json()
+    const cleanBusinessId = String(businessId ?? '').trim()
+    const cleanName = String(visitorName ?? '').trim().slice(0, MAX_NAME_LENGTH)
+    const cleanEmail = String(visitorEmail ?? '').trim().toLowerCase().slice(0, MAX_EMAIL_LENGTH)
+    const cleanMessage = String(message ?? '').trim().slice(0, MAX_MESSAGE_LENGTH)
+    const cleanVia = via ? String(via).trim().slice(0, MAX_SOURCE_LENGTH) : null
+
+    if (!cleanBusinessId || !cleanName || !cleanMessage) {
       return NextResponse.json(
         { error: 'businessId, visitorName, and message are required' },
         { status: 400 }
       )
     }
 
+    if (cleanEmail && !isEmail(cleanEmail)) {
+      return NextResponse.json({ error: 'visitorEmail must be a valid email address' }, { status: 400 })
+    }
+
     const db = createServiceClient()
-    const leadInterest = String(interest || extractInterest(message)).slice(0, 120)
-    const temperature = classifyTemperature(`${message} ${leadInterest}`)
+    const leadInterest = String(interest || extractInterest(cleanMessage)).slice(0, 120)
+    const temperature = classifyTemperature(`${cleanMessage} ${leadInterest}`)
 
     // Save the lead
     let { error: insertError } = await db.from('leads').insert({
-      business_id: businessId,
-      visitor_name: visitorName,
-      visitor_email: visitorEmail || '',
-      message,
-      via: via || null,
+      business_id: cleanBusinessId,
+      visitor_name: cleanName,
+      visitor_email: cleanEmail,
+      message: cleanMessage,
+      via: cleanVia,
       status: 'new',
       interest: leadInterest,
       temperature,
@@ -35,11 +55,11 @@ export async function POST(req: NextRequest) {
 
     if (insertError && (insertError.message?.includes('status') || insertError.message?.includes('interest') || insertError.message?.includes('temperature'))) {
       const fallback = await db.from('leads').insert({
-        business_id: businessId,
-        visitor_name: visitorName,
-        visitor_email: visitorEmail || '',
-        message,
-        via: via || null,
+        business_id: cleanBusinessId,
+        visitor_name: cleanName,
+        visitor_email: cleanEmail,
+        message: cleanMessage,
+        via: cleanVia,
       })
       insertError = fallback.error
     }
@@ -53,22 +73,22 @@ export async function POST(req: NextRequest) {
     const { data: business } = await db
       .from('businesses')
       .select('owner_name, owner_email, slug')
-      .eq('id', businessId)
+      .eq('id', cleanBusinessId)
       .single()
 
     if (business && resend) {
       await resend.emails.send({
         from: 'Vitrine <noreply@vitrine.app>',
         to: business.owner_email,
-        subject: `New lead from ${visitorName}`,
+        subject: `New lead from ${cleanName}`,
         html: `
           <p>Hi ${business.owner_name},</p>
           <p>You have a new lead from your Vitrine page!</p>
           <table style="border-collapse:collapse;width:100%;max-width:500px">
-            <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Name</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(visitorName)}</td></tr>
-            ${visitorEmail ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Email</td><td style="padding:8px;border:1px solid #eee"><a href="mailto:${escapeHtml(visitorEmail)}">${escapeHtml(visitorEmail)}</a></td></tr>` : ''}
-            <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Message</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(message)}</td></tr>
-            ${via ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Source</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(via)}</td></tr>` : ''}
+            <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Name</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(cleanName)}</td></tr>
+            ${cleanEmail ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Email</td><td style="padding:8px;border:1px solid #eee"><a href="mailto:${escapeHtml(cleanEmail)}">${escapeHtml(cleanEmail)}</a></td></tr>` : ''}
+            <tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Message</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(cleanMessage)}</td></tr>
+            ${cleanVia ? `<tr><td style="padding:8px;font-weight:bold;border:1px solid #eee">Source</td><td style="padding:8px;border:1px solid #eee">${escapeHtml(cleanVia)}</td></tr>` : ''}
           </table>
           <p style="margin-top:24px;color:#888;font-size:12px">Reply directly to their email to follow up.</p>
         `,

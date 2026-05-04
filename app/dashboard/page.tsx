@@ -66,7 +66,8 @@ const CATEGORIES = [
   'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
   'Tattoo Studio', 'Massage Therapy', 'Makeup Artist', 'Personal Trainer',
   'Restaurant', 'Café', 'Bar', 'Food Truck', 'Bakery', 'Home Cleaning',
-  'Auto Detailing', 'Mechanic', 'Pet Grooming', 'Dental Clinic', 'Yoga Studio', 'Other',
+  'Auto Detailing', 'Mechanic', 'Pet Grooming', 'Veterinary Clinic', 'Dental Clinic',
+  'Law Office', 'Consulting Office', 'Accounting Office', 'Yoga Studio', 'Other',
 ]
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -83,9 +84,9 @@ const DEFAULT_SERVICES: Record<string, Service[]> = {
     { name: 'House dessert', price: '6', description: 'Sweet finish customers remember' },
   ],
   technical: [
-    { name: 'Diagnostic visit', price: '35', description: 'Initial check and clear next steps' },
-    { name: 'Repair quote', price: '0', description: 'Fast quote before starting work' },
-    { name: 'Maintenance service', price: '60', description: 'Preventive service for peace of mind' },
+    { name: 'Initial consultation', price: 'consultation', description: 'First conversation with clear next steps' },
+    { name: 'Case or needs review', price: 'quote', description: 'Objective analysis before booking or hiring' },
+    { name: 'Ongoing support', price: 'monthly', description: 'Professional follow-up for recurring clients' },
   ],
   service: [
     { name: 'Haircut', price: '25', description: 'Clean, professional finish' },
@@ -96,7 +97,7 @@ const DEFAULT_SERVICES: Record<string, Service[]> = {
 function getTemplateForCategory(category: string): 'service' | 'food' | 'technical' {
   const value = category.toLowerCase()
   if (['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => value.includes(item))) return 'food'
-  if (['cleaning', 'auto', 'mechanic', 'detailing', 'repair'].some((item) => value.includes(item))) return 'technical'
+  if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'detailing', 'repair'].some((item) => value.includes(item))) return 'technical'
   return 'service'
 }
 
@@ -112,9 +113,9 @@ const TEMPLATE_DETAILS = {
     badge: 'Menu focused',
   },
   technical: {
-    title: 'Quote & trust page',
-    description: 'Best for mechanics, cleaning, repairs and practical services where customers need trust and a fast quote.',
-    badge: 'Quote focused',
+    title: 'Professional trust page',
+    description: 'Best for clinics, offices, vets, consultants and practical services where customers need trust before contact.',
+    badge: 'Trust focused',
   },
 }
 
@@ -122,18 +123,18 @@ const TEMPLATE_COPY: Record<SetupLang, Record<'service' | 'food' | 'technical', 
   pt: {
     service: { title: 'Página de serviços e agendamentos', description: 'Ideal para salões, clínicas, beleza, fitness e negócios com marcação.', badge: 'Foco em reservas' },
     food: { title: 'Página de restauração, menu e pedidos', description: 'Ideal para restaurantes, cafés, bares, padarias, food trucks e take-away.', badge: 'Foco em menu' },
-    technical: { title: 'Página de orçamento e confiança', description: 'Ideal para limpeza, mecânica, reparos e serviços práticos com pedido rápido.', badge: 'Foco em orçamento' },
+    technical: { title: 'Página profissional de confiança', description: 'Ideal para clínicas, escritórios, veterinários, consultores e serviços que precisam gerar confiança antes do contacto.', badge: 'Foco em confiança' },
   },
   en: TEMPLATE_DETAILS,
   es: {
     service: { title: 'Página de servicios y reservas', description: 'Ideal para salones, clínicas, belleza, fitness y negocios con cita.', badge: 'Foco en reservas' },
     food: { title: 'Página de comida, menú y pedidos', description: 'Ideal para restaurantes, cafés, bares, panaderías, food trucks y take-away.', badge: 'Foco en menú' },
-    technical: { title: 'Página de presupuesto y confianza', description: 'Ideal para limpieza, mecánica, reparaciones y servicios prácticos.', badge: 'Foco en presupuesto' },
+    technical: { title: 'Página profesional de confianza', description: 'Ideal para clínicas, oficinas, veterinarios, consultores y servicios que necesitan confianza antes del contacto.', badge: 'Foco en confianza' },
   },
   fr: {
     service: { title: 'Page services et réservations', description: 'Idéal pour salons, cliniques, beauté, fitness et activités sur rendez-vous.', badge: 'Focalisé réservation' },
     food: { title: 'Page restauration, menu et commandes', description: 'Idéal pour restaurants, cafés, bars, boulangeries, food trucks et take-away.', badge: 'Focalisé menu' },
-    technical: { title: 'Page devis et confiance', description: 'Idéal pour nettoyage, mécanique, réparations et services pratiques.', badge: 'Focalisé devis' },
+    technical: { title: 'Page professionnelle de confiance', description: 'Idéal pour cliniques, bureaux, vétérinaires, consultants et services qui doivent inspirer confiance.', badge: 'Focalisé confiance' },
   },
 }
 
@@ -156,7 +157,11 @@ const CATEGORY_LABELS_PT: Record<string, string> = {
   'Auto Detailing': 'Detalhamento automóvel',
   Mechanic: 'Mecânico',
   'Pet Grooming': 'Banho e tosa',
+  'Veterinary Clinic': 'Clínica veterinária',
   'Dental Clinic': 'Clínica dentária',
+  'Law Office': 'Escritório de advocacia',
+  'Consulting Office': 'Consultoria',
+  'Accounting Office': 'Contabilidade',
   'Yoga Studio': 'Estúdio de yoga',
   Other: 'Outro',
 }
@@ -859,7 +864,7 @@ export default function DashboardPage() {
                     <label className="block text-sm font-medium text-gray-700">{t.plan}</label>
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 text-navy px-3 py-1 text-[11px] font-black">
                       <Lock className="w-3 h-3" />
-                      {lang === 'pt' ? 'Marca d’água demo' : lang === 'es' ? 'Marca de agua demo' : lang === 'fr' ? 'Filigrane démo' : 'Demo watermark'}
+                      {lang === 'pt' ? 'Prévia protegida' : lang === 'es' ? 'Vista previa protegida' : lang === 'fr' ? 'Aperçu protégé' : 'Protected preview'}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

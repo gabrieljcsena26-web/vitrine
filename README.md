@@ -4,13 +4,13 @@
 
 Vitrine is a SaaS platform where local business owners upload photos and basic info, and the system instantly generates a professional, multilingual landing page with a chatbot, contact form, and more.
 
-## 🚀 Demo
+## 🚀 Product Routes
 
 - **Homepage:** `/` — product introduction
-- **Live Demo:** `/demo` — Studio Elegance hair salon page  
 - **Dashboard:** `/dashboard` — onboarding form for business owners
-- **Test Login:** `/login` — creates/opens a demo dashboard with analytics
-- **Developer Console:** `/admin` — private launch/testing controls
+- **Login:** `/login` — sends private dashboard links by email
+- **Billing:** `/billing` — secure Stripe Checkout for Starter/Pro
+- **Owner Dashboard:** `/admin` — private founder dashboard for customers, leads, plans and reports
 
 ## 💻 Run Locally
 
@@ -45,9 +45,15 @@ NEXT_PUBLIC_BASE_URL=
 SUPABASE_STORAGE_BUCKET=business-photos
 VITRINE_DEV_PASSWORD=
 VITRINE_DEV_SESSION_SECRET=
+VITRINE_OWNER_PASSWORD=
+VITRINE_OWNER_SESSION_SECRET=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_STARTER_PRICE_ID=
+STRIPE_PRO_PRICE_ID=
 ```
 
-Local development uses `dev` as the developer password if `VITRINE_DEV_PASSWORD` is not set. Always set a strong password in Vercel.
+Production owner login uses `VITRINE_OWNER_PASSWORD` and `VITRINE_OWNER_SESSION_SECRET`. Local development uses `dev` only when no owner/developer password is set. Always set strong owner values in Vercel.
 
 ## 🗄 Supabase Setup
 
@@ -77,6 +83,7 @@ Pricing stays private during beta; the public site demonstrates capacity only.
 - [x] **Analytics dashboard** — visits, intent, channels, leads
 - [ ] **Supabase Auth** — real owner accounts
 - [ ] **Stripe** — payment processing for subscriptions
+- [x] **Stripe Checkout foundation** — secure hosted checkout and webhook routes
 - [ ] Custom domains per business
 - [ ] Daily analytics aggregation for large scale
 

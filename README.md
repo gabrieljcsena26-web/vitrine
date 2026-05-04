@@ -47,13 +47,14 @@ VITRINE_DEV_PASSWORD=
 VITRINE_DEV_SESSION_SECRET=
 VITRINE_OWNER_PASSWORD=
 VITRINE_OWNER_SESSION_SECRET=
+VITRINE_OWNER_SETUP_CODE=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_STARTER_PRICE_ID=
 STRIPE_PRO_PRICE_ID=
 ```
 
-Production owner login uses `VITRINE_OWNER_PASSWORD` and `VITRINE_OWNER_SESSION_SECRET`. Local development uses `dev` only when no owner/developer password is set. Always set strong owner values in Vercel.
+Production owner login uses `VITRINE_OWNER_PASSWORD` or a hashed owner password saved from `/admin`, plus `VITRINE_OWNER_SESSION_SECRET`. Set `VITRINE_OWNER_SETUP_CODE` temporarily if you want to create/change the owner password from `/admin`, then remove the setup code after the password is saved. Local development uses `dev` only when no owner/developer password is set. Always set strong owner values in Vercel.
 
 ## 🗄 Supabase Setup
 

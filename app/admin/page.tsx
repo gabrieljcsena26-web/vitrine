@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import Link from 'next/link'
 import {
-  BarChart3, Check, CreditCard, Database, ExternalLink, Eye, Lock, LogOut,
+  BarChart3, Check, CreditCard, Database, ExternalLink, Eye, KeyRound, Lock, LogOut,
   Mail, RefreshCw, Save, Scissors, Settings, ShieldCheck, TrendingUp, Users,
 } from 'lucide-react'
 
@@ -73,6 +73,11 @@ export default function AdminPage() {
   const [saved, setSaved] = useState(false)
   const [overview, setOverview] = useState<OverviewData | null>(null)
   const [controlSettings, setControlSettings] = useState(defaultControlSettings)
+  const [setupCode, setSetupCode] = useState('')
+  const [currentOwnerPassword, setCurrentOwnerPassword] = useState('')
+  const [newOwnerPassword, setNewOwnerPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordSaved, setPasswordSaved] = useState(false)
 
   const controlSetting = useMemo(() => (
     overview?.settings.find((item) => item.key === 'control')
@@ -160,6 +165,36 @@ export default function AdminPage() {
     }
   }
 
+  const handlePasswordUpdate = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPasswordLoading(true)
+    setPasswordSaved(false)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          setupCode,
+          currentPassword: currentOwnerPassword,
+          newPassword: newOwnerPassword,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Could not update owner password')
+      setSetupCode('')
+      setCurrentOwnerPassword('')
+      setNewOwnerPassword('')
+      setPasswordSaved(true)
+      await loadOverview()
+      setTimeout(() => setPasswordSaved(false), 2500)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update owner password')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
+
   if (loading && !overview) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -199,6 +234,37 @@ export default function AdminPage() {
               className="w-full bg-gold text-navy rounded-xl px-4 py-3 font-black hover:bg-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loginLoading ? 'Opening...' : 'Open owner dashboard'}
+            </button>
+          </form>
+          <form onSubmit={handlePasswordUpdate} className="mt-6 pt-6 border-t border-stone-100 space-y-4">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-gold" />
+              <p className="text-sm font-black text-navy">First setup / change password</p>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              Use the temporary code from VITRINE_OWNER_SETUP_CODE once, choose your real password, then remove the setup code from Vercel.
+            </p>
+            <input
+              type="password"
+              value={setupCode}
+              onChange={(event) => setSetupCode(event.target.value)}
+              placeholder="Temporary setup code"
+              className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold text-sm"
+            />
+            <input
+              type="password"
+              value={newOwnerPassword}
+              onChange={(event) => setNewOwnerPassword(event.target.value)}
+              placeholder="New owner password — 12+ characters"
+              className="w-full border border-stone-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold text-sm"
+            />
+            {passwordSaved && <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-xl px-3 py-2">Owner password saved. Use it to log in.</p>}
+            <button
+              type="submit"
+              disabled={passwordLoading || !setupCode.trim() || newOwnerPassword.length < 12}
+              className="w-full border border-stone-200 text-navy rounded-xl px-4 py-3 font-black hover:border-gold/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            >
+              {passwordLoading ? 'Saving password...' : 'Set owner password'}
             </button>
           </form>
           <Link href="/" className="block text-center text-sm text-gray-400 hover:text-navy mt-5">
@@ -289,6 +355,37 @@ export default function AdminPage() {
               <h2 className="text-xl font-black text-navy">Saved controls</h2>
             </div>
             <div className="space-y-5">
+              <form onSubmit={handlePasswordUpdate} className="rounded-2xl bg-amber-50 border border-amber-100 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-gold" />
+                  <div>
+                    <p className="font-bold text-navy">Owner password</p>
+                    <p className="text-sm text-gray-500">Change the private /admin password. It is stored hashed in Supabase.</p>
+                  </div>
+                </div>
+                <input
+                  type="password"
+                  value={currentOwnerPassword}
+                  onChange={(event) => setCurrentOwnerPassword(event.target.value)}
+                  placeholder="Current password or leave blank while logged in"
+                  className="w-full border border-amber-100 rounded-xl px-4 py-3 focus:outline-none focus:border-gold text-sm bg-white"
+                />
+                <input
+                  type="password"
+                  value={newOwnerPassword}
+                  onChange={(event) => setNewOwnerPassword(event.target.value)}
+                  placeholder="New owner password — 12+ characters"
+                  className="w-full border border-amber-100 rounded-xl px-4 py-3 focus:outline-none focus:border-gold text-sm bg-white"
+                />
+                <button
+                  type="submit"
+                  disabled={passwordLoading || newOwnerPassword.length < 12}
+                  className="inline-flex items-center gap-2 bg-navy text-white px-5 py-3 rounded-xl font-black hover:bg-navy/90 transition-colors disabled:opacity-50"
+                >
+                  {passwordSaved ? <><Check className="w-4 h-4" />Password saved</> : passwordLoading ? 'Saving password...' : <><KeyRound className="w-4 h-4" />Change password</>}
+                </button>
+              </form>
+
               <label className="flex items-center justify-between gap-4 rounded-2xl bg-stone-50 border border-stone-100 p-4">
                 <div>
                   <p className="font-bold text-navy">Production controls</p>

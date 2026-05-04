@@ -49,6 +49,7 @@ NEXT_PUBLIC_BASE_URL=https://your-domain.com
 SUPABASE_STORAGE_BUCKET=business-photos
 VITRINE_OWNER_PASSWORD=
 VITRINE_OWNER_SESSION_SECRET=
+VITRINE_OWNER_SETUP_CODE=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_STARTER_PRICE_ID=
@@ -56,7 +57,7 @@ STRIPE_PRO_PRICE_ID=
 CRON_SECRET=
 ```
 
-Use a strong `VITRINE_OWNER_PASSWORD` for `/admin`. `VITRINE_OWNER_SESSION_SECRET` signs the private owner cookie. Do not hardcode this password in the repository.
+Use a strong `VITRINE_OWNER_PASSWORD` for `/admin`. `VITRINE_OWNER_SESSION_SECRET` signs the private owner cookie. Do not hardcode this password in the repository. For first setup, you can temporarily set `VITRINE_OWNER_SETUP_CODE`, open `/admin`, use that code to save your real password, then remove `VITRINE_OWNER_SETUP_CODE` from Vercel and redeploy.
 
 After adding/changing variables:
 1. Go to **Settings** → **Environment Variables**

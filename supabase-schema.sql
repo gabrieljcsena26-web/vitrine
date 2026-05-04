@@ -53,33 +53,34 @@ create table if not exists page_views (
   visited_at    timestamptz default now()
 );
 
--- Migration helper (run if the table already exists):
--- alter table page_views add column if not exists event_type text not null default 'visit';
--- alter table businesses  add column if not exists whatsapp_number text;
--- alter table businesses  add column if not exists whatsapp_message text;
--- alter table businesses  add column if not exists plan text default 'starter';
--- alter table businesses  add column if not exists subscription_status text default 'trial';
--- alter table businesses  add column if not exists billing_provider text;
--- alter table businesses  add column if not exists billing_customer_id text;
--- alter table businesses  add column if not exists billing_subscription_id text;
--- alter table businesses  add column if not exists trial_started_at timestamptz default now();
--- alter table businesses  add column if not exists published_at timestamptz;
--- alter table businesses  add column if not exists benefits jsonb;
--- alter table businesses  add column if not exists testimonials jsonb;
--- alter table businesses  add column if not exists faqs jsonb;
--- alter table businesses  add column if not exists social_links jsonb;
--- alter table businesses  add column if not exists logo_url text;
--- alter table businesses  add column if not exists primary_color text;
--- alter table businesses  add column if not exists accent_color text;
--- alter table businesses  add column if not exists map_url text;
--- alter table businesses  add column if not exists menu_url text;
--- alter table businesses  add column if not exists menu_image_url text;
--- alter table businesses  add column if not exists seo_title text;
--- alter table businesses  add column if not exists seo_description text;
--- alter table businesses  add column if not exists og_image_url text;
--- alter table leads add column if not exists status text default 'new';
--- alter table leads add column if not exists interest text;
--- alter table leads add column if not exists temperature text default 'new';
+-- Idempotent migration helper for existing projects.
+alter table page_views add column if not exists event_type text not null default 'visit';
+alter table businesses  add column if not exists whatsapp_number text;
+alter table businesses  add column if not exists whatsapp_message text;
+alter table businesses  add column if not exists plan text default 'starter';
+alter table businesses  add column if not exists subscription_status text default 'trial';
+alter table businesses  add column if not exists billing_provider text;
+alter table businesses  add column if not exists billing_customer_id text;
+alter table businesses  add column if not exists billing_subscription_id text;
+alter table businesses  add column if not exists trial_started_at timestamptz default now();
+alter table businesses  add column if not exists published_at timestamptz;
+alter table businesses  add column if not exists benefits jsonb;
+alter table businesses  add column if not exists testimonials jsonb;
+alter table businesses  add column if not exists faqs jsonb;
+alter table businesses  add column if not exists social_links jsonb;
+alter table businesses  add column if not exists logo_url text;
+alter table businesses  add column if not exists primary_color text;
+alter table businesses  add column if not exists accent_color text;
+alter table businesses  add column if not exists map_url text;
+alter table businesses  add column if not exists menu_url text;
+alter table businesses  add column if not exists menu_image_url text;
+alter table businesses  add column if not exists seo_title text;
+alter table businesses  add column if not exists seo_description text;
+alter table businesses  add column if not exists og_image_url text;
+alter table businesses  add column if not exists booking_url text;
+alter table leads add column if not exists status text default 'new';
+alter table leads add column if not exists interest text;
+alter table leads add column if not exists temperature text default 'new';
 
 -- ─── Leads ─────────────────────────────────────────────────────────────────────
 create table if not exists leads (
@@ -140,10 +141,51 @@ alter table channels    enable row level security;
 alter table dev_settings enable row level security;
 alter table email_reports enable row level security;
 
--- Anyone can insert a page view (tracked from the public page)
-create policy "insert page views" on page_views for insert with check (true);
+-- Anyone can insert a page view (tracked from the public page).
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'page_views' and policyname = 'insert page views'
+  ) then
+    create policy "insert page views" on page_views for insert with check (true);
+  end if;
+end $$;
 
--- Anyone can insert a lead (from the contact form)
-create policy "insert leads" on leads for insert with check (true);
+-- Anyone can insert a lead (from the contact form).
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'leads' and policyname = 'insert leads'
+  ) then
+    create policy "insert leads" on leads for insert with check (true);
+  end if;
+end $$;
+
+-- ─── Supabase Storage ─────────────────────────────────────────────────────────
+-- Public image reads are allowed; uploads are handled by server routes using the
+-- service role key, so anonymous users never receive write access to storage.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'business-photos',
+  'business-photos',
+  true,
+  2500000,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'public read business photos'
+  ) then
+    create policy "public read business photos"
+      on storage.objects for select
+      using (bucket_id = 'business-photos');
+  end if;
+end $$;
 
 -- Reads via service role key bypass RLS automatically — no extra policy needed.

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, CheckCircle, Clock, HeartPulse, Mail, MapPin, MessageCircle, Phone, QrCode, Scale, Star, Utensils } from 'lucide-react'
+import { ArrowLeft, CalendarCheck, CheckCircle, ChefHat, Clock, HeartPulse, Mail, MapPin, MessageCircle, Phone, QrCode, Scale, Star, Utensils, Wine, X } from 'lucide-react'
 import type { CommercialDemo } from '@/lib/demo-pages'
 import { whatsAppHref } from '@/lib/utils'
 
@@ -13,6 +13,7 @@ interface Props {
 
 export default function CommercialDemoPage({ demo }: Props) {
   const [activeMenuItem, setActiveMenuItem] = useState(0)
+  const [showFullMenu, setShowFullMenu] = useState(false)
   const whatsappHref = whatsAppHref(demo.whatsappNumber, demo.whatsappMessage) ?? '#contact'
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(demo.address)}`
   const isFood = demo.variant === 'food'
@@ -53,50 +54,123 @@ export default function CommercialDemoPage({ demo }: Props) {
         </div>
       </nav>
 
-      <section className={`relative min-h-[86vh] flex items-center overflow-hidden ${demo.theme.primary}`}>
-        <Image src={demo.photos[0]} alt={demo.businessName} fill priority className="object-cover opacity-35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/35" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent" />
-        <div className="relative max-w-6xl mx-auto px-4 py-32 text-white">
-          <div className="max-w-2xl">
-            <span className={`inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold ${demo.theme.accent}`}>
-              {demo.theme.badge}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black leading-[0.98] mt-6 mb-6 tracking-tight">{demo.headline}</h1>
-            <p className="text-lg md:text-xl text-white/75 leading-relaxed mb-8 max-w-xl">{demo.subheadline}</p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-8 py-4 rounded-full font-black text-lg hover:bg-[#1ebe5d] transition-all hover:scale-105">
-                <MessageCircle className="w-5 h-5" />
-                {primaryCta}
-              </a>
-              <a href="#services" className="inline-flex items-center justify-center bg-white/10 border border-white/25 text-white px-8 py-4 rounded-full font-black text-lg hover:bg-white/20 transition-colors">
-                {secondaryCta}
-              </a>
+      <section className={`relative min-h-[92vh] flex items-center overflow-hidden ${demo.theme.primary}`}>
+        <Image src={demo.photos[0]} alt={demo.businessName} fill priority className="object-cover opacity-55" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_22%,rgba(212,175,55,0.24),transparent_30%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#fffaf0] to-transparent" />
+        <div className="relative max-w-6xl mx-auto px-4 py-28 md:py-36 text-white w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-[0.95fr_1.05fr] gap-10 items-center">
+            <div className="max-w-2xl">
+              <span className={`inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-bold ${demo.theme.accent}`}>
+                <ChefHat className="w-4 h-4" />
+                {demo.theme.badge}
+              </span>
+              {isFood ? (
+                <>
+                  <p className="mt-7 text-gold text-sm font-black uppercase tracking-[0.28em]">Demonstração de restaurante premium</p>
+                  <h1 className="text-5xl md:text-7xl font-black leading-[0.9] mt-3 tracking-tight">{demo.businessName}</h1>
+                  <h2 className="text-2xl md:text-4xl font-black leading-tight mt-5 max-w-xl">Pratos desejáveis, ambiente elegante e reservas em poucos segundos.</h2>
+                </>
+              ) : (
+                <h1 className="text-4xl md:text-6xl font-black leading-[0.98] mt-6 mb-6 tracking-tight">{demo.headline}</h1>
+              )}
+              <p className="text-lg md:text-xl text-white/75 leading-relaxed mt-6 mb-8 max-w-xl">{demo.subheadline}</p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-8 py-4 rounded-full font-black text-lg hover:bg-[#1ebe5d] transition-all hover:scale-105 shadow-xl shadow-green-500/20">
+                  <MessageCircle className="w-5 h-5" />
+                  {primaryCta}
+                </a>
+                <button type="button" onClick={() => setShowFullMenu(true)} className="inline-flex items-center justify-center gap-2 bg-white/10 border border-white/25 text-white px-8 py-4 rounded-full font-black text-lg hover:bg-white/20 transition-colors">
+                  <Utensils className="w-5 h-5" />
+                  {secondaryCta}
+                </button>
+              </div>
+              {isFood && (
+                <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg">
+                  {['Reservas rápidas', 'QR na mesa', 'Menu visual'].map((item) => (
+                    <div key={item} className="rounded-2xl bg-white/10 border border-white/10 px-4 py-3 backdrop-blur">
+                      <CheckCircle className="w-4 h-4 text-gold mb-2" />
+                      <p className="text-xs font-black text-white/85">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {isFood && (
+              <div className="relative hidden lg:block">
+                <div className="absolute -inset-8 rounded-[3rem] bg-gold/20 blur-3xl" />
+                <div className="relative rounded-[2.25rem] border border-white/15 bg-white/10 p-3 shadow-2xl shadow-black/40 backdrop-blur">
+                  <div className="rounded-[1.8rem] bg-[#fffaf0] text-navy overflow-hidden">
+                    <div className="grid grid-cols-[1.05fr_0.95fr] gap-0">
+                      <div className="relative min-h-[520px]">
+                        <Image src={activeDishPhoto} alt={activeDish?.name ?? demo.businessName} fill className="object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
+                        <div className="absolute left-6 right-6 bottom-6 text-white">
+                          <p className="text-gold text-xs font-black uppercase tracking-wider mb-2">Destaque do chef</p>
+                          <h3 className="text-3xl font-black leading-tight">{activeDish?.name}</h3>
+                          <p className="text-sm text-white/75 mt-2">{activeDish?.description}</p>
+                        </div>
+                      </div>
+                      <div className="p-5 flex flex-col justify-between">
+                        <div>
+                          <div className="rounded-2xl bg-white p-4 shadow-sm border border-orange-100 mb-4">
+                            <p className="text-xs text-gold font-black uppercase tracking-wider">Como o cliente vê</p>
+                            <p className="text-2xl font-black mt-1">Menu bonito, sem PDF perdido.</p>
+                          </div>
+                          <div className="space-y-2">
+                            {demo.services.slice(0, 4).map((item, index) => (
+                              <button
+                                key={item.name}
+                                type="button"
+                                onClick={() => setActiveMenuItem(index)}
+                                className={`w-full rounded-2xl p-3 text-left border transition-all ${activeMenuItem === index ? 'bg-navy text-white border-navy' : 'bg-white border-orange-100 hover:border-gold/50'}`}
+                              >
+                                <p className="font-black text-sm">{item.name}</p>
+                                <p className={`text-xs mt-1 line-clamp-1 ${activeMenuItem === index ? 'text-white/60' : 'text-gray-400'}`}>{item.description}</p>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="mt-4 rounded-2xl bg-navy text-white p-4 flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gold text-navy flex items-center justify-center"><QrCode className="w-6 h-6" /></div>
+                          <div><p className="font-black">QR do menu</p><p className="text-xs text-gray-300">Mesa, flyer, balcão e delivery.</p></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
       {isFood && (
-        <section id="services" className="py-20 bg-[#fffaf0]">
-          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-center">
+        <section id="services" className="py-24 bg-[#fffaf0]">
+          <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.82fr_1.18fr] gap-10 items-center">
             <div>
-              <span className="inline-flex items-center gap-2 text-gold uppercase tracking-wider text-sm font-black">
-                <QrCode className="w-4 h-4" /> Cardápio + QR Code
+              <span className="inline-flex items-center gap-2 rounded-full bg-white border border-orange-100 px-4 py-2 text-gold uppercase tracking-wider text-sm font-black shadow-sm">
+                <QrCode className="w-4 h-4" /> Menu interativo + QR Code
               </span>
-              <h2 className="text-4xl md:text-5xl font-black mt-3 mb-4">Mais pedidos / Highlights</h2>
-              <p className="text-gray-500 text-lg leading-relaxed mb-6">A foto principal muda conforme o cliente passa pelos destaques do cardápio. Fica visual, rápido e perfeito para decidir pelo telemóvel.</p>
+              <h2 className="text-4xl md:text-6xl font-black mt-4 mb-5 leading-tight">Cardápio bonito para abrir no telemóvel e decidir rápido.</h2>
+              <p className="text-gray-500 text-lg leading-relaxed mb-7">O cliente final clica no menu, vê pratos com foto, escolhe o destaque e chama no WhatsApp. O QR pode ficar na mesa, balcão, flyer ou sacola.</p>
               <div className="grid grid-cols-2 gap-3">
-                {['QR de mesa', 'Menu completo', 'Pedido WhatsApp', 'Fotos de pratos'].map((item) => (
+                {['QR de mesa', 'Menu completo', 'Pedido WhatsApp', 'Fotos de pratos'].map((item, index) => (
                   <div key={item} className="rounded-2xl bg-white border border-orange-100 p-4 font-black text-navy shadow-sm hover:-translate-y-1 hover:border-gold/40 transition-all">
+                    <span className="text-gold text-xs">0{index + 1}</span>
                     {item}
                   </div>
                 ))}
               </div>
+              <button type="button" onClick={() => setShowFullMenu(true)} className="mt-6 inline-flex items-center gap-2 bg-navy text-white px-6 py-3 rounded-full font-black hover:bg-navy/90 transition-colors">
+                <Utensils className="w-4 h-4" /> Abrir cardápio completo
+              </button>
             </div>
-            <div className="rounded-[2rem] bg-white border border-orange-100 shadow-2xl shadow-orange-100/60 p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-[0.85fr_1.15fr] gap-4">
-                <div className="relative min-h-[320px] rounded-3xl overflow-hidden">
+            <div className="rounded-[2.4rem] bg-white border border-orange-100 shadow-2xl shadow-orange-100/70 p-4 md:p-5">
+              <div className="grid grid-cols-1 sm:grid-cols-[0.92fr_1.08fr] gap-4">
+                <div className="relative min-h-[420px] rounded-[2rem] overflow-hidden">
                   <Image key={activeDishPhoto} src={activeDishPhoto} alt={activeDish?.name ?? 'Menu highlight'} fill className="object-cover transition-opacity duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                   <div className="absolute left-4 bottom-4 text-white">
@@ -124,6 +198,7 @@ export default function CommercialDemoPage({ demo }: Props) {
                         <p className="font-black">{item.name}</p>
                         <span className={`h-2.5 w-2.5 rounded-full ${activeMenuItem === index ? 'bg-gold' : 'bg-stone-300'}`} />
                       </div>
+                      <p className={`text-xs mt-1 line-clamp-1 ${activeMenuItem === index ? 'text-white/60' : 'text-gray-400'}`}>{item.description}</p>
                     </button>
                   ))}
                   <div className="rounded-2xl bg-navy text-white p-4 flex items-center gap-3">
@@ -133,6 +208,19 @@ export default function CommercialDemoPage({ demo }: Props) {
                 </div>
               </div>
             </div>
+          </div>
+          <div className="max-w-6xl mx-auto px-4 mt-10 grid grid-cols-1 md:grid-cols-4 gap-4">
+            {demo.services.map((dish) => (
+              <article key={dish.name} className="group rounded-[1.75rem] bg-white border border-orange-100 p-3 shadow-sm hover:-translate-y-1 hover:shadow-xl hover:border-gold/40 transition-all">
+                <div className="relative h-44 rounded-[1.35rem] overflow-hidden bg-stone-100">
+                  <Image src={dish.photo || demo.photos[1]} alt={dish.name} fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                </div>
+                <div className="p-3">
+                  <p className="font-black text-navy text-lg">{dish.name}</p>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">{dish.description}</p>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
       )}
@@ -267,6 +355,38 @@ export default function CommercialDemoPage({ demo }: Props) {
         </div>
       </section>
 
+      {isFood && (
+        <section className="py-24 bg-[#111827] text-white overflow-hidden relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(212,175,55,0.22),transparent_28%),radial-gradient(circle_at_80%_40%,rgba(255,255,255,0.08),transparent_24%)]" />
+          <div className="relative max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-10 items-center">
+            <div>
+              <span className="text-gold uppercase tracking-wider text-sm font-black">Experiência no espaço</span>
+              <h2 className="text-4xl md:text-6xl font-black mt-3 mb-5 leading-tight">Onde o QR entra na experiência do restaurante.</h2>
+              <p className="text-white/65 text-lg leading-relaxed mb-6">A demonstração mostra o caminho completo: cliente senta, lê o QR, vê pratos com fotos, escolhe o menu completo e chama no WhatsApp ou reserva mesa.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  [<QrCode key="qr" className="w-5 h-5" />, 'QR na mesa'],
+                  [<Wine key="wine" className="w-5 h-5" />, 'Menu visual'],
+                  [<CalendarCheck key="calendar" className="w-5 h-5" />, 'Reserva rápida'],
+                ].map(([icon, text]) => (
+                  <div key={String(text)} className="rounded-2xl bg-white/10 border border-white/10 p-4">
+                    <div className="text-gold mb-2">{icon}</div>
+                    <p className="font-black">{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {demo.photos.slice(0, 4).map((photo, index) => (
+                <div key={photo} className={`relative rounded-[2rem] overflow-hidden shadow-2xl ${index === 0 ? 'h-80' : 'h-48'} ${index === 2 ? 'h-64' : ''}`}>
+                  <Image src={photo} alt={`${demo.businessName} ambiente ${index + 1}`} fill className="object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <section id="reviews" className="py-24 bg-stone-50">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-14">
@@ -356,6 +476,43 @@ export default function CommercialDemoPage({ demo }: Props) {
           </a>
         </div>
       </section>
+
+      {showFullMenu && (
+        <div className="fixed inset-0 z-[80] bg-navy/80 backdrop-blur-sm px-4 py-8 overflow-y-auto">
+          <div className="max-w-4xl mx-auto rounded-[2rem] bg-[#fffaf0] text-navy overflow-hidden shadow-2xl border border-gold/20">
+            <div className="relative p-6 md:p-8 bg-navy text-white">
+              <button type="button" onClick={() => setShowFullMenu(false)} className="absolute right-5 top-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center">
+                <X className="w-5 h-5" />
+              </button>
+              <p className="text-gold text-xs font-black uppercase tracking-[0.24em]">Cardápio completo demo</p>
+              <h2 className="text-3xl md:text-5xl font-black mt-2">{demo.businessName}</h2>
+              <p className="text-white/65 mt-3 max-w-2xl">Exemplo de como o cardápio do cliente pode aparecer: visual, organizado, sem depender de PDF e pronto para QR Code.</p>
+            </div>
+            <div className="p-5 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {demo.services.map((dish) => (
+                <article key={dish.name} className="rounded-3xl bg-white border border-orange-100 p-4 grid grid-cols-[110px_1fr] gap-4 items-center">
+                  <div className="relative h-28 rounded-2xl overflow-hidden bg-stone-100">
+                    <Image src={dish.photo || demo.photos[1]} alt={dish.name} fill className="object-cover" />
+                  </div>
+                  <div>
+                    <p className="font-black text-xl">{dish.name}</p>
+                    <p className="text-sm text-gray-500 mt-1 leading-relaxed">{dish.description}</p>
+                    <p className="text-xs text-gold font-black uppercase tracking-wider mt-3">Sem preço na demo · foco na experiência</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="p-5 md:p-8 pt-0 flex flex-col sm:flex-row gap-3">
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-6 py-3 rounded-full font-black hover:bg-[#1ebe5d] transition-colors">
+                <MessageCircle className="w-5 h-5" /> Pedir pelo WhatsApp
+              </a>
+              <button type="button" onClick={() => setShowFullMenu(false)} className="inline-flex items-center justify-center bg-navy text-white px-6 py-3 rounded-full font-black hover:bg-navy/90 transition-colors">
+                Fechar cardápio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

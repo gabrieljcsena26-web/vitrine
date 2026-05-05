@@ -34,6 +34,7 @@ export interface BusinessData {
   description: string
   address: string
   owner_email: string
+  contact_email?: string | null
   phone: string
   lang: string
   services: { name: string; price: string; description?: string; photo?: string }[]
@@ -87,7 +88,9 @@ export default function PublicPageClient({ business }: Props) {
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')
   const showEmail = contactMethods.includes('email')
-  const publicEmail = showEmail && !business.owner_email.endsWith('@vitrine.local') ? business.owner_email : undefined
+  const publicEmail = showEmail
+    ? (business.contact_email || (!business.owner_email.endsWith('@vitrine.local') ? business.owner_email : undefined))
+    : undefined
 
   return (
     <main className="bg-white">

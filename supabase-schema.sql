@@ -9,6 +9,7 @@ create table if not exists businesses (
   slug          text not null unique,
   owner_name    text not null,
   owner_email   text not null,
+  contact_email text,
   secret_token  text not null unique default encode(gen_random_bytes(18), 'hex'),
   category      text,
   description   text,
@@ -55,6 +56,7 @@ create table if not exists page_views (
 
 -- Idempotent migration helper for existing projects.
 alter table page_views add column if not exists event_type text not null default 'visit';
+alter table businesses  add column if not exists contact_email text;
 alter table businesses  add column if not exists whatsapp_number text;
 alter table businesses  add column if not exists whatsapp_message text;
 alter table businesses  add column if not exists plan text default 'starter';
@@ -106,6 +108,18 @@ create table if not exists owner_accounts (
   updated_at     timestamptz default now()
 );
 
+-- Temporary email confirmation records for customer account creation.
+create table if not exists account_verifications (
+  email          text primary key,
+  code_hash      text not null,
+  code_salt      text not null,
+  password_hash  text not null,
+  password_salt  text not null,
+  attempts       integer not null default 0,
+  expires_at     timestamptz not null,
+  created_at     timestamptz default now()
+);
+
 -- ─── Tracking channels ────────────────────────────────────────────────────────
 create table if not exists channels (
   id            uuid primary key default gen_random_uuid(),
@@ -137,9 +151,11 @@ create index if not exists page_views_business_event_idx on page_views (business
 create index if not exists page_views_business_via_idx on page_views (business_id, via);
 create index if not exists leads_business_submitted_idx on leads (business_id, submitted_at desc);
 create index if not exists businesses_owner_email_idx on businesses (owner_email);
+create index if not exists businesses_contact_email_idx on businesses (contact_email);
 create index if not exists businesses_billing_customer_idx on businesses (billing_customer_id);
 create index if not exists businesses_slug_idx on businesses (slug);
 create index if not exists owner_accounts_updated_idx on owner_accounts (updated_at desc);
+create index if not exists account_verifications_expires_idx on account_verifications (expires_at);
 create index if not exists channels_business_slug_idx on channels (business_id, slug);
 create index if not exists email_reports_business_type_idx on email_reports (business_id, report_type, sent_at desc);
 
@@ -150,6 +166,7 @@ alter table page_views  enable row level security;
 alter table leads       enable row level security;
 alter table channels    enable row level security;
 alter table owner_accounts enable row level security;
+alter table account_verifications enable row level security;
 alter table dev_settings enable row level security;
 alter table email_reports enable row level security;
 

@@ -74,7 +74,7 @@ export default async function PublicPage({ params }: PageProps) {
     ? business.social_links.contactMethods
     : ['whatsapp', 'booking', 'email']
   const publicEmail = contactMethods.includes('email') && !business.owner_email.endsWith('@vitrine.local')
-    ? business.owner_email
+    ? business.contact_email || business.owner_email
     : undefined
 
   const jsonLd = {

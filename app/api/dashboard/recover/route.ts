@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { isEmail } from '@/lib/utils'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 import { verifyPassword } from '@/lib/password-auth'
+import { setCustomerSessionCookie } from '@/lib/customer-auth'
 
 // POST /api/dashboard/recover — authenticate the owner and return their dashboard pages.
 // Body: { email: string, password: string }
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(10)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       dashboards: (businesses ?? []).map((business) => ({
         name: business.owner_name,
@@ -58,6 +59,8 @@ export async function POST(req: NextRequest) {
         createdAt: business.created_at,
       })),
     })
+    setCustomerSessionCookie(response, normalizedEmail)
+    return response
   } catch (err) {
     console.error('POST /api/dashboard/recover error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

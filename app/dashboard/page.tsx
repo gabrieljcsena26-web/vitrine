@@ -245,7 +245,8 @@ export default function DashboardPage() {
   const [description, setDescription] = useState('')
   const [address, setAddress] = useState('')
   const [email, setEmail] = useState('')
-  const [accountPassword, setAccountPassword] = useState('')
+  const [accountEmail, setAccountEmail] = useState('')
+  const [authLoading, setAuthLoading] = useState(true)
   const [phone, setPhone] = useState('')
   const [contactMethods, setContactMethods] = useState<ContactMethod[]>(['whatsapp'])
   const [bookingUrl, setBookingUrl] = useState('')
@@ -256,7 +257,6 @@ export default function DashboardPage() {
   const [plan, setPlan] = useState('starter')
   const [lang, setLang] = useState<SetupLang>('pt')
   const [nameError, setNameError] = useState('')
-  const [accountError, setAccountError] = useState('')
   const [generateError, setGenerateError] = useState('')
   const [services, setServices] = useState<Service[]>([
     { name: 'Haircut', price: '25' },
@@ -307,6 +307,27 @@ export default function DashboardPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/account/session')
+      .then(async (res) => {
+        if (!active) return
+        if (!res.ok) {
+          router.replace('/login?next=/dashboard')
+          return
+        }
+        const json = await res.json()
+        if (json.email) setAccountEmail(json.email)
+      })
+      .catch(() => {
+        if (active) router.replace('/login?next=/dashboard')
+      })
+      .finally(() => {
+        if (active) setAuthLoading(false)
+      })
+    return () => { active = false }
+  }, [router])
 
   // Restore previously saved data
   useEffect(() => {
@@ -417,7 +438,6 @@ export default function DashboardPage() {
       description,
       address,
       email,
-      accountPassword: '',
       phone,
       bookingUrl,
       whatsappNumber,
@@ -451,16 +471,7 @@ export default function DashboardPage() {
         setNameError(t.nameRequired)
         return
       }
-      if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        setAccountError('Enter a valid account email.')
-        return
-      }
-      if (accountPassword.length < 12) {
-        setAccountError('Create a dashboard password with at least 12 characters.')
-        return
-      }
       setNameError('')
-      setAccountError('')
     }
     setStep(step + 1)
   }
@@ -469,9 +480,8 @@ export default function DashboardPage() {
     saveBusinessData()
     setIsGenerating(true)
     setGenerateError('')
-    const ownerEmail = email.trim()
-    if (!ownerEmail || accountPassword.length < 12) {
-      setGenerateError('Create your account with a valid email and a 12+ character password before publishing.')
+    if (!accountEmail) {
+      setGenerateError('Please log in before publishing your page.')
       setIsGenerating(false)
       return
     }
@@ -485,8 +495,7 @@ export default function DashboardPage() {
           category,
           description,
           address,
-          email: ownerEmail,
-          accountPassword,
+          email: contactMethodSelected('email') ? email.trim() || null : null,
           phone,
           whatsappNumber: contactMethodSelected('whatsapp') ? whatsappNumber.trim() || null : null,
           whatsappMessage: contactMethodSelected('whatsapp') ? whatsappMessage.trim() || null : null,
@@ -545,6 +554,18 @@ export default function DashboardPage() {
       console.error('Failed to copy:', err)
       alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-gold/5 flex items-center justify-center px-4">
+        <div className="bg-white rounded-3xl border border-stone-100 shadow-xl p-8 text-center max-w-sm">
+          <div className="w-12 h-12 border-4 border-gold/30 border-t-gold rounded-full animate-spin mx-auto mb-4" />
+          <h1 className="text-xl font-black text-navy">Preparing your secure setup</h1>
+          <p className="text-sm text-gray-500 mt-2">Checking your account before opening the page builder.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -680,44 +701,16 @@ export default function DashboardPage() {
                   />
                   {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
                 </div>
-                <div className="rounded-[1.75rem] border border-navy/10 bg-navy/5 p-5">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-navy text-gold flex items-center justify-center flex-shrink-0">
-                      <Lock className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-navy">Create your secure dashboard account</h3>
-                      <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-                        This email and password protect your private dashboard. We do not email dashboard links without a password.
-                      </p>
-                    </div>
+                <div className="rounded-[1.75rem] border border-green-200 bg-green-50 p-5 flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-green-600 text-white flex items-center justify-center flex-shrink-0">
+                    <Lock className="w-5 h-5" />
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Account email *</label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => { setEmail(e.target.value); setAccountError('') }}
-                        placeholder="you@business.com"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Dashboard password *</label>
-                      <input
-                        type="password"
-                        value={accountPassword}
-                        onChange={(e) => { setAccountPassword(e.target.value); setAccountError('') }}
-                        placeholder="12+ characters"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                      />
-                    </div>
+                  <div>
+                    <h3 className="font-black text-navy">Secure account connected</h3>
+                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                      You are creating this page from {accountEmail}. Your dashboard stays protected by your login password.
+                    </p>
                   </div>
-                  {accountError && <p className="text-red-500 text-xs mt-2">{accountError}</p>}
-                  <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-                    If this email already has an account, enter its current password to add another page.
-                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t.category}</label>

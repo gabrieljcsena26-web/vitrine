@@ -3,7 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { getBaseUrl, isEmail, isHttpUrl } from '@/lib/utils'
 import { Resend } from 'resend'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
-import { hashPassword, verifyPassword } from '@/lib/password-auth'
+import { getCustomerEmailFromRequest } from '@/lib/customer-auth'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -113,28 +113,27 @@ export async function POST(req: NextRequest) {
       whatsappNumber,
       whatsappMessage,
       plan,
-      accountPassword,
     } = body
 
     const normalizedSlug = normalizeSlug(slug)
-    const normalizedEmail = String(email ?? '').trim().toLowerCase()
+    const normalizedEmail = getCustomerEmailFromRequest(req)
+    const contactEmail = String(email ?? '').trim().toLowerCase()
     const cleanedBusinessName = String(businessName ?? '').trim().slice(0, 120)
     const normalizedLang = normalizeLang(lang)
 
-    if (!cleanedBusinessName || !normalizedSlug || !normalizedEmail) {
+    if (!normalizedEmail) {
+      return NextResponse.json({ error: 'Please log in before publishing your page.' }, { status: 401 })
+    }
+
+    if (!cleanedBusinessName || !normalizedSlug) {
       return NextResponse.json(
-        { error: 'businessName, slug, and email are required' },
+        { error: 'businessName and slug are required' },
         { status: 400 }
       )
     }
 
-    if (!isEmail(normalizedEmail)) {
+    if (contactEmail && !isEmail(contactEmail)) {
       return NextResponse.json({ error: 'email must be a valid email address' }, { status: 400 })
-    }
-
-    const cleanedAccountPassword = String(accountPassword ?? '')
-    if (cleanedAccountPassword.length < 12) {
-      return NextResponse.json({ error: 'Create a dashboard password with at least 12 characters.' }, { status: 400 })
     }
 
     if (bookingUrl && !isHttpUrl(String(bookingUrl)) && !isEmail(String(bookingUrl))) {
@@ -152,23 +151,6 @@ export async function POST(req: NextRequest) {
     const db = createServiceClient()
     const normalizedPlan = normalizePlan(plan)
     const pageLimit = PLAN_LIMITS[normalizedPlan]
-
-    const { data: ownerAccount, error: ownerAccountError } = await db
-      .from('owner_accounts')
-      .select('email, password_hash, password_salt')
-      .eq('email', normalizedEmail)
-      .maybeSingle()
-
-    if (ownerAccountError) {
-      return NextResponse.json({ error: ownerAccountError.message }, { status: 500 })
-    }
-
-    if (ownerAccount) {
-      const validPassword = verifyPassword(cleanedAccountPassword, ownerAccount.password_salt, ownerAccount.password_hash)
-      if (!validPassword) {
-        return NextResponse.json({ error: 'This email already has an account. Enter the correct dashboard password.' }, { status: 401 })
-      }
-    }
 
     // Detect whether this slug already exists so we can send the welcome
     // email only on the first creation (not on subsequent edits).
@@ -212,6 +194,7 @@ export async function POST(req: NextRequest) {
       slug: normalizedSlug,
       owner_name: cleanedBusinessName,
       owner_email: normalizedEmail,
+      contact_email: contactEmail || null,
       plan: normalizedPlan,
       category: category ? String(category).trim().slice(0, 80) : null,
       description: description ? String(description).trim().slice(0, 2000) : null,
@@ -247,6 +230,7 @@ export async function POST(req: NextRequest) {
 
     if (error && (
       error.message?.includes('whatsapp_message') ||
+      error.message?.includes('contact_email') ||
       error.message?.includes('plan') ||
       error.message?.includes('benefits') ||
       error.message?.includes('testimonials') ||
@@ -264,6 +248,7 @@ export async function POST(req: NextRequest) {
     )) {
       const fallbackPayload: Record<string, unknown> = { ...businessPayload }
       if (error.message?.includes('whatsapp_message')) delete fallbackPayload.whatsapp_message
+      if (error.message?.includes('contact_email')) delete fallbackPayload.contact_email
       if (error.message?.includes('plan')) delete fallbackPayload.plan
       ;[
         'benefits',
@@ -293,23 +278,6 @@ export async function POST(req: NextRequest) {
     if (error || !data) {
       console.error('Supabase upsert error:', error)
       return NextResponse.json({ error: error?.message ?? 'Could not save business' }, { status: 500 })
-    }
-
-    if (!ownerAccount) {
-      const { salt, hash } = hashPassword(cleanedAccountPassword)
-      const { error: accountInsertError } = await db
-        .from('owner_accounts')
-        .insert({
-          email: normalizedEmail,
-          password_hash: hash,
-          password_salt: salt,
-          updated_at: new Date().toISOString(),
-        })
-
-      if (accountInsertError) {
-        await db.from('businesses').delete().eq('id', data.id)
-        return NextResponse.json({ error: accountInsertError.message }, { status: 500 })
-      }
     }
 
     // Fire-and-forget welcome email with the public page and secure login link (first creation only).

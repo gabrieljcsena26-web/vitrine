@@ -45,6 +45,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=
+RESEND_FROM_EMAIL="Vitrine <noreply@your-domain.com>"
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
 SUPABASE_STORAGE_BUCKET=business-photos
 VITRINE_OWNER_PASSWORD=
@@ -96,7 +97,7 @@ Card numbers, CVC and sensitive payment details stay inside Stripe Checkout. Vit
 
 1. Verify the sending domain in Resend.
 2. Add `RESEND_API_KEY` to Vercel.
-3. Confirm `noreply@vitrine.app` or your chosen sender is authorized.
+3. Add `RESEND_FROM_EMAIL` with an authorized sender, for example `Vitrine <noreply@your-domain.com>`.
 4. Test page creation, login recovery and report emails after deploy.
 
 ### 4. Verify Git Branch

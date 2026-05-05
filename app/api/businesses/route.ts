@@ -4,6 +4,7 @@ import { getBaseUrl, isEmail, isHttpUrl } from '@/lib/utils'
 import { Resend } from 'resend'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 import { getCustomerEmailFromRequest } from '@/lib/customer-auth'
+import { EMAIL_FROM } from '@/lib/email'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -290,7 +291,7 @@ export async function POST(req: NextRequest) {
       const pageLink = `${baseUrl}/p/${data.slug}`
       resend.emails
         .send({
-          from: 'Vitrine <noreply@vitrine.app>',
+          from: EMAIL_FROM,
           to: normalizedEmail,
           subject: copy.subject,
           html: `

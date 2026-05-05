@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { getBaseUrl } from '@/lib/utils'
+import { EMAIL_FROM } from '@/lib/email'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
@@ -187,7 +188,7 @@ async function sendOnboardingReports(db: ReturnType<typeof createServiceClient>)
 
     if (resend) {
       await resend.emails.send({
-        from: 'Vitrine <noreply@vitrine.app>',
+        from: EMAIL_FROM,
         to: business.owner_email,
         subject: copy.onboardingSubject,
         html: buildEmailHtml({
@@ -264,7 +265,7 @@ async function sendRecurringPlanReports(db: ReturnType<typeof createServiceClien
 
     if (resend) {
       await resend.emails.send({
-        from: 'Vitrine <noreply@vitrine.app>',
+        from: EMAIL_FROM,
         to: business.owner_email,
         subject: copy.recurringSubject(reportLabel),
         html: buildEmailHtml({

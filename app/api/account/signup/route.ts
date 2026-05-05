@@ -5,6 +5,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { hashPassword } from '@/lib/password-auth'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
 import { getBaseUrl, isEmail } from '@/lib/utils'
+import { EMAIL_FROM } from '@/lib/email'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const CODE_TTL_MINUTES = 15
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
 
     if (resend) {
       await resend.emails.send({
-        from: 'Vitrine <noreply@vitrine.app>',
+        from: EMAIL_FROM,
         to: normalizedEmail,
         subject: 'Confirm your Vitrine account',
         html: `

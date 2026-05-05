@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     console.error('POST /api/account/signup error:', err)
+    if (err instanceof Error && err.message.startsWith('Missing environment variable:')) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

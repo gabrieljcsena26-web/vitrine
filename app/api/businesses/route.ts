@@ -283,7 +283,7 @@ export async function POST(req: NextRequest) {
     // Fire-and-forget welcome email with the public page and secure login link (first creation only).
     // Failures here should never break the API response — the token is already
     // returned to the client and also displayed on the success screen.
-    if (isNew && resend && email) {
+    if (isNew && resend && normalizedEmail) {
       const copy = welcomeCopy[normalizedLang]
       const baseUrl = getBaseUrl()
       const dashboardLink = `${baseUrl}/login`

@@ -1,12 +1,24 @@
 'use client'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Scissors, Mail, ArrowRight, CheckCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Scissors, Mail, ArrowRight, CheckCircle, Lock } from 'lucide-react'
+
+interface DashboardLink {
+  name: string | null
+  slug: string
+  token: string
+  plan: string | null
+  subscriptionStatus: string | null
+}
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [dashboards, setDashboards] = useState<DashboardLink[]>([])
+  const [error, setError] = useState('')
   const [lastToken, setLastToken] = useState('')
 
   useEffect(() => {
@@ -19,20 +31,44 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email.trim()) return
+    if (!email.trim() || !password) return
     setLoading(true)
+    setError('')
+    setDashboards([])
     try {
-      await fetch('/api/dashboard/recover', {
+      const res = await fetch('/api/dashboard/recover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), password }),
       })
-    } catch {
-      // fail silently — always show success to avoid enumeration
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Invalid email or password')
+      const nextDashboards = Array.isArray(json.dashboards) ? json.dashboards : []
+      setDashboards(nextDashboards)
+      if (nextDashboards.length === 1 && nextDashboards[0]?.token) {
+        try {
+          localStorage.setItem('vitrine_dashboard_token', nextDashboards[0].token)
+          localStorage.setItem('vitrine_dashboard_slug', nextDashboards[0].slug)
+        } catch {
+          // localStorage unavailable — ignore
+        }
+        router.push(`/dashboard/${nextDashboards[0].token}`)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid email or password')
     } finally {
       setLoading(false)
-      setSent(true)
     }
+  }
+
+  const openDashboard = (dashboard: DashboardLink) => {
+    try {
+      localStorage.setItem('vitrine_dashboard_token', dashboard.token)
+      localStorage.setItem('vitrine_dashboard_slug', dashboard.slug)
+    } catch {
+      // localStorage unavailable — ignore
+    }
+    router.push(`/dashboard/${dashboard.token}`)
   }
 
   return (
@@ -57,21 +93,31 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            {sent ? (
+            {dashboards.length > 1 ? (
               <div className="text-center py-4">
                 <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-800 mb-2">Check your inbox</h2>
-                <p className="text-slate-500 text-sm leading-relaxed">
-                  If we found an account with that email, we sent your dashboard link(s).
-                  Check your inbox and spam folder.
-                </p>
+                <h2 className="text-xl font-bold text-slate-800 mb-2">Choose your dashboard</h2>
+                <p className="text-slate-500 text-sm leading-relaxed mb-5">You have more than one page on this account.</p>
+                <div className="space-y-3 text-left">
+                  {dashboards.map((dashboard) => (
+                    <button
+                      key={dashboard.token}
+                      type="button"
+                      onClick={() => openDashboard(dashboard)}
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 hover:border-gold/50 hover:bg-gold/5 p-4 text-left transition-all"
+                    >
+                      <p className="font-black text-navy">{dashboard.name ?? dashboard.slug}</p>
+                      <p className="text-xs text-slate-400 mt-1">/{dashboard.slug} · {dashboard.plan ?? 'starter'} · {dashboard.subscriptionStatus ?? 'trial'}</p>
+                    </button>
+                  ))}
+                </div>
                 <button
-                  onClick={() => { setEmail(''); setSent(false) }}
+                  onClick={() => { setDashboards([]); setPassword('') }}
                   className="mt-6 text-sm text-gold hover:underline font-medium"
                 >
-                  ← Try a different email
+                  ← Back to login
                 </button>
               </div>
             ) : (
@@ -82,7 +128,7 @@ export default function LoginPage() {
                   </div>
                   <h1 className="text-2xl font-bold text-slate-800 mb-2">Access your dashboard</h1>
                   <p className="text-slate-500 text-sm">
-                    Enter the email you used to create your page. We&apos;ll send you your private dashboard link.
+                    Enter your account email and password to open your private dashboard.
                   </p>
                 </div>
 
@@ -105,16 +151,35 @@ export default function LoginPage() {
                     </div>
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Your password"
+                        className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-gold transition-colors bg-slate-50 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {error && <p className="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+
                   <button
                     type="submit"
-                    disabled={loading || !email.trim()}
+                    disabled={loading || !email.trim() || !password}
                     className="w-full bg-gold text-navy py-3 rounded-xl font-bold text-sm hover:bg-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <div className="w-4 h-4 border-2 border-navy/30 border-t-navy rounded-full animate-spin" />
                     ) : (
                       <>
-                        Send me my dashboard link
+                        Open my dashboard
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -131,9 +196,9 @@ export default function LoginPage() {
                     </Link>
                   )}
                   <p className="text-sm text-slate-500">
-                    Don&apos;t have a page yet?{' '}
+                    Don&apos;t have an account yet?{' '}
                     <Link href="/dashboard" className="text-gold font-semibold hover:underline">
-                      Create your page →
+                      Create your account and page →
                     </Link>
                   </p>
                 </div>
@@ -142,7 +207,7 @@ export default function LoginPage() {
           </div>
 
           <p className="text-center text-xs text-slate-400 mt-6">
-            Your dashboard link is private. Never share it publicly.
+            Your dashboard is protected by your email and password. Never share your private dashboard link publicly.
           </p>
         </div>
       </div>

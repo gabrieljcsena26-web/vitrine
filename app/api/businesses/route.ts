@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { getBaseUrl, isEmail, isHttpUrl } from '@/lib/utils'
 import { Resend } from 'resend'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
+import { hashPassword, verifyPassword } from '@/lib/password-auth'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -38,8 +39,8 @@ const welcomeCopy = {
     intro: 'Sua landing page está online e pronta para receber visitas, leads e reservas.',
     publicPage: 'Sua página pública',
     privateDashboard: '🔒 Seu dashboard privado',
-    keepSafe: 'Guarde este link. Ele dá acesso aos leads, estatísticas e ajustes da sua página.',
-    cta: 'Abrir meu dashboard →',
+    keepSafe: 'Acesse com o email e a senha criados no cadastro. Não enviamos link privado de dashboard sem senha.',
+    cta: 'Entrar no dashboard →',
     footer: 'Precisa de ajuda? Responda este email.',
   },
   es: {
@@ -48,8 +49,8 @@ const welcomeCopy = {
     intro: 'Tu landing page está online y lista para recibir visitas, leads y reservas.',
     publicPage: 'Tu página pública',
     privateDashboard: '🔒 Tu dashboard privado',
-    keepSafe: 'Guarda este enlace. Da acceso a leads, estadísticas y ajustes de tu página.',
-    cta: 'Abrir mi dashboard →',
+    keepSafe: 'Accede con el email y la contraseña creados en el registro. No enviamos enlaces privados sin contraseña.',
+    cta: 'Entrar al dashboard →',
     footer: '¿Necesitas ayuda? Responde a este email.',
   },
   en: {
@@ -58,8 +59,8 @@ const welcomeCopy = {
     intro: 'Your landing page is live and ready to receive visits, leads and bookings.',
     publicPage: 'Your public page',
     privateDashboard: '🔒 Your private dashboard',
-    keepSafe: 'Keep this link safe. It gives access to leads, analytics and page settings.',
-    cta: 'Open my dashboard →',
+    keepSafe: 'Log in with the email and password you created. We do not send private dashboard links without a password.',
+    cta: 'Log in to dashboard →',
     footer: 'Need help? Just reply to this email.',
   },
   fr: {
@@ -68,8 +69,8 @@ const welcomeCopy = {
     intro: 'Votre landing page est en ligne et prête à recevoir visites, leads et réservations.',
     publicPage: 'Votre page publique',
     privateDashboard: '🔒 Votre dashboard privé',
-    keepSafe: 'Gardez ce lien. Il donne accès aux leads, statistiques et réglages de votre page.',
-    cta: 'Ouvrir mon dashboard →',
+    keepSafe: 'Connectez-vous avec l’email et le mot de passe créés. Nous n’envoyons pas de lien privé sans mot de passe.',
+    cta: 'Se connecter au dashboard →',
     footer: 'Besoin d’aide ? Répondez à cet email.',
   },
 } as const
@@ -112,6 +113,7 @@ export async function POST(req: NextRequest) {
       whatsappNumber,
       whatsappMessage,
       plan,
+      accountPassword,
     } = body
 
     const normalizedSlug = normalizeSlug(slug)
@@ -130,6 +132,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'email must be a valid email address' }, { status: 400 })
     }
 
+    const cleanedAccountPassword = String(accountPassword ?? '')
+    if (cleanedAccountPassword.length < 12) {
+      return NextResponse.json({ error: 'Create a dashboard password with at least 12 characters.' }, { status: 400 })
+    }
+
     if (bookingUrl && !isHttpUrl(String(bookingUrl)) && !isEmail(String(bookingUrl))) {
       return NextResponse.json({ error: 'bookingUrl must be a valid http/https URL or email address' }, { status: 400 })
     }
@@ -145,6 +152,23 @@ export async function POST(req: NextRequest) {
     const db = createServiceClient()
     const normalizedPlan = normalizePlan(plan)
     const pageLimit = PLAN_LIMITS[normalizedPlan]
+
+    const { data: ownerAccount, error: ownerAccountError } = await db
+      .from('owner_accounts')
+      .select('email, password_hash, password_salt')
+      .eq('email', normalizedEmail)
+      .maybeSingle()
+
+    if (ownerAccountError) {
+      return NextResponse.json({ error: ownerAccountError.message }, { status: 500 })
+    }
+
+    if (ownerAccount) {
+      const validPassword = verifyPassword(cleanedAccountPassword, ownerAccount.password_salt, ownerAccount.password_hash)
+      if (!validPassword) {
+        return NextResponse.json({ error: 'This email already has an account. Enter the correct dashboard password.' }, { status: 401 })
+      }
+    }
 
     // Detect whether this slug already exists so we can send the welcome
     // email only on the first creation (not on subsequent edits).
@@ -271,13 +295,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error?.message ?? 'Could not save business' }, { status: 500 })
     }
 
-    // Fire-and-forget welcome email with the dashboard link (first creation only).
+    if (!ownerAccount) {
+      const { salt, hash } = hashPassword(cleanedAccountPassword)
+      const { error: accountInsertError } = await db
+        .from('owner_accounts')
+        .insert({
+          email: normalizedEmail,
+          password_hash: hash,
+          password_salt: salt,
+          updated_at: new Date().toISOString(),
+        })
+
+      if (accountInsertError) {
+        await db.from('businesses').delete().eq('id', data.id)
+        return NextResponse.json({ error: accountInsertError.message }, { status: 500 })
+      }
+    }
+
+    // Fire-and-forget welcome email with the public page and secure login link (first creation only).
     // Failures here should never break the API response — the token is already
     // returned to the client and also displayed on the success screen.
     if (isNew && resend && email) {
       const copy = welcomeCopy[normalizedLang]
       const baseUrl = getBaseUrl()
-      const dashboardLink = `${baseUrl}/dashboard/${data.secret_token}`
+      const dashboardLink = `${baseUrl}/login`
       const pageLink = `${baseUrl}/p/${data.slug}`
       resend.emails
         .send({

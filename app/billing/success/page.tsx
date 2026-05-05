@@ -16,7 +16,7 @@ export default function BillingSuccessPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link href="/login" className="inline-flex items-center justify-center gap-2 border border-stone-200 text-navy px-5 py-3 rounded-full font-black hover:border-gold/40 transition-colors">
-            Receber link do dashboard
+            Entrar com email e senha
           </Link>
         </div>
       </div>

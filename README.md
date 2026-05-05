@@ -8,7 +8,7 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 
 - **Homepage:** `/` — product introduction
 - **Dashboard:** `/dashboard` — onboarding form for business owners
-- **Login:** `/login` — sends private dashboard links by email
+- **Login:** `/login` — secure customer dashboard login with email and password
 - **Billing:** `/billing` — secure Stripe Checkout for Starter/Pro
 - **Owner Dashboard:** `/admin` — private founder dashboard for customers, leads, plans and reports
 
@@ -82,6 +82,7 @@ Pricing stays private during beta; the public site demonstrates capacity only.
 - [x] **Supabase** — database + storage foundation
 - [x] **Resend** — transactional emails for leads and recovery
 - [x] **Analytics dashboard** — visits, intent, channels, leads
+- [x] **Customer password login** — owner accounts with hashed passwords
 - [ ] **Supabase Auth** — real owner accounts
 - [ ] **Stripe** — payment processing for subscriptions
 - [x] **Stripe Checkout foundation** — secure hosted checkout and webhook routes

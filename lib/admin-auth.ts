@@ -1,10 +1,10 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { cookies } from 'next/headers'
 import { createServiceClient } from './supabase'
+import { hashPassword, safeEqual, verifyPassword } from './password-auth'
 
 const COOKIE_NAME = 'vitrine_owner_session'
 const OWNER_AUTH_KEY = 'owner_auth'
-const PASSWORD_HASH_BYTES = 64
 
 function getSecret() {
   if (process.env.VITRINE_OWNER_SESSION_SECRET) return process.env.VITRINE_OWNER_SESSION_SECRET
@@ -20,22 +20,6 @@ export function getAdminPassword() {
 
 export function getOwnerSetupCode() {
   return process.env.VITRINE_OWNER_SETUP_CODE || ''
-}
-
-function safeEqual(leftValue: string, rightValue: string) {
-  const left = Buffer.from(leftValue)
-  const right = Buffer.from(rightValue)
-  return left.length === right.length && timingSafeEqual(left, right)
-}
-
-function hashPassword(password: string, salt = randomBytes(16).toString('hex')) {
-  const hash = scryptSync(password, salt, PASSWORD_HASH_BYTES).toString('hex')
-  return { salt, hash }
-}
-
-function verifyPassword(password: string, salt: string, hash: string) {
-  const candidate = hashPassword(password, salt).hash
-  return safeEqual(candidate, hash)
 }
 
 async function getStoredOwnerAuth() {

@@ -579,10 +579,10 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           </div>
           <h1 className="text-2xl font-bold text-navy mb-2">Dashboard not found</h1>
           <p className="text-gray-500 mb-6 text-sm">
-            The link may be invalid or expired. Check the welcome email we sent when you created your page — your private dashboard link is there.
+            The link may be invalid. Log in with your email and password to open your dashboard securely.
           </p>
-          <Link href="/dashboard" className="inline-block bg-gold text-navy px-5 py-2.5 rounded-full font-semibold hover:bg-yellow-400 transition-colors text-sm">
-            Create a new page →
+          <Link href="/login" className="inline-block bg-gold text-navy px-5 py-2.5 rounded-full font-semibold hover:bg-yellow-400 transition-colors text-sm">
+            Go to secure login →
           </Link>
         </div>
       </div>

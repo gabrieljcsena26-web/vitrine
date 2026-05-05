@@ -78,10 +78,6 @@ alter table businesses  add column if not exists seo_title text;
 alter table businesses  add column if not exists seo_description text;
 alter table businesses  add column if not exists og_image_url text;
 alter table businesses  add column if not exists booking_url text;
-alter table leads add column if not exists status text default 'new';
-alter table leads add column if not exists interest text;
-alter table leads add column if not exists temperature text default 'new';
-
 -- ─── Leads ─────────────────────────────────────────────────────────────────────
 create table if not exists leads (
   id              uuid primary key default gen_random_uuid(),
@@ -94,6 +90,20 @@ create table if not exists leads (
   interest        text,
   temperature     text default 'new', -- 'new' | 'warm' | 'hot'
   submitted_at    timestamptz default now()
+);
+
+alter table leads add column if not exists status text default 'new';
+alter table leads add column if not exists interest text;
+alter table leads add column if not exists temperature text default 'new';
+
+-- ─── Owner accounts ───────────────────────────────────────────────────────────
+-- Customer dashboard login. Passwords are stored as scrypt hashes only.
+create table if not exists owner_accounts (
+  email          text primary key,
+  password_hash  text not null,
+  password_salt  text not null,
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
 );
 
 -- ─── Tracking channels ────────────────────────────────────────────────────────
@@ -129,6 +139,7 @@ create index if not exists leads_business_submitted_idx on leads (business_id, s
 create index if not exists businesses_owner_email_idx on businesses (owner_email);
 create index if not exists businesses_billing_customer_idx on businesses (billing_customer_id);
 create index if not exists businesses_slug_idx on businesses (slug);
+create index if not exists owner_accounts_updated_idx on owner_accounts (updated_at desc);
 create index if not exists channels_business_slug_idx on channels (business_id, slug);
 create index if not exists email_reports_business_type_idx on email_reports (business_id, report_type, sent_at desc);
 
@@ -138,6 +149,7 @@ alter table businesses  enable row level security;
 alter table page_views  enable row level security;
 alter table leads       enable row level security;
 alter table channels    enable row level security;
+alter table owner_accounts enable row level security;
 alter table dev_settings enable row level security;
 alter table email_reports enable row level security;
 

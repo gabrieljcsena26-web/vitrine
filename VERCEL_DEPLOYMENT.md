@@ -7,7 +7,7 @@ This guide helps you deploy Vitrine to Vercel with Supabase, Resend, Stripe and 
 The Next.js app builds successfully locally with these public/private routes:
 - `/` - Homepage
 - `/dashboard` - Customer page creation
-- `/login` - Customer dashboard link recovery
+- `/login` - Secure customer dashboard login with email and password
 - `/billing` - Stripe Checkout plan selection
 - `/admin` - Private owner dashboard
 - `/p/[slug]` - Public customer pages
@@ -75,6 +75,7 @@ Before deploying public traffic:
    - `page_views`
    - `leads`
    - `channels`
+   - `owner_accounts`
    - `email_reports`
    - `dev_settings`
 4. Confirm the recommended indexes were created for scale.

@@ -3,17 +3,51 @@ import { useState, useEffect } from 'react'
 import { Menu, X, Scissors } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import type { Language, Translations } from '@/lib/translations'
+import { safeBookingHref, whatsAppHref } from '@/lib/utils'
+import LeadCaptureModal from './LeadCaptureModal'
 
 interface Props {
   t: Translations
   lang: Language
   setLang: (lang: Language) => void
   businessName: string
+  bookingUrl?: string | null
+  whatsappNumber?: string | null
+  whatsappMessage?: string | null
+  businessId?: string
+  via?: string
 }
 
-export default function Navbar({ t, lang, setLang, businessName }: Props) {
+export default function Navbar({
+  t,
+  lang,
+  setLang,
+  businessName,
+  bookingUrl,
+  whatsappNumber,
+  whatsappMessage,
+  businessId,
+  via,
+}: Props) {
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [leadAction, setLeadAction] = useState<{
+    label: string
+    href: string
+    eventType: 'booking_click' | 'whatsapp_click'
+  } | null>(null)
+
+  const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
+  const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
+  const bookNowHref = bookingHref ?? whatsappHref ?? '#contact'
+  const bookNowEventType = bookingHref ? 'booking_click' : whatsappHref ? 'whatsapp_click' : null
+
+  const handleBookNowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!bookNowEventType || bookNowHref === '#contact') return
+    e.preventDefault()
+    setOpen(false)
+    setLeadAction({ label: t.nav.bookNow, href: bookNowHref, eventType: bookNowEventType })
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -25,7 +59,10 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
     { href: '#about', label: t.nav.about },
     { href: '#services', label: t.nav.services },
     { href: '#gallery', label: t.nav.gallery },
+    { href: '#testimonials', label: 'Reviews' },
     { href: '#hours', label: t.nav.hours },
+    { href: '#location', label: 'Location' },
+    { href: '#faq', label: 'FAQ' },
     { href: '#contact', label: t.nav.contact },
   ]
 
@@ -46,7 +83,7 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-4">
             {links.map((link) => (
               <a
                 key={link.href}
@@ -62,7 +99,8 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
           <div className="hidden md:flex items-center gap-4">
             <LanguageSwitcher lang={lang} setLang={setLang} />
             <a
-              href="#contact"
+              href={bookNowHref}
+              onClick={handleBookNowClick}
               className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold hover:bg-yellow-400 transition-colors"
             >
               {t.nav.bookNow}
@@ -96,15 +134,26 @@ export default function Navbar({ t, lang, setLang, businessName }: Props) {
             <div className="pt-2 flex items-center justify-between">
               <LanguageSwitcher lang={lang} setLang={setLang} />
               <a
-                href="#contact"
+                href={bookNowHref}
                 className="bg-gold text-navy px-4 py-2 rounded-full text-sm font-semibold"
-                onClick={() => setOpen(false)}
+                onClick={handleBookNowClick}
               >
                 {t.nav.bookNow}
               </a>
             </div>
           </div>
         </div>
+      )}
+      {leadAction && (
+        <LeadCaptureModal
+          open
+          onClose={() => setLeadAction(null)}
+          actionLabel={leadAction.label}
+          destinationHref={leadAction.href}
+          businessId={businessId}
+          via={via}
+          eventType={leadAction.eventType}
+        />
       )}
     </nav>
   )

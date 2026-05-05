@@ -1,95 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
-import { getBaseUrl, isEmail } from '@/lib/utils'
-import { Resend } from 'resend'
+import { isEmail } from '@/lib/utils'
+import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
+import { verifyPassword } from '@/lib/password-auth'
+import { setCustomerSessionCookie } from '@/lib/customer-auth'
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
-
-// POST /api/dashboard/recover — send dashboard link(s) to the owner's email
-// Body: { email: string }
+// POST /api/dashboard/recover — authenticate the owner and return their dashboard pages.
+// Body: { email: string, password: string }
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json()
+    const limited = rateLimit(rateLimitKey(req, 'dashboard-recover'), { limit: 5, windowMs: 15 * 60_000 })
+    if (!limited.allowed) {
+      return NextResponse.json({ ok: true }, { status: 200, headers: { 'Retry-After': String(limited.retryAfter) } })
+    }
+
+    const { email, password } = await req.json()
 
     if (!email || typeof email !== 'string' || email.trim().length > 254 || !isEmail(email.trim())) {
       return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 })
     }
 
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json({ error: 'Password is required.' }, { status: 400 })
+    }
+
+    const normalizedEmail = email.trim().toLowerCase()
     const db = createServiceClient()
+
+    const { data: ownerAccount, error: ownerAccountError } = await db
+      .from('owner_accounts')
+      .select('email, password_hash, password_salt')
+      .eq('email', normalizedEmail)
+      .maybeSingle()
+
+    if (ownerAccountError) {
+      return NextResponse.json({ error: ownerAccountError.message }, { status: 500 })
+    }
+
+    if (!ownerAccount || !verifyPassword(password, ownerAccount.password_salt, ownerAccount.password_hash)) {
+      return NextResponse.json({ error: 'Invalid email or password.' }, { status: 401 })
+    }
 
     const { data: businesses } = await db
       .from('businesses')
-      .select('owner_name, slug, secret_token')
-      .eq('owner_email', email.trim().toLowerCase())
+      .select('owner_name, slug, secret_token, plan, subscription_status, created_at')
+      .eq('owner_email', normalizedEmail)
       .order('created_at', { ascending: false })
       .limit(10)
 
-    // Always return success to avoid email enumeration
-    if (!businesses || businesses.length === 0 || !resend) {
-      return NextResponse.json({ ok: true })
-    }
-
-    const baseUrl = getBaseUrl()
-
-    const linksHtml = businesses
-      .map(
-        (b) => `
-        <tr>
-          <td style="padding:12px;border-bottom:1px solid #eee">
-            <strong style="color:#1a1a2e">${escapeHtml(b.owner_name)}</strong><br/>
-            <a href="${baseUrl}/p/${b.slug}" style="font-size:12px;color:#888">${baseUrl}/p/${b.slug}</a>
-          </td>
-          <td style="padding:12px;border-bottom:1px solid #eee">
-            <a href="${baseUrl}/dashboard/${b.secret_token}" style="display:inline-block;background:#f5c518;color:#1a1a2e;padding:8px 16px;border-radius:6px;font-weight:bold;text-decoration:none;font-size:13px">
-              Open Dashboard
-            </a>
-          </td>
-        </tr>`
-      )
-      .join('')
-
-    await resend.emails.send({
-      from: 'Vitrine <noreply@vitrine.app>',
-      to: email.trim(),
-      subject: 'Your Vitrine dashboard link(s)',
-      html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-          <h2 style="color:#1a1a2e">Your dashboard link${businesses.length > 1 ? 's' : ''}</h2>
-          <p style="color:#444">Here ${businesses.length > 1 ? 'are' : 'is'} the dashboard link${businesses.length > 1 ? 's' : ''} associated with your email.</p>
-
-          <table style="width:100%;border-collapse:collapse;margin:20px 0">
-            <thead>
-              <tr style="background:#f9fafb">
-                <th style="padding:10px 12px;text-align:left;color:#888;font-size:13px">Business</th>
-                <th style="padding:10px 12px;text-align:left;color:#888;font-size:13px">Dashboard</th>
-              </tr>
-            </thead>
-            <tbody>${linksHtml}</tbody>
-          </table>
-
-          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:12px;margin-top:16px">
-            <p style="margin:0;font-size:13px;color:#92400e">🔒 Keep these links safe — they give full access to your leads and statistics.</p>
-          </div>
-
-          <p style="margin-top:32px;color:#aaa;font-size:12px">
-            You requested this email from the Vitrine dashboard recovery page.
-          </p>
-        </div>
-      `,
+    const response = NextResponse.json({
+      ok: true,
+      dashboards: (businesses ?? []).map((business) => ({
+        name: business.owner_name,
+        slug: business.slug,
+        token: business.secret_token,
+        plan: business.plan,
+        subscriptionStatus: business.subscription_status,
+        createdAt: business.created_at,
+      })),
     })
-
-    return NextResponse.json({ ok: true })
+    setCustomerSessionCookie(response, normalizedEmail)
+    return response
   } catch (err) {
     console.error('POST /api/dashboard/recover error:', err)
+    if (err instanceof Error && err.message.startsWith('Missing environment variable:')) {
+      return NextResponse.json({ error: err.message }, { status: 500 })
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }

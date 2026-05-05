@@ -4,7 +4,7 @@ import { Scissors, Sparkles, Heart, Wind } from 'lucide-react'
 
 interface Props {
   t: Translations
-  services?: { name: string; price: string }[]
+  services?: { name: string; price: string; description?: string }[]
 }
 
 const icons = [
@@ -17,7 +17,7 @@ const icons = [
 export default function Services({ t, services: userServices }: Props) {
   const items =
     userServices && userServices.length > 0
-      ? userServices.map((s) => ({ name: s.name, price: s.price ? `${s.price}€` : '', description: '' }))
+      ? userServices.map((s) => ({ name: s.name, price: s.price ? `${s.price}€` : '', description: s.description ?? '' }))
       : t.services.items
 
   return (

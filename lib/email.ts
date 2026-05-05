@@ -1,0 +1,1 @@
+export const EMAIL_FROM = process.env.RESEND_FROM_EMAIL || 'Vitrine <noreply@vitrine.app>'

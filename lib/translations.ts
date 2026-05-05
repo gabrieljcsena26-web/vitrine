@@ -1,4 +1,4 @@
-export type Language = 'pt' | 'es' | 'en'
+export type Language = 'pt' | 'es' | 'en' | 'fr'
 
 export const translations = {
   pt: {
@@ -238,6 +238,86 @@ export const translations = {
         price: 'Our prices: Haircut — 25€, Color — 65€, Treatment — 45€, Blowout — 30€.',
         hours: 'We are open Monday to Saturday from 9:00 to 20:00. Sunday closed.',
         default: 'Thank you for your message! A team member will respond shortly. For urgent inquiries, call +34 91 234 5678.',
+      },
+    },
+  },
+  fr: {
+    nav: {
+      about: 'À propos',
+      services: 'Services',
+      gallery: 'Galerie',
+      hours: 'Horaires',
+      contact: 'Contact',
+      bookNow: 'Réserver',
+    },
+    hero: {
+      tagline: 'Là où le style rencontre la perfection',
+      bookNow: 'Réserver maintenant',
+      seeServices: 'Voir les services',
+    },
+    about: {
+      title: 'À propos de nous',
+      description: 'Chez Studio Elegance, nous pensons que chaque client mérite une expérience unique et personnalisée. Notre équipe de professionnels combine des techniques modernes avec un accueil chaleureux. Situé au cœur de Madrid, notre salon est un espace dédié à la beauté et au bien-être.',
+    },
+    services: {
+      title: 'Nos services',
+      subtitle: 'Des soins premium pour chaque occasion',
+      items: [
+        { name: 'Coupe', price: '25€', description: 'Coupe précise adaptée à votre visage et à votre style' },
+        { name: 'Coloration', price: '65€', description: 'Coloration complète, mèches, balayage avec des produits premium' },
+        { name: 'Soin', price: '45€', description: 'Soins hydratants et réparateurs pour des cheveux sains et brillants' },
+        { name: 'Brushing', price: '30€', description: 'Brushing professionnel pour volume, douceur et tenue longue durée' },
+      ],
+    },
+    gallery: {
+      title: 'Galerie',
+      subtitle: 'Découvrez notre travail',
+    },
+    hours: {
+      title: 'Horaires d’ouverture',
+      days: {
+        monday: 'Lundi',
+        tuesday: 'Mardi',
+        wednesday: 'Mercredi',
+        thursday: 'Jeudi',
+        friday: 'Vendredi',
+        saturday: 'Samedi',
+        sunday: 'Dimanche',
+      },
+      closed: 'Fermé',
+    },
+    contact: {
+      title: 'Contactez-nous',
+      subtitle: 'Nous sommes là pour vous aider',
+      name: 'Nom',
+      email: 'Email',
+      message: 'Message',
+      send: 'Envoyer le message',
+      success: 'Message envoyé avec succès ! Nous vous contacterons bientôt.',
+      namePlaceholder: 'Votre nom',
+      emailPlaceholder: 'votre@email.com',
+      messagePlaceholder: 'Comment pouvons-nous vous aider ?',
+    },
+    footer: {
+      rights: 'Tous droits réservés',
+      poweredBy: 'Créé avec Vitrine',
+    },
+    booking: {
+      title: 'Planifiez votre rendez-vous',
+      subtitle: 'Choisissez le meilleur créneau pour vous',
+      cta: 'Réserver',
+    },
+    whatsapp: {
+      label: 'Discuter sur WhatsApp',
+    },
+    chatbot: {
+      greeting: 'Bonjour ! Bienvenue chez Studio Elegance 👋 Comment puis-je vous aider ?',
+      placeholder: 'Écrivez votre message...',
+      responses: {
+        booking: 'Pour réserver un rendez-vous, appelez le +34 91 234 5678 ou visitez-nous à Calle Gran Vía 45, Madrid.',
+        price: 'Nos prix : Coupe — 25€, Coloration — 65€, Soin — 45€, Brushing — 30€.',
+        hours: 'Nous sommes ouverts du lundi au samedi de 9h00 à 20h00. Fermé le dimanche.',
+        default: 'Merci pour votre message ! Un membre de notre équipe vous répondra bientôt. Pour une demande urgente, appelez le +34 91 234 5678.',
       },
     },
   },

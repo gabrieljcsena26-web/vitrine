@@ -1,13 +1,18 @@
-# Vercel Deployment Guide - Fixing 404 Errors
+# Vercel Deployment Guide - Production Launch
 
-This guide helps you fix 404 errors when deploying the Vitrine project to Vercel.
+This guide helps you deploy Vitrine to Vercel with Supabase, Resend, Stripe and the private owner dashboard configured for production.
 
-## ✅ Quick Diagnosis
+## ✅ Current Production Routes
 
-Your Next.js app **builds successfully locally** with all routes working:
+The Next.js app builds successfully locally with these public/private routes:
 - `/` - Homepage
-- `/demo` - Demo page  
-- `/dashboard` - Dashboard page
+- `/dashboard` - Customer page creation
+- `/login` - Secure customer dashboard login with email and password
+- `/billing` - Stripe Checkout plan selection
+- `/admin` - Private owner dashboard
+- `/p/[slug]` - Public customer pages
+
+Demo and test-login routes have been removed for production.
 
 ## 🔧 Common Solutions for Vercel 404 Errors
 
@@ -33,17 +38,74 @@ Often, redeploying fixes issues:
 
 ### 3. Check Environment Variables
 
-If you added any environment variables:
+Set these variables in **Settings → Environment Variables** for Production and Preview:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL="Vitrine <noreply@your-domain.com>"
+NEXT_PUBLIC_BASE_URL=https://your-domain.com
+SUPABASE_STORAGE_BUCKET=business-photos
+VITRINE_OWNER_PASSWORD=
+VITRINE_OWNER_SESSION_SECRET=
+VITRINE_OWNER_SETUP_CODE=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_STARTER_PRICE_ID=
+STRIPE_PRO_PRICE_ID=
+CRON_SECRET=
+```
+
+Use a strong `VITRINE_OWNER_PASSWORD` for `/admin`. `VITRINE_OWNER_SESSION_SECRET` signs the private owner cookie. Do not hardcode this password in the repository. For first setup, you can temporarily set `VITRINE_OWNER_SETUP_CODE`, open `/admin`, use that code to save your real password, then remove `VITRINE_OWNER_SETUP_CODE` from Vercel and redeploy.
+
+After adding/changing variables:
 1. Go to **Settings** → **Environment Variables**
 2. Make sure all required variables are set for **Production**
 3. Redeploy after adding/changing variables
+
+### 3.1 Supabase Checklist
+
+Before deploying public traffic:
+
+1. Run `supabase-schema.sql` in Supabase SQL Editor.
+2. Create a public Storage bucket named `business-photos`.
+3. Confirm these tables exist:
+   - `businesses`
+   - `page_views`
+   - `leads`
+   - `channels`
+   - `owner_accounts`
+   - `email_reports`
+   - `dev_settings`
+4. Confirm the recommended indexes were created for scale.
+5. Open `/admin` after deploy and save the owner controls once, so the `dev_settings` row is created.
+
+### 3.2 Stripe Checklist
+
+1. Create Starter and Pro subscription prices in Stripe.
+2. Add `STRIPE_STARTER_PRICE_ID` and `STRIPE_PRO_PRICE_ID` to Vercel.
+3. Create a webhook endpoint pointing to:
+   - `https://your-domain.com/api/billing/webhook`
+4. Listen for checkout/session and subscription events.
+5. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+Card numbers, CVC and sensitive payment details stay inside Stripe Checkout. Vitrine only receives customer/subscription metadata and plan status.
+
+### 3.3 Resend Checklist
+
+1. Verify the sending domain in Resend.
+2. Add `RESEND_API_KEY` to Vercel.
+3. Add `RESEND_FROM_EMAIL` with an authorized sender, for example `Vitrine <noreply@your-domain.com>`.
+4. Test page creation, login recovery and report emails after deploy.
 
 ### 4. Verify Git Branch
 
 Make sure you're deploying from the correct branch:
 1. Go to **Settings** → **Git**
 2. Check **Production Branch** (should be `main` or your default branch)
-3. If you want to deploy from `copilot/fix-404-error-in-vitrine`, change it there
+3. Deploy from the branch that contains the latest production cleanup changes, then merge to `main` when approved.
 
 ### 5. Check Build Logs
 
@@ -77,9 +139,9 @@ If nothing works, create a fresh deployment:
 ## 📝 Important Notes
 
 - **Next.js 15** is fully supported by Vercel
-- Your app uses **static generation** (all pages are pre-rendered)
-- No server-side rendering or API routes are used
-- All routes should work immediately after deployment
+- The app uses static pages plus dynamic API routes
+- Supabase environment variables are required for dashboard/data routes
+- All public routes should work immediately after deployment
 
 ## 🐛 Still Getting 404?
 
@@ -87,8 +149,10 @@ If you still see 404 errors after trying the above:
 
 1. **Check the exact URL**: 
    - `https://your-project.vercel.app/` ← Should work
-   - `https://your-project.vercel.app/demo` ← Should work
    - `https://your-project.vercel.app/dashboard` ← Should work
+   - `https://your-project.vercel.app/login` ← Should work
+   - `https://your-project.vercel.app/billing` ← Should work
+   - `https://your-project.vercel.app/admin` ← Should show owner login
 
 2. **Check browser console** (F12): Look for JavaScript errors
 
@@ -100,7 +164,9 @@ If you still see 404 errors after trying the above:
 
 After deploying, test all these URLs:
 - Homepage: `/`
-- Demo: `/demo`
-- Dashboard: `/dashboard`
+- Page creation: `/dashboard`
+- Customer login: `/login`
+- Billing: `/billing`
+- Owner dashboard: `/admin`
 
 All should return status **200 OK** and display the correct page.

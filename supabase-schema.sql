@@ -9,6 +9,7 @@ create table if not exists businesses (
   slug          text not null unique,
   owner_name    text not null,
   owner_email   text not null,
+  contact_email text,
   secret_token  text not null unique default encode(gen_random_bytes(18), 'hex'),
   category      text,
   description   text,
@@ -18,9 +19,29 @@ create table if not exists businesses (
   services          jsonb,
   hours             jsonb,
   photos            jsonb,
+  benefits          jsonb,
+  testimonials      jsonb,
+  faqs              jsonb,
+  social_links      jsonb,
+  logo_url          text,
+  primary_color     text,
+  accent_color      text,
+  map_url           text,
+  menu_url          text,
+  menu_image_url    text,
+  seo_title         text,
+  seo_description   text,
+  og_image_url      text,
   booking_url       text,
   whatsapp_number   text,
   whatsapp_message  text,
+  plan              text default 'starter',
+  subscription_status text default 'trial',
+  billing_provider text,
+  billing_customer_id text,
+  billing_subscription_id text,
+  trial_started_at timestamptz default now(),
+  published_at timestamptz,
   created_at        timestamptz default now()
 );
 
@@ -33,11 +54,32 @@ create table if not exists page_views (
   visited_at    timestamptz default now()
 );
 
--- Migration helper (run if the table already exists):
--- alter table page_views add column if not exists event_type text not null default 'visit';
--- alter table businesses  add column if not exists whatsapp_number text;
--- alter table businesses  add column if not exists whatsapp_message text;
-
+-- Idempotent migration helper for existing projects.
+alter table page_views add column if not exists event_type text not null default 'visit';
+alter table businesses  add column if not exists contact_email text;
+alter table businesses  add column if not exists whatsapp_number text;
+alter table businesses  add column if not exists whatsapp_message text;
+alter table businesses  add column if not exists plan text default 'starter';
+alter table businesses  add column if not exists subscription_status text default 'trial';
+alter table businesses  add column if not exists billing_provider text;
+alter table businesses  add column if not exists billing_customer_id text;
+alter table businesses  add column if not exists billing_subscription_id text;
+alter table businesses  add column if not exists trial_started_at timestamptz default now();
+alter table businesses  add column if not exists published_at timestamptz;
+alter table businesses  add column if not exists benefits jsonb;
+alter table businesses  add column if not exists testimonials jsonb;
+alter table businesses  add column if not exists faqs jsonb;
+alter table businesses  add column if not exists social_links jsonb;
+alter table businesses  add column if not exists logo_url text;
+alter table businesses  add column if not exists primary_color text;
+alter table businesses  add column if not exists accent_color text;
+alter table businesses  add column if not exists map_url text;
+alter table businesses  add column if not exists menu_url text;
+alter table businesses  add column if not exists menu_image_url text;
+alter table businesses  add column if not exists seo_title text;
+alter table businesses  add column if not exists seo_description text;
+alter table businesses  add column if not exists og_image_url text;
+alter table businesses  add column if not exists booking_url text;
 -- ─── Leads ─────────────────────────────────────────────────────────────────────
 create table if not exists leads (
   id              uuid primary key default gen_random_uuid(),
@@ -46,19 +88,133 @@ create table if not exists leads (
   visitor_email   text,
   message         text,
   via             text,              -- same as page_views.via
+  status          text default 'new', -- 'new' | 'contacted' | 'won' | 'lost'
+  interest        text,
+  temperature     text default 'new', -- 'new' | 'warm' | 'hot'
   submitted_at    timestamptz default now()
 );
+
+alter table leads add column if not exists status text default 'new';
+alter table leads add column if not exists interest text;
+alter table leads add column if not exists temperature text default 'new';
+
+-- ─── Owner accounts ───────────────────────────────────────────────────────────
+-- Customer dashboard login. Passwords are stored as scrypt hashes only.
+create table if not exists owner_accounts (
+  email          text primary key,
+  password_hash  text not null,
+  password_salt  text not null,
+  created_at     timestamptz default now(),
+  updated_at     timestamptz default now()
+);
+
+-- Temporary email confirmation records for customer account creation.
+create table if not exists account_verifications (
+  email          text primary key,
+  code_hash      text not null,
+  code_salt      text not null,
+  password_hash  text not null,
+  password_salt  text not null,
+  attempts       integer not null default 0,
+  expires_at     timestamptz not null,
+  created_at     timestamptz default now()
+);
+
+-- ─── Tracking channels ────────────────────────────────────────────────────────
+create table if not exists channels (
+  id            uuid primary key default gen_random_uuid(),
+  business_id   uuid not null references businesses(id) on delete cascade,
+  name          text not null,
+  slug          text not null,
+  created_at    timestamptz default now(),
+  unique (business_id, slug)
+);
+
+-- ─── Email reports ────────────────────────────────────────────────────────────
+create table if not exists email_reports (
+  id            uuid primary key default gen_random_uuid(),
+  business_id   uuid not null references businesses(id) on delete cascade,
+  report_type   text not null,
+  period_days   integer not null,
+  sent_at       timestamptz default now()
+);
+
+-- ─── Developer/admin settings ─────────────────────────────────────────────────
+create table if not exists dev_settings (
+  key          text primary key,
+  value        jsonb not null,
+  updated_at   timestamptz default now()
+);
+
+-- ─── Recommended indexes for scale ────────────────────────────────────────────
+create index if not exists page_views_business_event_idx on page_views (business_id, event_type, visited_at desc);
+create index if not exists page_views_business_via_idx on page_views (business_id, via);
+create index if not exists leads_business_submitted_idx on leads (business_id, submitted_at desc);
+create index if not exists businesses_owner_email_idx on businesses (owner_email);
+create index if not exists businesses_contact_email_idx on businesses (contact_email);
+create index if not exists businesses_billing_customer_idx on businesses (billing_customer_id);
+create index if not exists businesses_slug_idx on businesses (slug);
+create index if not exists owner_accounts_updated_idx on owner_accounts (updated_at desc);
+create index if not exists account_verifications_expires_idx on account_verifications (expires_at);
+create index if not exists channels_business_slug_idx on channels (business_id, slug);
+create index if not exists email_reports_business_type_idx on email_reports (business_id, report_type, sent_at desc);
 
 -- ─── Row Level Security ────────────────────────────────────────────────────────
 -- Public pages can insert views and leads; reads are only via service role key.
 alter table businesses  enable row level security;
 alter table page_views  enable row level security;
 alter table leads       enable row level security;
+alter table channels    enable row level security;
+alter table owner_accounts enable row level security;
+alter table account_verifications enable row level security;
+alter table dev_settings enable row level security;
+alter table email_reports enable row level security;
 
--- Anyone can insert a page view (tracked from the public page)
-create policy "insert page views" on page_views for insert with check (true);
+-- Anyone can insert a page view (tracked from the public page).
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'page_views' and policyname = 'insert page views'
+  ) then
+    create policy "insert page views" on page_views for insert with check (true);
+  end if;
+end $$;
 
--- Anyone can insert a lead (from the contact form)
-create policy "insert leads" on leads for insert with check (true);
+-- Anyone can insert a lead (from the contact form).
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'public' and tablename = 'leads' and policyname = 'insert leads'
+  ) then
+    create policy "insert leads" on leads for insert with check (true);
+  end if;
+end $$;
+
+-- ─── Supabase Storage ─────────────────────────────────────────────────────────
+-- Public image reads are allowed; uploads are handled by server routes using the
+-- service role key, so anonymous users never receive write access to storage.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'business-photos',
+  'business-photos',
+  true,
+  2500000,
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'public read business photos'
+  ) then
+    create policy "public read business photos"
+      on storage.objects for select
+      using (bucket_id = 'business-photos');
+  end if;
+end $$;
 
 -- Reads via service role key bypass RLS automatically — no extra policy needed.

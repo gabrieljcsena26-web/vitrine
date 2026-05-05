@@ -5,7 +5,7 @@ import { whatsAppHref } from '@/lib/utils'
 interface Props {
   t: Translations
   whatsappNumber: string
-  businessId: string
+  businessId?: string
   via?: string
   whatsappMessage?: string
 }
@@ -15,6 +15,7 @@ export default function WhatsAppButton({ t, whatsappNumber, businessId, via, wha
   if (!href) return null
 
   const handleClick = () => {
+    if (!businessId) return
     fetch('/api/track-visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

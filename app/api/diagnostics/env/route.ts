@@ -11,9 +11,20 @@ const requiredEnv = [
   'VITRINE_CUSTOMER_SESSION_SECRET',
 ] as const
 
+const launchEnv = [
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'STRIPE_STARTER_PRICE_ID',
+  'STRIPE_PRO_PRICE_ID',
+  'CRON_SECRET',
+] as const
+
 export async function GET() {
   const env = Object.fromEntries(
     requiredEnv.map((name) => [name, Boolean(process.env[name])])
+  )
+  const launch = Object.fromEntries(
+    launchEnv.map((name) => [name, Boolean(process.env[name])])
   )
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
   const publicBaseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? ''
@@ -21,6 +32,7 @@ export async function GET() {
   const diagnostics: Record<string, unknown> = {
     ok: true,
     env,
+    launch,
     supabaseUrlLooksValid: /^https:\/\/[^/]+\.supabase\.co$/.test(supabaseUrl),
     publicBaseUrlLooksValid: /^https:\/\/[^/]+$/.test(publicBaseUrl),
     supabaseHost: supabaseUrl ? new URL(supabaseUrl).host : null,

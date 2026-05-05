@@ -20,6 +20,7 @@ import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
 import FoodMenuBlock from '@/components/FoodMenuBlock'
+import PreviewWatermark from '@/components/PreviewWatermark'
 
 export interface FAQItem {
   question: string
@@ -45,6 +46,7 @@ export interface BusinessData {
   whatsapp_message: string | null
   menu_url?: string | null
   menu_image_url?: string | null
+  subscription_status?: string | null
   social_links?: { contactMethods?: ('whatsapp' | 'booking' | 'email')[] } | null
   benefits?: string[] | null
   testimonials?: Testimonial[] | null
@@ -72,6 +74,7 @@ export default function PublicPageClient({ business }: Props) {
     : 'en'
   const [lang, setLang] = useState<Language>(initialLang)
   const pageTemplate = getPageTemplate(business.category)
+  const isPaidActive = String(business.subscription_status ?? '').toLowerCase() === 'active'
 
   useEffect(() => {
     fetch('/api/track-visit', {
@@ -94,6 +97,7 @@ export default function PublicPageClient({ business }: Props) {
 
   return (
     <main className="bg-white">
+      {!isPaidActive && <PreviewWatermark lang={lang} businessName={business.owner_name} />}
       <Navbar
         t={t}
         lang={lang}

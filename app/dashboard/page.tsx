@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2 } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X } from 'lucide-react'
 
 interface Service {
   name: string
@@ -274,6 +274,9 @@ export default function DashboardPage() {
   const [copySuccess, setCopySuccess] = useState(false)
   const [dashboardToken, setDashboardToken] = useState('')
   const [publicPageUrl, setPublicPageUrl] = useState('')
+  const [showPlanModal, setShowPlanModal] = useState(false)
+  const [billingLoadingPlan, setBillingLoadingPlan] = useState('')
+  const [billingError, setBillingError] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
@@ -540,7 +543,29 @@ export default function DashboardPage() {
     generateTimeoutRef.current = setTimeout(() => {
       setIsGenerating(false)
       setIsGenerated(true)
+      setShowPlanModal(true)
     }, GENERATION_DURATION_MS)
+  }
+
+  const startCheckout = async (selectedPlan: string) => {
+    setPlan(selectedPlan)
+    setBillingError('')
+    setBillingLoadingPlan(selectedPlan)
+    try {
+      const res = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan, email: accountEmail }),
+      })
+      const json = await res.json().catch(() => null)
+      if (!res.ok || !json?.url) {
+        throw new Error(json?.error ?? 'Could not open the secure checkout yet.')
+      }
+      window.location.href = json.url
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : 'Could not open the secure checkout yet.')
+      setBillingLoadingPlan('')
+    }
   }
 
   const handleCopyLink = async () => {
@@ -1352,6 +1377,14 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => { setBillingError(''); setShowPlanModal(true) }}
+                    className="mt-6 inline-flex items-center justify-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-6 py-3 text-sm font-black text-navy hover:bg-gold/20 transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-gold" />
+                    Choose plan and secure payment
+                  </button>
                   <p className="text-sm text-gray-400 mt-6">
                     {t.shareHint}
                   </p>
@@ -1381,6 +1414,108 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {showPlanModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-navy/70 px-4 py-6 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-[2rem] border border-white/20 bg-white shadow-2xl">
+            <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-gold/20 blur-3xl" />
+            <button
+              type="button"
+              onClick={() => setShowPlanModal(false)}
+              className="absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2 text-slate-500 hover:bg-slate-200 hover:text-navy transition-colors"
+              aria-label="Close plan checkout"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="relative grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="bg-navy p-6 sm:p-8 text-white">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-gold">
+                  <ShieldCheck className="w-4 h-4" />
+                  Secure publishing
+                </div>
+                <h2 className="text-3xl font-black leading-tight sm:text-4xl">
+                  Your Vitrine is ready. Publish it professionally.
+                </h2>
+                <p className="mt-4 text-sm leading-relaxed text-slate-300">
+                  The page is saved as a safe trial while you test it. Choose a plan to unlock the production flow, reports and a clean client-ready experience.
+                </p>
+                <div className="mt-6 space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200">
+                  <p className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-gold" /> Payment runs on Stripe Checkout.</p>
+                  <p className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-gold" /> Vitrine never stores card number, CVC or bank data.</p>
+                  <p className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-gold" /> Reports are sent according to the selected plan.</p>
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-8">
+                <p className="text-xs font-black uppercase tracking-wider text-gold">Choose your plan</p>
+                <h3 className="mt-1 text-2xl font-black text-navy">Simple, secure and ready to scale</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  Use the same login email: <span className="font-bold text-navy">{accountEmail}</span>
+                </p>
+
+                <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {PLANS.map((p) => {
+                    const isPro = p.id === 'pro'
+                    const features = isPro
+                      ? ['Up to 3 pages', 'Weekly performance reports', 'Tracked QR/campaign links', 'Best for growth']
+                      : ['1 business page', 'Biweekly performance reports', 'Lead dashboard', 'Best to start']
+                    return (
+                      <div
+                        key={p.id}
+                        className={`rounded-3xl border p-5 transition-all ${plan === p.id ? 'border-gold bg-gold/10 ring-2 ring-gold/20' : 'border-slate-200 bg-white'}`}
+                      >
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xl font-black text-navy">{p.name}</p>
+                            <p className="text-sm font-bold text-gold">{p.pages}</p>
+                          </div>
+                          <div className={`rounded-2xl p-2 ${isPro ? 'bg-navy text-gold' : 'bg-gold/20 text-gold'}`}>
+                            <CreditCard className="h-5 w-5" />
+                          </div>
+                        </div>
+                        <p className="mb-4 text-sm text-slate-500">{p.description}</p>
+                        <ul className="mb-5 space-y-2 text-sm text-slate-600">
+                          {features.map((feature) => (
+                            <li key={feature} className="flex items-start gap-2">
+                              <Check className="mt-0.5 h-4 w-4 text-gold" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          type="button"
+                          onClick={() => startCheckout(p.id)}
+                          disabled={Boolean(billingLoadingPlan)}
+                          className={`w-full rounded-full px-4 py-3 text-sm font-black transition-all disabled:cursor-not-allowed disabled:opacity-60 ${isPro ? 'bg-navy text-gold hover:bg-navy/90' : 'bg-gold text-navy hover:bg-yellow-400'}`}
+                        >
+                          {billingLoadingPlan === p.id ? 'Opening secure checkout...' : `Continue with ${p.name}`}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {billingError && (
+                  <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                    <p className="font-black">Checkout is not ready yet.</p>
+                    <p className="mt-1">{billingError}</p>
+                    <p className="mt-2 text-xs">Configure Stripe keys in Vercel, then redeploy. Your page data is already safe.</p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowPlanModal(false)}
+                  className="mt-5 w-full rounded-full border border-slate-200 px-4 py-3 text-sm font-bold text-slate-500 hover:border-gold/50 hover:text-navy transition-colors"
+                >
+                  I will finish payment later
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Scissors, Mail, ArrowRight, CheckCircle, Lock, UserPlus, KeyRound } from 'lucide-react'
+import { Scissors, Mail, ArrowRight, CheckCircle, Lock, UserPlus, KeyRound, Eye, EyeOff } from 'lucide-react'
 
 interface DashboardLink {
   name: string | null
@@ -312,19 +312,29 @@ function EmailInput({ email, setEmail, autoFocus }: { email: string; setEmail: (
 }
 
 function PasswordInput({ label, value, setValue, placeholder }: { label: string; value: string; setValue: (value: string) => void; placeholder: string }) {
+  const [showPassword, setShowPassword] = useState(false)
+
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1.5">{label}</label>
       <div className="relative">
         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         <input
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           required
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-gold transition-colors bg-slate-50 focus:bg-white"
+          className="w-full pl-10 pr-11 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-gold transition-colors bg-slate-50 focus:bg-white"
         />
+        <button
+          type="button"
+          onClick={() => setShowPassword((current) => !current)}
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+        >
+          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
       </div>
     </div>
   )

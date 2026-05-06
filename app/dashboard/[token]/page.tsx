@@ -4,7 +4,7 @@ import Link from 'next/link'
 import {
   ThumbsUp, Copy, Check, ExternalLink, Users, Eye, TrendingUp,
   CalendarDays, Plus, Save, MousePointerClick, MessageCircle, Sparkles, Download, QrCode, BarChart3,
-  ChevronDown, Layers,
+  ChevronDown, Layers, MoreHorizontal, PenSquare, ImagePlus, X, Trash2,
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
@@ -37,6 +37,113 @@ const dashboardCopy = {
   },
   fr: {
     newPage: 'Nouvelle page', upgrade: 'Améliorer le plan', viewPage: 'Voir ma page', copyPage: 'Copier le lien', copied: 'Copié !', openPage: 'Ouvrir la page', publicUrl: 'Votre URL publique', liveFor: 'En ligne depuis', day: 'jour', days: 'jours', since: 'depuis', period: 'Période du dashboard', updated: 'mis à jour', ranges: { '7d': '7 jours', '30d': '30 jours', '90d': '90 jours', all: 'Tout' }, currentPlan: 'Plan actuel', pageUsed: 'page utilisée', pagesUsed: 'pages utilisées', createAnother: 'Créer une autre page', limitReached: 'Limite de pages atteinte.', upgradeHint: 'Passez au Pro pour créer jusqu’à 3 pages avec cet email.', reportCadence: 'Rapports', starterReport: 'Rapport email tous les 14 jours', proReport: 'Rapport email hebdomadaire', proBenefit: 'Pro inclut jusqu’à 3 pages, QR par campagne et recommandations hebdomadaires.', tabs: { overview: 'Vue générale', leads: 'Leads', channels: 'Canaux', settings: 'Réglages' }, visits: 'Visites', intent: 'Actions d’intention', leadsLabel: 'Leads', conversion: 'Conversion', noVisits: 'Aucune visite pour le moment', recommended: 'Action recommandée', next: 'Que faire maintenant', recentLeads: 'Leads récents', recentLeadsHint: 'Dernières personnes ayant laissé leurs coordonnées.', viewAll: 'Voir tout', noLeads: 'Aucun lead pour le moment. Partagez votre page et ils apparaîtront ici.', topChannels: 'Top canaux', topChannelsHint: 'Meilleures sources par visites et intention.', manage: 'Gérer', noChannelData: 'Aucune donnée de canal pour le moment. Créez un lien suivi pour commencer.', settingsTitle: 'Réservation et WhatsApp', settingsHint: 'Configurez comment les clients peuvent vous contacter et réserver depuis votre page publique.', saveChanges: 'Enregistrer', saved: 'Enregistré !', qrTitle: 'QR Code suivi', qrHint: 'Créez un QR Code pour votre landing page à placer en boutique, sur cartes, flyers ou à l’accueil. Chaque scan apparaît dans le dashboard comme canal suivi.', qrCreate: 'Créer un QR Code suivi', qrCreating: 'Création...', qrReady: 'QR Code prêt', qrDownload: 'Télécharger le QR Code', qrCopy: 'Copier le lien suivi', qrCopied: 'Lien copié', qrStats: 'Les visites de ce QR apparaissent dans Canaux et sont incluses dans le rapport email.',
+  },
+} as const
+
+const quickEditCopy = {
+  pt: {
+    menu: 'Editar landing',
+    info: 'Editar infos',
+    prices: 'Editar precos',
+    photos: 'Trocar fotos',
+    title: 'Edicao rapida da landing',
+    subtitle: 'Ajuste descricao, servicos e fotos sem refazer o setup.',
+    live: 'As alteracoes aparecem na landing publica assim que salvar.',
+    close: 'Fechar',
+    description: 'Descricao principal',
+    descriptionHint: 'Explique rapidamente o que o cliente oferece e por que confiar.',
+    address: 'Morada ou zona atendida',
+    services: 'Servicos e precos',
+    addService: 'Adicionar servico',
+    serviceName: 'Servico',
+    servicePrice: 'Preco',
+    serviceDescription: 'Detalhe curto',
+    photosTitle: 'Galeria da landing',
+    uploadPhoto: 'Adicionar foto',
+    removePhoto: 'Remover foto',
+    emptyPhotos: 'Ainda sem fotos. Adicione uma nova imagem para atualizar a landing.',
+    saving: 'Salvando...',
+    save: 'Salvar alteracoes',
+    saved: 'Landing atualizada',
+    uploadHint: 'As imagens sao comprimidas antes do upload para reduzir erros.',
+  },
+  en: {
+    menu: 'Edit landing',
+    info: 'Edit info',
+    prices: 'Edit prices',
+    photos: 'Swap photos',
+    title: 'Quick landing editor',
+    subtitle: 'Adjust copy, services and photos without rebuilding the setup.',
+    live: 'Changes appear on the public landing as soon as you save.',
+    close: 'Close',
+    description: 'Main description',
+    descriptionHint: 'Explain quickly what the business offers and why to trust it.',
+    address: 'Address or service area',
+    services: 'Services and prices',
+    addService: 'Add service',
+    serviceName: 'Service',
+    servicePrice: 'Price',
+    serviceDescription: 'Short detail',
+    photosTitle: 'Landing gallery',
+    uploadPhoto: 'Add photo',
+    removePhoto: 'Remove photo',
+    emptyPhotos: 'No photos yet. Add a new image to refresh the landing.',
+    saving: 'Saving...',
+    save: 'Save changes',
+    saved: 'Landing updated',
+    uploadHint: 'Images are compressed before upload to reduce errors.',
+  },
+  es: {
+    menu: 'Editar landing',
+    info: 'Editar info',
+    prices: 'Editar precios',
+    photos: 'Cambiar fotos',
+    title: 'Editor rapido de la landing',
+    subtitle: 'Ajusta texto, servicios y fotos sin rehacer el setup.',
+    live: 'Los cambios aparecen en la landing publica al guardar.',
+    close: 'Cerrar',
+    description: 'Descripcion principal',
+    descriptionHint: 'Explica rapido que ofrece el negocio y por que confiar.',
+    address: 'Direccion o zona atendida',
+    services: 'Servicios y precios',
+    addService: 'Agregar servicio',
+    serviceName: 'Servicio',
+    servicePrice: 'Precio',
+    serviceDescription: 'Detalle corto',
+    photosTitle: 'Galeria de la landing',
+    uploadPhoto: 'Agregar foto',
+    removePhoto: 'Quitar foto',
+    emptyPhotos: 'Sin fotos todavia. Agrega una imagen nueva para refrescar la landing.',
+    saving: 'Guardando...',
+    save: 'Guardar cambios',
+    saved: 'Landing actualizada',
+    uploadHint: 'Las imagenes se comprimen antes del upload para reducir errores.',
+  },
+  fr: {
+    menu: 'Modifier la landing',
+    info: 'Modifier les infos',
+    prices: 'Modifier les prix',
+    photos: 'Changer les photos',
+    title: 'Editeur rapide de la landing',
+    subtitle: 'Ajustez le texte, les services et les photos sans refaire le setup.',
+    live: 'Les changements apparaissent sur la landing publique des que vous sauvegardez.',
+    close: 'Fermer',
+    description: 'Description principale',
+    descriptionHint: 'Expliquez vite ce que propose le business et pourquoi faire confiance.',
+    address: 'Adresse ou zone couverte',
+    services: 'Services et prix',
+    addService: 'Ajouter un service',
+    serviceName: 'Service',
+    servicePrice: 'Prix',
+    serviceDescription: 'Detail court',
+    photosTitle: 'Galerie de la landing',
+    uploadPhoto: 'Ajouter une photo',
+    removePhoto: 'Supprimer la photo',
+    emptyPhotos: 'Pas encore de photos. Ajoutez une image pour rafraichir la landing.',
+    saving: 'Sauvegarde...',
+    save: 'Enregistrer',
+    saved: 'Landing mise a jour',
+    uploadHint: 'Les images sont compressees avant upload pour reduire les erreurs.',
   },
 } as const
 
@@ -222,6 +329,13 @@ interface OwnerPageSummary {
   }
 }
 
+interface ServiceItem {
+  name: string
+  price: string
+  description?: string
+  photo?: string
+}
+
 interface DashboardData {
   business: {
     id: string
@@ -229,6 +343,10 @@ interface DashboardData {
     ownerName: string
     ownerEmail: string
     category: string
+    description: string
+    address: string
+    services: ServiceItem[]
+    photos: string[]
     createdAt: string
     bookingUrl: string | null
     whatsappNumber: string | null
@@ -271,6 +389,82 @@ const SOURCE_LABELS: Record<string, string> = {
   'paid-ads': 'Paid Ads',
   direct: 'Direct',
   Direct: 'Direct',
+}
+
+const QUICK_EDIT_MAX_IMAGE_PX = 1200
+const QUICK_EDIT_TARGET_IMAGE_BYTES = 260_000
+const QUICK_EDIT_MAX_PHOTOS = 10
+
+function normalizeServiceItems(items: unknown): ServiceItem[] {
+  if (!Array.isArray(items)) return []
+  return items
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map((item) => ({
+      name: typeof item.name === 'string' ? item.name : '',
+      price: typeof item.price === 'string' ? item.price : '',
+      description: typeof item.description === 'string' ? item.description : '',
+      photo: typeof item.photo === 'string' ? item.photo : '',
+    }))
+}
+
+function normalizePhotoItems(items: unknown): string[] {
+  if (!Array.isArray(items)) return []
+  return items.filter((item): item is string => typeof item === 'string' && Boolean(item.trim()))
+}
+
+function compressQuickEditImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = (event) => {
+      const img = new window.Image()
+      img.onerror = reject
+      img.onload = () => {
+        let { width, height } = img
+        if (width > QUICK_EDIT_MAX_IMAGE_PX || height > QUICK_EDIT_MAX_IMAGE_PX) {
+          if (width >= height) {
+            height = Math.round((height * QUICK_EDIT_MAX_IMAGE_PX) / width)
+            width = QUICK_EDIT_MAX_IMAGE_PX
+          } else {
+            width = Math.round((width * QUICK_EDIT_MAX_IMAGE_PX) / height)
+            height = QUICK_EDIT_MAX_IMAGE_PX
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          reject(new Error('canvas context unavailable'))
+          return
+        }
+
+        ctx.drawImage(img, 0, 0, width, height)
+        let quality = 0.84
+        let dataUrl = canvas.toDataURL('image/webp', quality)
+        while (dataUrl.length * 0.75 > QUICK_EDIT_TARGET_IMAGE_BYTES && quality > 0.44) {
+          quality -= 0.08
+          dataUrl = canvas.toDataURL('image/webp', quality)
+        }
+        resolve(dataUrl)
+      }
+      img.src = String(event.target?.result ?? '')
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+async function uploadQuickEditImage(dataUrl: string, filename: string): Promise<string> {
+  const blob = await fetch(dataUrl).then((res) => res.blob())
+  const formData = new FormData()
+  const safeName = filename.replace(/\.[^.]+$/, '') || 'landing-photo'
+  formData.append('file', new File([blob], `${safeName}.webp`, { type: blob.type || 'image/webp' }))
+  const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
+  if (!res.ok) throw new Error('upload failed')
+  const json = await res.json()
+  if (!json.url) throw new Error('missing upload url')
+  return json.url as string
 }
 
 const formatSourceLabel = (source?: string | null) => {
@@ -319,7 +513,19 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [whatsappMessageInput, setWhatsappMessageInput] = useState('')
   const [contactSaving, setContactSaving] = useState(false)
   const [contactSaved, setContactSaved] = useState(false)
+  const [quickMenuOpen, setQuickMenuOpen] = useState(false)
+  const [quickEditorOpen, setQuickEditorOpen] = useState(false)
+  const [quickEditorTab, setQuickEditorTab] = useState<'info' | 'prices' | 'photos'>('info')
+  const [descriptionInput, setDescriptionInput] = useState('')
+  const [addressInput, setAddressInput] = useState('')
+  const [servicesInput, setServicesInput] = useState<ServiceItem[]>([])
+  const [photosInput, setPhotosInput] = useState<string[]>([])
+  const [contentSaving, setContentSaving] = useState(false)
+  const [contentSaved, setContentSaved] = useState(false)
+  const [contentError, setContentError] = useState('')
+  const [photoUploading, setPhotoUploading] = useState(false)
   const contactSaveTimeoutRef = useRef<NodeJS.Timeout>()
+  const contentSaveTimeoutRef = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
     try {
@@ -359,12 +565,17 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       setBookingInput(json.business.bookingUrl ?? '')
       setWhatsappInput(json.business.whatsappNumber ?? '')
       setWhatsappMessageInput(json.business.whatsappMessage ?? '')
+      setDescriptionInput(json.business.description ?? '')
+      setAddressInput(json.business.address ?? '')
+      setServicesInput(normalizeServiceItems(json.business.services))
+      setPhotosInput(normalizePhotoItems(json.business.photos))
       setLoading(false)
     }
     load()
     return () => {
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
       if (contactSaveTimeoutRef.current) clearTimeout(contactSaveTimeoutRef.current)
+      if (contentSaveTimeoutRef.current) clearTimeout(contentSaveTimeoutRef.current)
       if (pageUrlCopyTimeoutRef.current) clearTimeout(pageUrlCopyTimeoutRef.current)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -562,6 +773,97 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     }
   }
 
+  const handleOpenQuickEditor = (tab: 'info' | 'prices' | 'photos') => {
+    setQuickEditorTab(tab)
+    setQuickEditorOpen(true)
+    setQuickMenuOpen(false)
+    setContentError('')
+  }
+
+  const handleServiceInputChange = (index: number, field: keyof ServiceItem, value: string) => {
+    setServicesInput((items) => items.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)))
+  }
+
+  const handleAddServiceInput = () => {
+    setServicesInput((items) => [...items, { name: '', price: '', description: '' }])
+  }
+
+  const handleRemoveServiceInput = (index: number) => {
+    setServicesInput((items) => items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const handleRemovePhotoInput = (index: number) => {
+    setPhotosInput((items) => items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const handleUploadPhotoInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setPhotoUploading(true)
+    setContentError('')
+    try {
+      const dataUrl = await compressQuickEditImage(file)
+      const uploadedUrl = await uploadQuickEditImage(dataUrl, file.name)
+      setPhotosInput((items) => [...items, uploadedUrl].slice(0, QUICK_EDIT_MAX_PHOTOS))
+      setQuickEditorOpen(true)
+      setQuickEditorTab('photos')
+    } catch {
+      setContentError('Nao foi possivel enviar a foto agora. Tente outra imagem.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
+  const handleSaveQuickContent = async () => {
+    if (!token || !data) return
+    setContentSaving(true)
+    setContentError('')
+
+    const nextServices = servicesInput
+      .map((item) => ({
+        name: item.name.trim(),
+        price: item.price.trim(),
+        description: item.description?.trim() || '',
+        photo: item.photo?.trim() || '',
+      }))
+      .filter((item) => item.name)
+
+    const nextPhotos = photosInput.filter(Boolean).slice(0, QUICK_EDIT_MAX_PHOTOS)
+
+    try {
+      const res = await fetch(`/api/dashboard/${token}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: descriptionInput.trim() || null,
+          address: addressInput.trim() || null,
+          services: nextServices,
+          photos: nextPhotos,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? 'save failed')
+
+      setData({
+        ...data,
+        business: {
+          ...data.business,
+          description: descriptionInput.trim(),
+          address: addressInput.trim(),
+          services: nextServices,
+          photos: nextPhotos,
+        },
+      })
+      setContentSaved(true)
+      contentSaveTimeoutRef.current = setTimeout(() => setContentSaved(false), 2200)
+    } catch (error) {
+      setContentError(error instanceof Error ? error.message : 'Nao foi possivel salvar agora.')
+    } finally {
+      setContentSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
@@ -592,6 +894,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const t = dashboardCopy[dashboardLang]
   const mt = menuQrCopy[dashboardLang]
   const pt = pageCollectionCopy[dashboardLang]
+  const qt = quickEditCopy[dashboardLang]
 
   const { business: currentBusiness, pageUsage } = data
   const ownerPages = (data.pages && data.pages.length > 0 ? data.pages : [{
@@ -619,6 +922,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
     whatsappNumber: selectedPage?.whatsappNumber ?? currentBusiness.whatsappNumber,
     menuUrl: selectedPage?.menuUrl ?? currentBusiness.menuUrl,
   }
+  const canQuickEditCurrentPage = business.id === currentBusiness.id
   const stats = selectedPage?.stats ?? data.stats
   const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
   const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : []
@@ -772,6 +1076,34 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               <div className="md:hidden w-full mb-1">
                 <LanguageSwitcher lang={dashboardLang} setLang={(value) => setDashboardLang(value as DashboardLang)} />
               </div>
+              {canQuickEditCurrentPage && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setQuickMenuOpen((value) => !value)}
+                    className="flex items-center justify-center bg-white border border-stone-200 hover:border-gold/40 text-navy text-sm px-3.5 py-2 rounded-xl transition-colors font-medium"
+                    aria-label={qt.menu}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                  {quickMenuOpen && (
+                    <div className="absolute right-0 top-full z-10 mt-2 w-52 rounded-2xl border border-stone-200 bg-white p-2 shadow-xl">
+                      <button type="button" onClick={() => handleOpenQuickEditor('info')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-navy hover:bg-stone-50">
+                        <PenSquare className="w-4 h-4 text-gold" />
+                        {qt.info}
+                      </button>
+                      <button type="button" onClick={() => handleOpenQuickEditor('prices')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-navy hover:bg-stone-50">
+                        <PenSquare className="w-4 h-4 text-gold" />
+                        {qt.prices}
+                      </button>
+                      <button type="button" onClick={() => handleOpenQuickEditor('photos')} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-navy hover:bg-stone-50">
+                        <ImagePlus className="w-4 h-4 text-gold" />
+                        {qt.photos}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <button
                 onClick={handleCopyPageUrl}
                 className="flex items-center gap-1.5 bg-white border border-stone-200 hover:border-gold/40 text-navy text-sm px-3.5 py-2 rounded-xl transition-colors font-medium"
@@ -794,6 +1126,184 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             <p className="text-navy/70 font-mono text-sm break-all">{pageUrl}</p>
           </div>
         </div>
+
+        {quickEditorOpen && canQuickEditCurrentPage && (
+          <div className="mb-6 overflow-hidden rounded-3xl border border-gold/20 bg-gradient-to-br from-white via-gold/5 to-stone-50 shadow-sm">
+            <div className="flex items-start justify-between gap-4 border-b border-stone-200/70 px-5 py-4 flex-wrap">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{qt.menu}</p>
+                <h2 className="mt-1 text-xl font-black text-navy">{qt.title}</h2>
+                <p className="mt-1 text-sm text-gray-500">{qt.subtitle}</p>
+              </div>
+              <button type="button" onClick={() => setQuickEditorOpen(false)} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm font-semibold text-navy hover:border-gold/40">
+                <X className="w-4 h-4" />
+                {qt.close}
+              </button>
+            </div>
+
+            <div className="px-5 pt-4">
+              <div className="inline-flex rounded-2xl border border-stone-200 bg-white p-1">
+                {([
+                  ['info', qt.info],
+                  ['prices', qt.prices],
+                  ['photos', qt.photos],
+                ] as const).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setQuickEditorTab(tab)}
+                    className={`rounded-xl px-3 py-2 text-sm font-black transition-colors ${quickEditorTab === tab ? 'bg-navy text-white' : 'text-gray-500 hover:text-navy'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-5 px-5 py-5 lg:grid-cols-[1.2fr_0.8fr]">
+              <div className="space-y-5">
+                {quickEditorTab === 'info' && (
+                  <>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-gray-700">{qt.description}</label>
+                      <p className="mb-2 text-xs text-gray-400">{qt.descriptionHint}</p>
+                      <textarea
+                        rows={5}
+                        maxLength={2000}
+                        value={descriptionInput}
+                        onChange={(event) => setDescriptionInput(event.target.value)}
+                        className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-navy focus:border-gold focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold text-gray-700">{qt.address}</label>
+                      <input
+                        type="text"
+                        maxLength={240}
+                        value={addressInput}
+                        onChange={(event) => setAddressInput(event.target.value)}
+                        className="w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-navy focus:border-gold focus:outline-none"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {quickEditorTab === 'prices' && (
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-black text-navy">{qt.services}</h3>
+                        <p className="text-xs text-gray-400">Edite o nome, o preco e um detalhe curto de cada item.</p>
+                      </div>
+                      <button type="button" onClick={handleAddServiceInput} className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-navy border border-stone-200 hover:border-gold/40">
+                        <Plus className="w-4 h-4 text-gold" />
+                        {qt.addService}
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {servicesInput.length === 0 && <p className="rounded-2xl border border-dashed border-stone-200 bg-white px-4 py-4 text-sm text-gray-400">Adicione pelo menos um servico para mostrar preco na landing.</p>}
+                      {servicesInput.map((service, index) => (
+                        <div key={`${service.name}-${index}`} className="rounded-2xl border border-stone-200 bg-white p-4">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <p className="text-sm font-black text-navy">Item {index + 1}</p>
+                            <button type="button" onClick={() => handleRemoveServiceInput(index)} className="inline-flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-red-500">
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Remover
+                            </button>
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-[1fr_140px]">
+                            <input
+                              type="text"
+                              value={service.name}
+                              onChange={(event) => handleServiceInputChange(index, 'name', event.target.value)}
+                              placeholder={qt.serviceName}
+                              className="rounded-2xl border border-stone-200 px-4 py-3 text-sm text-navy focus:border-gold focus:outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={service.price}
+                              onChange={(event) => handleServiceInputChange(index, 'price', event.target.value)}
+                              placeholder={qt.servicePrice}
+                              className="rounded-2xl border border-stone-200 px-4 py-3 text-sm text-navy focus:border-gold focus:outline-none"
+                            />
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={service.description ?? ''}
+                            onChange={(event) => handleServiceInputChange(index, 'description', event.target.value)}
+                            placeholder={qt.serviceDescription}
+                            className="mt-3 w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm text-navy focus:border-gold focus:outline-none"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {quickEditorTab === 'photos' && (
+                  <div>
+                    <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+                      <div>
+                        <h3 className="text-base font-black text-navy">{qt.photosTitle}</h3>
+                        <p className="text-xs text-gray-400">{qt.uploadHint}</p>
+                      </div>
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-navy border border-stone-200 hover:border-gold/40">
+                        <ImagePlus className="w-4 h-4 text-gold" />
+                        {photoUploading ? 'Enviando...' : qt.uploadPhoto}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleUploadPhotoInput} disabled={photoUploading || photosInput.length >= QUICK_EDIT_MAX_PHOTOS} />
+                      </label>
+                    </div>
+                    {photosInput.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-stone-200 bg-white px-4 py-5 text-sm text-gray-400">{qt.emptyPhotos}</p>
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {photosInput.map((photo, index) => (
+                          <div key={`${photo}-${index}`} className="overflow-hidden rounded-3xl border border-stone-200 bg-white">
+                            <div className="relative aspect-[4/3] bg-stone-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={photo} alt={`Landing photo ${index + 1}`} className="h-full w-full object-cover" />
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-3">
+                              <span className="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">Foto {index + 1}</span>
+                              <button type="button" onClick={() => handleRemovePhotoInput(index)} className="inline-flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-red-500">
+                                <Trash2 className="w-3.5 h-3.5" />
+                                {qt.removePhoto}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-3xl border border-navy/10 bg-navy p-5 text-white">
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-gold">Live edit</p>
+                  <h3 className="mt-2 text-xl font-black">{business.ownerName}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-300">{qt.live}</p>
+                  <div className="mt-4 space-y-2 text-sm text-gray-200">
+                    <p>{normalizePhotoItems(photosInput).length} fotos ligadas</p>
+                    <p>{servicesInput.filter((item) => item.name.trim()).length} servicos com nome</p>
+                    <p>{descriptionInput.trim().length} caracteres na descricao</p>
+                  </div>
+                </div>
+                {contentError && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{contentError}</p>}
+                {contentSaved && <p className="rounded-2xl border border-green-100 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{qt.saved}</p>}
+                <button
+                  type="button"
+                  onClick={handleSaveQuickContent}
+                  disabled={contentSaving || photoUploading}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gold px-4 py-3 text-sm font-black text-navy hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4" />
+                  {contentSaving ? qt.saving : qt.save}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── Date range filter ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-3 mb-6 flex items-center justify-between gap-3 flex-wrap">

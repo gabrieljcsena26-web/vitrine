@@ -2,6 +2,8 @@
 
 This guide helps you deploy Vitrine to Vercel with Supabase, Resend, Stripe and the private owner dashboard configured for production.
 
+For the final launch checklist, E2E sequence, and exact environment variable matrix, use [LAUNCH_E2E.md](LAUNCH_E2E.md) as the primary runbook.
+
 ## ✅ Current Production Routes
 
 The Next.js app builds successfully locally with these public/private routes:
@@ -48,6 +50,7 @@ RESEND_API_KEY=
 RESEND_FROM_EMAIL="Vitrine <noreply@your-domain.com>"
 NEXT_PUBLIC_BASE_URL=https://your-domain.com
 SUPABASE_STORAGE_BUCKET=business-photos
+VITRINE_CUSTOMER_SESSION_SECRET=
 VITRINE_OWNER_PASSWORD=
 VITRINE_OWNER_SESSION_SECRET=
 VITRINE_OWNER_SETUP_CODE=
@@ -55,6 +58,8 @@ STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_STARTER_PRICE_ID=
 STRIPE_PRO_PRICE_ID=
+OPENAI_API_KEY=
+OPENAI_VISION_MODEL=gpt-5.5
 CRON_SECRET=
 ```
 
@@ -79,6 +84,13 @@ Before deploying public traffic:
    - `owner_accounts`
    - `email_reports`
    - `dev_settings`
+   - `customers`
+   - `subscriptions`
+   - `business_assets`
+   - `business_page_configs`
+   - `ai_generation_logs`
+   - `menu_items`
+   - `google_places_connections`
 4. Confirm the recommended indexes were created for scale.
 5. Open `/admin` after deploy and save the owner controls once, so the `dev_settings` row is created.
 
@@ -99,6 +111,13 @@ Card numbers, CVC and sensitive payment details stay inside Stripe Checkout. Vit
 2. Add `RESEND_API_KEY` to Vercel.
 3. Add `RESEND_FROM_EMAIL` with an authorized sender, for example `Vitrine <noreply@your-domain.com>`.
 4. Test page creation, login recovery and report emails after deploy.
+
+### 3.4 OpenAI Checklist
+
+1. Add `OPENAI_API_KEY` to Vercel.
+2. Optionally add `OPENAI_VISION_MODEL=gpt-5.5`.
+3. Test `/dashboard` → AI preview with real business photos.
+4. Confirm the AI preview route returns `source: openai` when the key is present.
 
 ### 4. Verify Git Branch
 

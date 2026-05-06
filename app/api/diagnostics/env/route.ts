@@ -12,11 +12,16 @@ const requiredEnv = [
 ] as const
 
 const launchEnv = [
+  'OPENAI_API_KEY',
+  'OPENAI_VISION_MODEL',
   'STRIPE_SECRET_KEY',
   'STRIPE_WEBHOOK_SECRET',
   'STRIPE_STARTER_PRICE_ID',
   'STRIPE_PRO_PRICE_ID',
   'CRON_SECRET',
+  'VITRINE_OWNER_PASSWORD',
+  'VITRINE_OWNER_SESSION_SECRET',
+  'VITRINE_OWNER_SETUP_CODE',
 ] as const
 
 export async function GET() {

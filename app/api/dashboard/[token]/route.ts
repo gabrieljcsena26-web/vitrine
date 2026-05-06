@@ -29,8 +29,11 @@ const missingColumnError = (error: { code?: string; message?: string } | null) =
 )
 
 const businessSelects = [
-  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, menu_url, menu_image_url, whatsapp_message, plan',
-  'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, whatsapp_message, plan',
+  'id, slug, owner_name, owner_email, category, description, address, services, photos, created_at, booking_url, whatsapp_number, menu_url, menu_image_url, whatsapp_message, plan',
+  'id, slug, owner_name, owner_email, category, description, address, services, photos, created_at, booking_url, whatsapp_number, whatsapp_message, plan',
+  'id, slug, owner_name, owner_email, category, description, address, services, photos, created_at, booking_url, whatsapp_number, whatsapp_message',
+  'id, slug, owner_name, owner_email, category, description, address, photos, created_at, booking_url, whatsapp_number, whatsapp_message',
+  'id, slug, owner_name, owner_email, category, description, address, created_at, booking_url, whatsapp_number, whatsapp_message',
   'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number, whatsapp_message',
   'id, slug, owner_name, owner_email, category, created_at, booking_url, whatsapp_number',
   'id, slug, owner_name, owner_email, category, created_at',
@@ -258,6 +261,10 @@ export async function GET(
       ownerName: business.owner_name,
       ownerEmail: business.owner_email,
       category: business.category,
+      description: business.description ?? '',
+      address: business.address ?? '',
+      services: Array.isArray(business.services) ? business.services : [],
+      photos: Array.isArray(business.photos) ? business.photos : [],
       createdAt: business.created_at,
       bookingUrl: business.booking_url ?? null,
       whatsappNumber: business.whatsapp_number ?? null,
@@ -321,7 +328,7 @@ export async function PATCH(
   }
 
   const body = await req.json()
-  const { bookingUrl, whatsappNumber, whatsappMessage, menuUrl, menuImageUrl } = body
+  const { bookingUrl, whatsappNumber, whatsappMessage, menuUrl, menuImageUrl, description, address, photos, services } = body
 
   // Validate bookingUrl: only allow http/https URLs or plain email addresses
   if (bookingUrl !== null && bookingUrl !== undefined && bookingUrl !== '') {
@@ -358,25 +365,81 @@ export async function PATCH(
     }
   }
 
+  if (description !== null && description !== undefined && String(description).trim().length > 2000) {
+    return NextResponse.json({ error: 'description must be 2000 characters or fewer' }, { status: 400 })
+  }
+
+  if (address !== null && address !== undefined && String(address).trim().length > 240) {
+    return NextResponse.json({ error: 'address must be 240 characters or fewer' }, { status: 400 })
+  }
+
+  if (photos !== null && photos !== undefined) {
+    if (!Array.isArray(photos) || photos.length > 12 || photos.some((item) => typeof item !== 'string' || !String(item).trim())) {
+      return NextResponse.json({ error: 'photos must be an array of up to 12 image URLs' }, { status: 400 })
+    }
+  }
+
+  if (services !== null && services !== undefined) {
+    if (!Array.isArray(services) || services.length > 12) {
+      return NextResponse.json({ error: 'services must be an array of up to 12 items' }, { status: 400 })
+    }
+
+    const invalidService = services.some((item) => {
+      if (!item || typeof item !== 'object') return true
+      const name = typeof item.name === 'string' ? item.name.trim() : ''
+      const price = typeof item.price === 'string' ? item.price.trim() : ''
+      const serviceDescription = item.description == null ? '' : String(item.description).trim()
+      const photo = item.photo == null ? '' : String(item.photo).trim()
+      return !name || name.length > 120 || price.length > 80 || serviceDescription.length > 280 || photo.length > 2000
+    })
+
+    if (invalidService) {
+      return NextResponse.json({ error: 'services contain invalid values' }, { status: 400 })
+    }
+  }
+
   const db = createServiceClient()
 
-  const updates: Record<string, string | null> = {}
+  const updates: Record<string, unknown> = {}
   if (bookingUrl !== undefined) updates.booking_url = bookingUrl ?? null
   if (whatsappNumber !== undefined) updates.whatsapp_number = whatsappNumber ?? null
   if (whatsappMessage !== undefined) updates.whatsapp_message = whatsappMessage ? String(whatsappMessage).trim() : null
   if (menuUrl !== undefined) updates.menu_url = menuUrl ? String(menuUrl).trim() : null
   if (menuImageUrl !== undefined) updates.menu_image_url = menuImageUrl ? String(menuImageUrl).trim() : null
+  if (description !== undefined) updates.description = description ? String(description).trim() : null
+  if (address !== undefined) updates.address = address ? String(address).trim() : null
+  if (photos !== undefined) updates.photos = photos ?? []
+  if (services !== undefined) {
+    updates.services = services.map((item: any) => ({
+      name: String(item.name).trim(),
+      price: item.price ? String(item.price).trim() : '',
+      description: item.description ? String(item.description).trim() : '',
+      photo: item.photo ? String(item.photo).trim() : '',
+    }))
+  }
 
   let { error } = await db
     .from('businesses')
     .update(updates)
     .eq('secret_token', token)
 
-  if (error && (error.message?.includes('whatsapp_message') || error.message?.includes('menu_url') || error.message?.includes('menu_image_url'))) {
+  if (error && (
+    error.message?.includes('whatsapp_message') ||
+    error.message?.includes('menu_url') ||
+    error.message?.includes('menu_image_url') ||
+    error.message?.includes('description') ||
+    error.message?.includes('address') ||
+    error.message?.includes('photos') ||
+    error.message?.includes('services')
+  )) {
     const fallbackUpdates = { ...updates }
     if (error.message?.includes('whatsapp_message')) delete fallbackUpdates.whatsapp_message
     if (error.message?.includes('menu_url')) delete fallbackUpdates.menu_url
     if (error.message?.includes('menu_image_url')) delete fallbackUpdates.menu_image_url
+    if (error.message?.includes('description')) delete fallbackUpdates.description
+    if (error.message?.includes('address')) delete fallbackUpdates.address
+    if (error.message?.includes('photos')) delete fallbackUpdates.photos
+    if (error.message?.includes('services')) delete fallbackUpdates.services
     const fallback = await db
       .from('businesses')
       .update(fallbackUpdates)

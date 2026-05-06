@@ -8,8 +8,10 @@ Este arquivo e o roteiro final para colocar o projeto no ar com o menor risco po
 - Lint: OK
 - Login com mascote interativo: OK
 - Edicao rapida da landing pelo dashboard: OK
-- Preview IA: OK com fallback local, e modo real quando OpenAI estiver configurada
-- Deploy automatico por CLI neste ambiente: indisponivel, porque a Vercel CLI nao esta instalada/autenticada aqui
+- Preview IA: OK com fallback local, sem redirecionar para login, e modo real quando OpenAI estiver configurada
+- Deploy automatico GitHub > Vercel: OK
+- Deploy manual por CLI neste ambiente: bloqueado por login da Vercel CLI
+- Observacao de producao: se a URL responder 401, o deploy esta protegido por Vercel Deployment Protection/SSO e precisa ser liberado nas configuracoes do projeto
 
 ## O que publicar neste release
 
@@ -17,6 +19,29 @@ Este arquivo e o roteiro final para colocar o projeto no ar com o menor risco po
 - Edicao rapida da landing em [app/dashboard/[token]/page.tsx](app/dashboard/[token]/page.tsx)
 - Salvamento de descricao, endereco, servicos, precos e fotos em [app/api/dashboard/[token]/route.ts](app/api/dashboard/[token]/route.ts)
 - Diagnostico de ambiente ampliado em [app/api/diagnostics/env/route.ts](app/api/diagnostics/env/route.ts)
+
+## Resultado E2E local desta rodada
+
+Executado em 2026-05-06 apos o commit `5e2d982`.
+
+| Checagem | Resultado |
+| --- | --- |
+| `npm run build` | OK |
+| `/` local | 200 |
+| `/login` local | 200 |
+| `/dashboard` local | 200 |
+| `/preview` local | 200 |
+| `/api/diagnostics/env` local | 200 |
+| Supabase local | `supabaseConnection: ok` |
+| API `/api/ai/generate-page-config` sem sessao, `initial_preview` | OK, retorna fallback local em vez de mandar para login |
+
+Diagnostico local indicou que estas variaveis nao estavam carregadas no ambiente do Codespace: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_BASE_URL`, `VITRINE_CUSTOMER_SESSION_SECRET`, `OPENAI_API_KEY`, `OPENAI_VISION_MODEL`, Stripe e `CRON_SECRET`. Isso nao prova que faltam na Vercel, mas se faltarem em Production causam exatamente estes sintomas:
+
+- `VITRINE_CUSTOMER_SESSION_SECRET` ausente: login pode nao persistir corretamente entre deploys/ambientes.
+- `OPENAI_API_KEY` ausente: a IA usa fallback local e nao interpreta fotos de verdade.
+- `NEXT_PUBLIC_BASE_URL` ausente: emails, links e callbacks podem sair com dominio errado.
+- Stripe ausente: checkout/billing nao abre em producao.
+- Resend ausente: emails de verificacao/boas-vindas/relatorio nao saem.
 
 ## Variaveis de ambiente para Vercel
 
@@ -166,7 +191,7 @@ CRON_SECRET=troque-por-uma-chave-muito-longa-e-aleatoria
 1. Abrir /
 2. Confirmar carregamento da homepage
 3. Abrir /dashboard
-4. Confirmar redirecionamento correto para login quando nao autenticado
+4. Confirmar que o setup abre e a previa IA pode ser testada sem sessao
 5. Criar conta nova em /login
 6. Confirmar email/codigo
 7. Voltar para /dashboard
@@ -178,7 +203,7 @@ CRON_SECRET=troque-por-uma-chave-muito-longa-e-aleatoria
 
 1. Abrir /login
 2. Confirmar que o mascote responde ao mouse
-3. Focar senha e confirmar modo protegido
+3. Focar senha e confirmar que o robo cobre os olhos com as maos
 4. Fazer login com conta valida
 5. Confirmar abertura do dashboard certo
 6. Abrir menu de tres pontos
@@ -246,4 +271,6 @@ Esperado:
 
 ## Bloqueio atual deste ambiente
 
-Eu nao consigo publicar direto no Vercel a partir daqui porque a Vercel CLI nao esta instalada ou autenticada neste ambiente. Se o seu projeto estiver com integracao GitHub > Vercel ativa, basta subir este release para o branch de producao que o deploy deve disparar automaticamente.
+O deploy automatico pelo GitHub esta funcionando, mas o deploy manual pela Vercel CLI neste Codespace pede login por device code. Se quiser usar CLI aqui, rode `npx vercel login` e autentique no navegador. Enquanto isso, o fluxo profissional recomendado e manter GitHub > Vercel ativo e acompanhar o deploy pelo status do commit.
+
+Se a URL `.vercel.app` abrir com 401, nao e erro do app: e protecao de acesso da Vercel. Para o publico ver a landing, desative em Vercel > Project > Settings > Deployment Protection ou configure o dominio publico em Production.

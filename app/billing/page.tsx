@@ -9,6 +9,8 @@ const plans = [
     id: 'starter',
     name: 'Starter',
     pages: '1 landing page',
+    price: '€10',
+    period: '/mês',
     badge: 'Relatório quinzenal',
     text: 'Para validar uma página profissional com link público, leads e dashboard básico.',
     features: ['1 página publicada', 'Dashboard privado', 'Leads e rastreio', 'Relatório a cada 14 dias'],
@@ -17,6 +19,8 @@ const plans = [
     id: 'pro',
     name: 'Pro',
     pages: '3 landing pages',
+    price: '€15',
+    period: '/mês',
     badge: 'Mais escolhido',
     text: 'Para clientes com múltiplas páginas, campanhas, QR e relatórios semanais.',
     features: ['Até 3 páginas', 'Seletor inteligente por landing', 'QR por campanha', 'Relatório semanal'],
@@ -113,7 +117,11 @@ export default function BillingPage() {
                   <div>
                     <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${plan.highlighted ? 'bg-navy text-gold' : 'bg-gold/10 text-gold'}`}>{plan.badge}</span>
                     <h2 className="text-3xl font-black mt-3">{plan.name}</h2>
-                    <p className="font-bold text-lg">{plan.pages}</p>
+                    <div className="mt-2 flex items-end gap-1">
+                      <span className="text-4xl font-black">{plan.price}</span>
+                      <span className={`pb-1 text-sm font-black ${plan.highlighted ? 'text-navy/60' : 'text-gray-400'}`}>{plan.period}</span>
+                    </div>
+                    <p className="font-bold text-lg mt-1">{plan.pages}</p>
                   </div>
                   <CreditCard className="w-7 h-7" />
                 </div>

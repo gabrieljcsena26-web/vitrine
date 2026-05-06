@@ -73,8 +73,8 @@ const CATEGORIES = [
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const PLANS = [
-  { id: 'starter', name: 'Starter', pages: '1 page', description: 'Best for one business page' },
-  { id: 'pro', name: 'Pro', pages: '3 pages', description: 'For multiple services or locations' },
+  { id: 'starter', name: 'Starter', pages: '1 page', price: '€10', period: '/month', description: 'Best for one business page' },
+  { id: 'pro', name: 'Pro', pages: '3 pages', price: '€15', period: '/month', description: 'For multiple services or locations' },
 ]
 
 const DEFAULT_SERVICES: Record<string, Service[]> = {
@@ -1468,6 +1468,10 @@ export default function DashboardPage() {
                         <div className="mb-4 flex items-start justify-between gap-3">
                           <div>
                             <p className="text-xl font-black text-navy">{p.name}</p>
+                            <div className="mt-1 flex items-end gap-1">
+                              <span className="text-3xl font-black text-navy">{p.price}</span>
+                              <span className="pb-1 text-xs font-black text-slate-400">{p.period}</span>
+                            </div>
                             <p className="text-sm font-bold text-gold">{p.pages}</p>
                           </div>
                           <div className={`rounded-2xl p-2 ${isPro ? 'bg-navy text-gold' : 'bg-gold/20 text-gold'}`}>

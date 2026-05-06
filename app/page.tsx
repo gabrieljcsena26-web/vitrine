@@ -590,6 +590,8 @@ export default function HomePage() {
               {
                 name: 'Starter',
                 pages: '1 page',
+                price: '€10',
+                period: '/month',
                 desc: t.starterDesc,
                 features: starterFeatures,
                 cta: t.startStarter,
@@ -599,6 +601,8 @@ export default function HomePage() {
               {
                 name: 'Pro',
                 pages: '3 pages',
+                price: '€15',
+                period: '/month',
                 desc: t.proDesc,
                 features: proFeatures,
                 cta: t.choosePro,
@@ -632,9 +636,11 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-black text-navy">
-                      {plan.pages}
+                      {plan.price}
                     </span>
+                    <span className={`text-sm font-black ${plan.highlighted ? 'text-navy/60' : 'text-gray-400'}`}>{plan.period}</span>
                   </div>
+                  <p className={`mt-1 text-sm font-bold ${plan.highlighted ? 'text-navy/70' : 'text-gold'}`}>{plan.pages}</p>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feat, j) => (

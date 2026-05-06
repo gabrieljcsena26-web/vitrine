@@ -42,6 +42,7 @@ interface BusinessData {
 interface AiPreviewConfig {
   template?: string
   imageCount?: number
+  sections?: string[]
   style?: {
     mood?: string
     primaryColor?: string
@@ -101,20 +102,43 @@ export default function PreviewPage() {
   if (loading || !userData) return null
 
   const t = translations[lang]
-  const pageTemplate = getPageTemplate(userData.category)
+  const pageTemplate = aiConfig?.template === 'food' ? 'food' : getPageTemplate(userData.category)
   const contactMethods = userData.contactMethods?.length ? userData.contactMethods : ['whatsapp', 'booking', 'email']
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')
   const showEmail = contactMethods.includes('email')
+  const previewSections = Array.isArray(aiConfig?.sections) ? aiConfig.sections.slice(0, 6) : []
+  const previewAccent = aiConfig?.style?.accentColor || '#D4AF37'
+  const previewHeadline = aiConfig?.copy?.headline?.trim() || userData.businessName
+  const previewTagline = aiConfig?.copy?.subheadline?.trim() || null
+  const previewCategoryLabel = aiConfig?.template ? `${userData.category} · ${aiConfig.template}` : userData.category
 
   return (
     <main className="bg-white">
       <PreviewWatermark lang={lang} businessName={userData.businessName} />
       {aiConfig && (
-        <div className="fixed left-4 top-20 z-[75] max-w-xs rounded-2xl border border-gold/30 bg-navy/95 p-4 text-white shadow-2xl backdrop-blur">
-          <p className="text-[10px] font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Prévia estruturada por IA' : lang === 'es' ? 'Vista previa estructurada por IA' : lang === 'fr' ? 'Aperçu structuré par IA' : 'AI structured preview'}</p>
-          <p className="mt-1 text-sm font-bold">{aiConfig.template ?? pageTemplate} layout · {aiConfig.imageCount ?? userData.photos?.length ?? 0} {lang === 'pt' ? 'fotos analisadas' : lang === 'es' ? 'fotos analizadas' : lang === 'fr' ? 'photos analysées' : 'photos analyzed'}</p>
+        <div className="fixed left-4 top-20 z-[75] max-w-sm rounded-3xl border border-white/10 bg-navy/95 p-4 text-white shadow-2xl backdrop-blur">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: previewAccent }} />
+            <p className="text-[10px] font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Prévia estruturada por IA' : lang === 'es' ? 'Vista previa estructurada por IA' : lang === 'fr' ? 'Aperçu structuré par IA' : 'AI structured preview'}</p>
+          </div>
+          <p className="mt-2 text-sm font-bold">{aiConfig.template ?? pageTemplate} layout · {aiConfig.imageCount ?? userData.photos?.length ?? 0} {lang === 'pt' ? 'fotos analisadas' : lang === 'es' ? 'fotos analizadas' : lang === 'fr' ? 'photos analysées' : 'photos analyzed'}</p>
           {aiConfig.style?.mood && <p className="mt-1 text-xs text-gray-300">{lang === 'pt' ? 'Estilo' : lang === 'es' ? 'Estilo' : lang === 'fr' ? 'Style' : 'Mood'}: {aiConfig.style.mood.replace(/_/g, ' ')}</p>}
+          {previewSections.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {previewSections.map((section) => (
+                <span key={section} className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-200">
+                  {section}
+                </span>
+              ))}
+            </div>
+          )}
+          {aiConfig.recommendations && aiConfig.recommendations.length > 0 && (
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3">
+              <p className="text-[10px] font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Leitura da IA' : lang === 'es' ? 'Lectura de IA' : lang === 'fr' ? 'Lecture IA' : 'AI readout'}</p>
+              <p className="mt-1 text-xs leading-relaxed text-gray-200">{aiConfig.recommendations[0]}</p>
+            </div>
+          )}
         </div>
       )}
       <Navbar
@@ -130,8 +154,10 @@ export default function PreviewPage() {
         t={t}
         businessName={userData.businessName}
         category={userData.category}
+        categoryLabel={previewCategoryLabel}
         heroPhoto={userData.photos?.[0]}
-        tagline={aiConfig?.copy?.subheadline}
+        headline={previewHeadline}
+        tagline={previewTagline}
         bookingUrl={showBooking ? userData.bookingUrl : undefined}
         whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
         whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}

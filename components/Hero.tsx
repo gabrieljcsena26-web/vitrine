@@ -17,6 +17,8 @@ interface Props {
   whatsappNumber?: string | null
   whatsappMessage?: string | null
   tagline?: string | null
+  headline?: string | null
+  categoryLabel?: string | null
 }
 
 export default function Hero({
@@ -30,6 +32,8 @@ export default function Hero({
   whatsappNumber,
   whatsappMessage,
   tagline,
+  headline,
+  categoryLabel,
 }: Props) {
   const [leadAction, setLeadAction] = useState<{
     label: string
@@ -66,10 +70,10 @@ export default function Hero({
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 rounded-full px-4 py-2 mb-6">
           <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
-          <span className="text-gold text-sm font-medium">{category || 'Hair Salon · Madrid'}</span>
+          <span className="text-gold text-sm font-medium">{categoryLabel || category || 'Hair Salon · Madrid'}</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 leading-tight">
-          {businessName}
+          {headline || businessName}
         </h1>
         <p className="text-xl md:text-2xl text-gold font-light mb-10 italic">
           &ldquo;{tagline || t.hero.tagline}&rdquo;

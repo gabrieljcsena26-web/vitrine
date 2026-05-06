@@ -16,6 +16,9 @@ function getCustomerSessionSecret() {
   const secret =
     process.env.VITRINE_CUSTOMER_SESSION_SECRET ||
     process.env.VITRINE_OWNER_SESSION_SECRET ||
+    process.env.VITRINE_OWNER_PASSWORD ||
+    process.env.VITRINE_DEV_SESSION_SECRET ||
+    process.env.VITRINE_DEV_PASSWORD ||
     process.env.NEXTAUTH_SECRET ||
     process.env.VERCEL_AUTOMATION_BYPASS_SECRET
 

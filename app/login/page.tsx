@@ -185,10 +185,17 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8" onMouseMove={handleCardMouseMove} onMouseLeave={handleCardMouseLeave}>
-            {dashboards.length > 1 ? (
-              <div className="text-center py-4">
+        <div className="w-full max-w-5xl" onMouseMove={handleCardMouseMove} onMouseLeave={handleCardMouseLeave}>
+          <div className={`mx-auto grid items-center gap-6 ${dashboards.length > 1 ? 'max-w-md' : 'max-w-4xl lg:grid-cols-[250px_minmax(0,460px)]'}`}>
+            {dashboards.length <= 1 && (
+              <div className="order-2 lg:order-1">
+                <LoginMascot mode={mode} pointer={mascotPointer} guarding={passwordGuardActive} />
+              </div>
+            )}
+
+            <div className={`rounded-2xl border border-slate-200 bg-white p-8 shadow-sm ${dashboards.length > 1 ? '' : 'order-1 lg:order-2'}`}>
+              {dashboards.length > 1 ? (
+                <div className="text-center py-4">
                 <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
@@ -211,12 +218,8 @@ export default function LoginPage() {
                   ← Back to login
                 </button>
               </div>
-            ) : (
-              <>
-                <div className="mb-6">
-                  <LoginMascot mode={mode} pointer={mascotPointer} guarding={passwordGuardActive} />
-                </div>
-
+              ) : (
+                <>
                 <div className="text-center mb-8">
                   <div className="w-12 h-12 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     {mode === 'signup' ? <UserPlus className="w-5 h-5 text-gold" /> : mode === 'verify' ? <KeyRound className="w-5 h-5 text-gold" /> : <Scissors className="w-5 h-5 text-gold" />}
@@ -319,8 +322,9 @@ export default function LoginPage() {
                     </button>
                   </p>
                 </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
           </div>
 
           <p className="text-center text-xs text-slate-400 mt-6">
@@ -373,56 +377,64 @@ function LoginMascot({
   const pupilY = Math.round(pointer.y * 3)
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_40%),linear-gradient(135deg,#f8fafc_0%,#eef2ff_100%)] p-4">
-      <div className="absolute inset-x-6 top-0 h-20 rounded-full bg-gold/10 blur-2xl" />
-      <div className="relative flex items-end justify-between gap-4">
-        <div className="max-w-[210px]">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">
-            <Bot className="h-3.5 w-3.5 text-gold" />
-            Mascote Vitrine
-          </div>
-          <h2 className="mt-3 text-lg font-black text-slate-800">{bubbleTitle}</h2>
-          <p className="mt-1 text-sm leading-relaxed text-slate-500">{bubbleText}</p>
+    <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_42%),linear-gradient(155deg,#ffffff_0%,#eef6ff_62%,#fff9ed_100%)] p-5 shadow-sm">
+      <div className="absolute inset-x-8 top-0 h-20 rounded-full bg-gold/10 blur-2xl" />
+      <div className="relative">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+          <Bot className="h-3.5 w-3.5 text-gold" />
+          Companheiro de login
         </div>
+        <h2 className="mt-3 text-base font-black text-slate-800">{bubbleTitle}</h2>
+        <p className="mt-1 max-w-[210px] text-sm leading-relaxed text-slate-500">{bubbleText}</p>
 
-        <div className="relative h-32 w-28 shrink-0">
-          <div className="absolute right-0 top-2 flex h-10 w-10 items-center justify-center rounded-2xl border border-gold/30 bg-white/85 text-gold shadow-sm" style={{ transform: `translate(${pointer.x * 4}px, ${pointer.y * 2}px) rotate(${pointer.x * 10}deg)` }}>
-            <Sparkles className="h-4.5 w-4.5" />
+        <div className="mt-5 flex items-end justify-between gap-3">
+          <div className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm backdrop-blur">
+            <p className="text-[11px] font-semibold text-slate-500">{guarding ? 'Guardando a senha' : 'Seguindo o seu mouse'}</p>
           </div>
-          <div className="absolute right-2 top-1 h-2.5 w-2.5 rounded-full bg-gold/60 animate-pulse" />
-          <div className="absolute right-10 top-6 h-1.5 w-1.5 rounded-full bg-cyan-400/80 animate-pulse" />
-          <div className="absolute left-11 top-1 h-6 w-2 rounded-full bg-slate-700" style={{ transform: `rotate(${pointer.x * 9}deg)` }} />
-          <div className="absolute left-8 top-5 h-20 w-20 rounded-[28px] border border-slate-700 bg-slate-900 shadow-[0_20px_40px_rgba(15,23,42,0.28)] transition-transform" style={{ transform: `translate(${pointer.x * 3}px, ${pointer.y * 2}px)` }}>
-            <div className="absolute left-1/2 top-2 h-3 w-10 -translate-x-1/2 rounded-full bg-slate-700" />
-            <div className="absolute inset-x-3 top-7 h-9 overflow-hidden rounded-2xl border border-cyan-200/40 bg-cyan-100/90">
-              {guarding ? (
-                <>
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.22))]" />
-                  <div className="absolute inset-x-2 top-3.5 h-1.5 rounded-full bg-slate-800/80" />
-                </>
-              ) : (
-                <>
-                  <div className="absolute left-4 top-1.5 h-6 w-6 rounded-full bg-slate-900">
-                    <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
-                  </div>
-                  <div className="absolute right-4 top-1.5 h-6 w-6 rounded-full bg-slate-900">
-                    <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
-                  </div>
-                </>
-              )}
+
+          <div className="relative h-40 w-32 shrink-0">
+            <div className="absolute right-1 top-4 flex h-8 w-8 items-center justify-center rounded-2xl border border-gold/30 bg-white/85 text-gold shadow-sm transition-transform" style={{ transform: `translate(${pointer.x * 6}px, ${pointer.y * 3}px) rotate(${pointer.x * 12}deg)` }}>
+              <Sparkles className="h-4 w-4" />
             </div>
-            <div className="absolute bottom-3 left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-full bg-slate-700/80" />
+            <div className="absolute right-5 top-1 h-2 w-2 rounded-full bg-gold/70 animate-pulse" />
+            <div className="absolute left-10 top-3 h-6 w-2 rounded-full bg-slate-700 transition-transform" style={{ transform: `rotate(${pointer.x * 12}deg)` }} />
+            <div className="absolute left-6 top-8 h-16 w-16 rounded-[26px] border border-slate-700 bg-slate-900 shadow-[0_20px_40px_rgba(15,23,42,0.22)] transition-transform" style={{ transform: `translate(${pointer.x * 4}px, ${pointer.y * 2}px)` }}>
+              <div className="absolute left-1/2 top-2 h-2.5 w-8 -translate-x-1/2 rounded-full bg-slate-700" />
+              <div className="absolute inset-x-2.5 top-5 h-7 overflow-hidden rounded-2xl border border-cyan-200/40 bg-cyan-100/90">
+                {guarding ? (
+                  <>
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0.24))]" />
+                    <div className="absolute inset-x-2 top-3 h-1.5 rounded-full bg-slate-800/80" />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute left-2.5 top-1.5 h-4.5 w-4.5 rounded-full bg-slate-900">
+                      <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
+                    </div>
+                    <div className="absolute right-2.5 top-1.5 h-4.5 w-4.5 rounded-full bg-slate-900">
+                      <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="absolute bottom-2.5 left-1/2 h-2 w-8 -translate-x-1/2 rounded-full bg-slate-700/80" />
+            </div>
+            <div className="absolute left-3 top-[77px] h-7 w-7 rounded-[18px] border border-slate-700 bg-slate-800 transition-all" style={{ transform: guarding ? 'translateX(12px) rotate(-14deg)' : `translate(${pointer.x * 2}px, ${pointer.y * 2}px) rotate(10deg)` }} />
+            <div className="absolute right-4 top-[77px] h-7 w-7 rounded-[18px] border border-slate-700 bg-slate-800 transition-all" style={{ transform: guarding ? 'translateX(-12px) rotate(14deg)' : `translate(${pointer.x * 2}px, ${pointer.y * 2}px) rotate(-10deg)` }} />
+            <div className="absolute left-9 top-[92px] h-11 w-10 rounded-[18px] border border-slate-700 bg-slate-800 shadow-[0_12px_20px_rgba(15,23,42,0.14)] transition-transform" style={{ transform: `translate(${pointer.x * 3}px, ${pointer.y}px)` }}>
+              <div className="absolute left-1/2 top-2 h-1.5 w-5 -translate-x-1/2 rounded-full bg-cyan-200/70" />
+            </div>
+            <div className="absolute left-10 top-[129px] h-8 w-3 rounded-full bg-slate-800" />
+            <div className="absolute left-[74px] top-[129px] h-8 w-3 rounded-full bg-slate-800" />
+            <div className="absolute left-7 top-[152px] h-3 w-7 rounded-full bg-slate-900/80" />
+            <div className="absolute left-[67px] top-[152px] h-3 w-7 rounded-full bg-slate-900/80" />
+            {guarding && (
+              <div className="absolute -left-1 top-[114px] inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 shadow-sm">
+                <Shield className="h-3 w-3" />
+                Shield on
+              </div>
+            )}
           </div>
-          <div className={`absolute left-2 top-[62px] h-8 w-8 rounded-[20px] border border-slate-700 bg-slate-800 transition-all ${guarding ? 'translate-x-5 -rotate-12' : 'translate-x-0 rotate-6'}`} />
-          <div className={`absolute right-3 top-[62px] h-8 w-8 rounded-[20px] border border-slate-700 bg-slate-800 transition-all ${guarding ? '-translate-x-5 rotate-12' : 'translate-x-0 -rotate-6'}`} />
-          <div className="absolute bottom-3 left-6 h-10 w-4 rounded-full bg-slate-800" />
-          <div className="absolute bottom-3 right-6 h-10 w-4 rounded-full bg-slate-800" />
-          {guarding && (
-            <div className="absolute -left-1 bottom-7 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2 py-1 text-[10px] font-bold text-emerald-700 shadow-sm">
-              <Shield className="h-3 w-3" />
-              Shield on
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -111,8 +111,12 @@ Do not call Google Places on every public page view.
 - Base subscription: €12.90/month
 - Extra page: €3/month
 - AI generation/update: €1/use
+- Free edits: text, contact information, opening hours, prices and small manual service/menu changes should not be charged.
+- Paid AI usage: charge €1 only when the customer asks Vitrine to rebuild the full landing structure, analyze a new photo set, run menu OCR again, or add many new photos that require a new AI interpretation.
 
 Every AI generation should create an `ai_generation_logs` row with `cost_cents = 100`, even if billing is applied later. This keeps usage auditable.
+
+Initial setup preview can be included/free (`cost_cents = 0`) to reduce friction. Later full redesigns should be logged as billable usage.
 
 ## Current database additions
 

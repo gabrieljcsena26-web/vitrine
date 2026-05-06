@@ -177,7 +177,8 @@ function isDefaultServiceList(items: Service[]) {
 const GENERATION_DURATION_MS = 2000 // Simulated page generation time
 const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
 const MAX_IMAGE_PX = 1000 // Max width/height for compressed photos
-const IMAGE_QUALITY = 0.75 // JPEG quality for compressed photos
+const TARGET_IMAGE_BYTES = 200_000 // Target size for AI/web previews
+const AI_PHOTO_LIMIT = 7
 
 // Compress an image file to a small data URL using canvas
 function compressImage(file: File): Promise<string> {
@@ -204,7 +205,14 @@ function compressImage(file: File): Promise<string> {
         const ctx = canvas.getContext('2d')
         if (!ctx) { reject(new Error('canvas context unavailable')); return }
         ctx.drawImage(img, 0, 0, width, height)
-        resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY))
+        const mimeType = 'image/webp'
+        let quality = 0.82
+        let dataUrl = canvas.toDataURL(mimeType, quality)
+        while (dataUrl.length * 0.75 > TARGET_IMAGE_BYTES && quality > 0.42) {
+          quality -= 0.08
+          dataUrl = canvas.toDataURL(mimeType, quality)
+        }
+        resolve(dataUrl)
       }
       img.src = e.target?.result as string
     }
@@ -216,7 +224,8 @@ async function uploadCompressedImage(dataUrl: string, filename = 'photo.jpg'): P
   try {
     const blob = await fetch(dataUrl).then((res) => res.blob())
     const formData = new FormData()
-    formData.append('file', new File([blob], filename, { type: blob.type || 'image/jpeg' }))
+    const safeName = filename.replace(/\.[^.]+$/, '') || 'photo'
+    formData.append('file', new File([blob], `${safeName}.webp`, { type: blob.type || 'image/webp' }))
     const res = await fetch('/api/upload-image', { method: 'POST', body: formData })
     if (!res.ok) return dataUrl
     const json = await res.json()
@@ -279,6 +288,8 @@ export default function DashboardPage() {
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [billingLoadingPlan, setBillingLoadingPlan] = useState('')
   const [billingError, setBillingError] = useState('')
+  const [aiPreviewLoading, setAiPreviewLoading] = useState(false)
+  const [aiPreviewError, setAiPreviewError] = useState('')
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
   const heroInputRef = useRef<HTMLInputElement>(null)
@@ -420,7 +431,8 @@ export default function DashboardPage() {
 
   const handleGalleryFiles = (files: FileList | null) => {
     if (!files) return
-    Array.from(files).forEach((file) => {
+    const availableSlots = Math.max(0, AI_PHOTO_LIMIT - 2 - galleryPhotos.length)
+    Array.from(files).slice(0, availableSlots).forEach((file) => {
       if (!file.type.startsWith('image/')) return
       compressImage(file)
         .then((dataUrl) => uploadCompressedImage(dataUrl, file.name))
@@ -436,7 +448,7 @@ export default function DashboardPage() {
   }
 
   const saveBusinessData = (): boolean => {
-    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos]
+    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].slice(0, AI_PHOTO_LIMIT)
     const data = {
       businessName,
       category,
@@ -585,7 +597,7 @@ export default function DashboardPage() {
 
   const buildAiPreviewConfig = () => {
     const template = selectedTemplate
-    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean)
+    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean).slice(0, AI_PHOTO_LIMIT)
     const hasMenu = template === 'food' && Boolean(menuUrl || menuImageUrl || services.length)
     const hasBooking = contactMethodSelected('booking') && Boolean(bookingUrl)
     const hasWhatsapp = contactMethodSelected('whatsapp') && Boolean(whatsappNumber)
@@ -634,14 +646,45 @@ export default function DashboardPage() {
     }
   }
 
-  const handleAiPreview = () => {
+  const handleAiPreview = async () => {
     saveBusinessData()
+    setAiPreviewLoading(true)
+    setAiPreviewError('')
+    const localFallback = buildAiPreviewConfig()
     try {
-      localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify(buildAiPreviewConfig()))
-    } catch {
-      // localStorage unavailable — preview still works from saved setup data
+      const res = await fetch('/api/ai/generate-page-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessName,
+          category,
+          description,
+          address,
+          lang,
+          contactMethods,
+          bookingUrl: contactMethodSelected('booking') ? bookingUrl.trim() || null : null,
+          whatsappNumber: contactMethodSelected('whatsapp') ? whatsappNumber.trim() || null : null,
+          menuUrl: menuUrl.trim() || null,
+          services,
+          hours,
+          photos: [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean).slice(0, AI_PHOTO_LIMIT),
+          generationType: 'initial_preview',
+        }),
+      })
+      const json = await res.json().catch(() => null)
+      const config = res.ok && json?.config ? json.config : localFallback
+      localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify(config))
+      router.push('/preview')
+    } catch (err) {
+      try {
+        localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify(localFallback))
+        router.push('/preview')
+      } catch {
+        setAiPreviewError(err instanceof Error ? err.message : 'Could not prepare AI preview.')
+      }
+    } finally {
+      setAiPreviewLoading(false)
     }
-    router.push('/preview')
   }
 
   if (authLoading) {
@@ -1363,6 +1406,11 @@ export default function DashboardPage() {
                       {generateError}
                     </div>
                   )}
+                  {aiPreviewError && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-4 mb-6 text-sm max-w-md mx-auto">
+                      {aiPreviewError}
+                    </div>
+                  )}
                   <div className="bg-gray-50 rounded-xl p-4 mb-8 text-left max-w-sm mx-auto">
                     <p className="text-xs text-gray-400 mb-1">{t.pageUrl}</p>
                     <p className="text-navy font-mono text-sm break-all">
@@ -1372,10 +1420,20 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <button
                       onClick={handleAiPreview}
-                      className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
+                      disabled={aiPreviewLoading}
+                      className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {lang === 'pt' ? 'Prévia IA com fotos' : lang === 'es' ? 'Vista previa IA con fotos' : lang === 'fr' ? 'Aperçu IA avec photos' : 'AI preview from photos'}
-                      <ArrowRight className="w-4 h-4" />
+                      {aiPreviewLoading ? (
+                        <>
+                          <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          {lang === 'pt' ? 'Analisando fotos...' : lang === 'es' ? 'Analizando fotos...' : lang === 'fr' ? 'Analyse des photos...' : 'Analyzing photos...'}
+                        </>
+                      ) : (
+                        <>
+                          {lang === 'pt' ? 'Prévia IA com fotos' : lang === 'es' ? 'Vista previa IA con fotos' : lang === 'fr' ? 'Aperçu IA avec photos' : 'AI preview from photos'}
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
                     </button>
                     <button 
                       onClick={handleGeneratePage}

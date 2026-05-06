@@ -16,6 +16,7 @@ interface Props {
   bookingUrl?: string | null
   whatsappNumber?: string | null
   whatsappMessage?: string | null
+  tagline?: string | null
 }
 
 export default function Hero({
@@ -28,6 +29,7 @@ export default function Hero({
   bookingUrl,
   whatsappNumber,
   whatsappMessage,
+  tagline,
 }: Props) {
   const [leadAction, setLeadAction] = useState<{
     label: string
@@ -70,7 +72,7 @@ export default function Hero({
           {businessName}
         </h1>
         <p className="text-xl md:text-2xl text-gold font-light mb-10 italic">
-          &ldquo;{t.hero.tagline}&rdquo;
+          &ldquo;{tagline || t.hero.tagline}&rdquo;
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a

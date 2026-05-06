@@ -39,6 +39,25 @@ interface BusinessData {
   photos: string[]
 }
 
+interface AiPreviewConfig {
+  template?: string
+  imageCount?: number
+  style?: {
+    mood?: string
+    primaryColor?: string
+    accentColor?: string
+  }
+  copy?: {
+    headline?: string
+    subheadline?: string
+    primaryCta?: string
+    secondaryCta?: string
+  }
+  recommendations?: string[]
+}
+
+const AI_PREVIEW_STORAGE_KEY = 'vitrine_ai_page_config'
+
 const FOOD_CATEGORIES = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria']
 
 function getPageTemplate(category?: string | null) {
@@ -51,6 +70,7 @@ export default function PreviewPage() {
   const router = useRouter()
   const [lang, setLang] = useState<Language>('en')
   const [userData, setUserData] = useState<BusinessData | null>(null)
+  const [aiConfig, setAiConfig] = useState<AiPreviewConfig | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -66,6 +86,8 @@ export default function PreviewPage() {
         return
       }
       setUserData(data)
+      const savedAiConfig = localStorage.getItem(AI_PREVIEW_STORAGE_KEY)
+      if (savedAiConfig) setAiConfig(JSON.parse(savedAiConfig) as AiPreviewConfig)
       if (data.lang && ['pt', 'es', 'en', 'fr'].includes(data.lang)) {
         setLang(data.lang as Language)
       }
@@ -88,6 +110,13 @@ export default function PreviewPage() {
   return (
     <main className="bg-white">
       <PreviewWatermark lang={lang} businessName={userData.businessName} />
+      {aiConfig && (
+        <div className="fixed left-4 top-20 z-[75] max-w-xs rounded-2xl border border-gold/30 bg-navy/95 p-4 text-white shadow-2xl backdrop-blur">
+          <p className="text-[10px] font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Prévia estruturada por IA' : lang === 'es' ? 'Vista previa estructurada por IA' : lang === 'fr' ? 'Aperçu structuré par IA' : 'AI structured preview'}</p>
+          <p className="mt-1 text-sm font-bold">{aiConfig.template ?? pageTemplate} layout · {aiConfig.imageCount ?? userData.photos?.length ?? 0} {lang === 'pt' ? 'fotos analisadas' : lang === 'es' ? 'fotos analizadas' : lang === 'fr' ? 'photos analysées' : 'photos analyzed'}</p>
+          {aiConfig.style?.mood && <p className="mt-1 text-xs text-gray-300">{lang === 'pt' ? 'Estilo' : lang === 'es' ? 'Estilo' : lang === 'fr' ? 'Style' : 'Mood'}: {aiConfig.style.mood.replace(/_/g, ' ')}</p>}
+        </div>
+      )}
       <Navbar
         t={t}
         lang={lang}
@@ -102,6 +131,7 @@ export default function PreviewPage() {
         businessName={userData.businessName}
         category={userData.category}
         heroPhoto={userData.photos?.[0]}
+        tagline={aiConfig?.copy?.subheadline}
         bookingUrl={showBooking ? userData.bookingUrl : undefined}
         whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
         whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}

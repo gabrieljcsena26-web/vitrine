@@ -14,6 +14,8 @@ interface Service {
 type SetupLang = 'pt' | 'en' | 'es' | 'fr'
 type ContactMethod = 'whatsapp' | 'booking' | 'email'
 
+const AI_PREVIEW_STORAGE_KEY = 'vitrine_ai_page_config'
+
 const LANGUAGE_OPTIONS: { code: SetupLang; label: string }[] = [
   { code: 'pt', label: 'Português' },
   { code: 'en', label: 'English' },
@@ -579,6 +581,67 @@ export default function DashboardPage() {
       console.error('Failed to copy:', err)
       alert(`Failed to copy link. Please copy manually:\n\n${fullUrl}`)
     }
+  }
+
+  const buildAiPreviewConfig = () => {
+    const template = selectedTemplate
+    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean)
+    const hasMenu = template === 'food' && Boolean(menuUrl || menuImageUrl || services.length)
+    const hasBooking = contactMethodSelected('booking') && Boolean(bookingUrl)
+    const hasWhatsapp = contactMethodSelected('whatsapp') && Boolean(whatsappNumber)
+    const primaryCta = hasBooking ? 'Book now' : hasWhatsapp ? 'Message on WhatsApp' : 'Contact us'
+    const secondaryCta = hasMenu ? 'View menu' : 'View services'
+    const headline = template === 'food'
+      ? `${businessName || 'Your restaurant'} — menu, atmosphere and easy ordering`
+      : template === 'technical'
+      ? `${businessName || 'Your business'} — trust, clarity and direct contact`
+      : `${businessName || 'Your business'} — services, photos and booking in one page`
+    const subheadline = description.trim()
+      ? description.trim().slice(0, 220)
+      : template === 'food'
+      ? 'A warm, visual landing page built from your photos to help customers choose, order or reserve faster.'
+      : 'A professional landing page built from your setup and photos to turn visitors into real contacts.'
+
+    return {
+      generatedAt: new Date().toISOString(),
+      source: 'setup_and_photos_preview',
+      template,
+      imageCount: photos.length,
+      style: template === 'food'
+        ? { primaryColor: '#1F2937', accentColor: '#D4AF37', mood: 'warm_premium' }
+        : template === 'technical'
+        ? { primaryColor: '#0F172A', accentColor: '#38BDF8', mood: 'clean_trust' }
+        : { primaryColor: '#0F172A', accentColor: '#D4AF37', mood: 'modern_local' },
+      sections: template === 'food'
+        ? ['hero', 'about', 'menu', 'gallery', 'hours', 'location', 'contact']
+        : ['hero', 'about', 'benefits', 'services', 'gallery', 'hours', 'contact'],
+      copy: {
+        headline,
+        subheadline,
+        primaryCta,
+        secondaryCta,
+      },
+      photoRoles: {
+        hero: photos[0] ? 'photo_1' : null,
+        about: photos[1] ? 'photo_2' : null,
+        gallery: photos.slice(2).map((_, index) => `photo_${index + 3}`),
+      },
+      recommendations: [
+        photos.length >= 3 ? 'Use the strongest photo as the hero and keep the rest as visual proof.' : 'Add more real photos to make the landing feel more trustworthy.',
+        hasWhatsapp ? 'Keep WhatsApp visible as the fastest conversion action.' : 'Add WhatsApp if you want faster customer conversations.',
+        hasMenu ? 'Show menu highlights before the gallery so customers decide faster.' : 'Keep services clear and easy to scan before the contact section.',
+      ],
+    }
+  }
+
+  const handleAiPreview = () => {
+    saveBusinessData()
+    try {
+      localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify(buildAiPreviewConfig()))
+    } catch {
+      // localStorage unavailable — preview still works from saved setup data
+    }
+    router.push('/preview')
   }
 
   if (authLoading) {
@@ -1308,10 +1371,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <button
-                      onClick={() => { saveBusinessData(); router.push('/preview') }}
+                      onClick={handleAiPreview}
                       className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
                     >
-                      {t.previewPage}
+                      {lang === 'pt' ? 'Prévia IA com fotos' : lang === 'es' ? 'Vista previa IA con fotos' : lang === 'fr' ? 'Aperçu IA avec photos' : 'AI preview from photos'}
                       <ArrowRight className="w-4 h-4" />
                     </button>
                     <button 

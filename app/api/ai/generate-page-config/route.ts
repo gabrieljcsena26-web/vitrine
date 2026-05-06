@@ -82,25 +82,26 @@ const pageConfigSchema = {
 
 export async function POST(req: NextRequest) {
   try {
-    const ownerEmail = getCustomerEmailFromRequest(req)
-    if (!ownerEmail) {
-      return NextResponse.json({ error: 'Please log in before generating an AI preview.' }, { status: 401 })
-    }
-
-    const limited = rateLimit(rateLimitKey(req, 'ai-page-config', ownerEmail), { limit: 8, windowMs: 10 * 60_000 })
-    if (!limited.allowed) {
-      return NextResponse.json({ error: 'Too many AI preview attempts' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
-    }
-
     const body = await req.json().catch(() => null) as SetupPayload | null
     if (!body) return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
 
     const photos = Array.isArray(body.photos) ? body.photos.filter(Boolean).slice(0, MAX_PHOTOS) : []
     const generationType = normalizeGenerationType(body.generationType)
+    const ownerEmail = getCustomerEmailFromRequest(req)
+    if (!ownerEmail && generationType !== 'initial_preview') {
+      return NextResponse.json({ error: 'Please log in before generating this AI update.' }, { status: 401 })
+    }
+
+    const rateOwner = ownerEmail ?? 'guest-preview'
+    const limited = rateLimit(rateLimitKey(req, 'ai-page-config', rateOwner), { limit: ownerEmail ? 8 : 4, windowMs: 10 * 60_000 })
+    if (!limited.allowed) {
+      return NextResponse.json({ error: 'Too many AI preview attempts' }, { status: 429, headers: { 'Retry-After': String(limited.retryAfter) } })
+    }
+
     const costCents = generationType === 'full_redesign' || generationType === 'menu_ocr' ? 100 : 0
     const template = inferTemplate(body.category, body.description)
 
-    const logId = await createGenerationLog({ ownerEmail, body, photos, generationType, costCents })
+    const logId = await createGenerationLog({ ownerEmail: ownerEmail ?? null, body, photos, generationType, costCents })
     const fallbackConfig = buildFallbackConfig(body, photos, template)
 
     let config = fallbackConfig
@@ -272,7 +273,7 @@ function normalizeGenerationType(value: unknown): GenerationType {
   return value === 'full_redesign' || value === 'menu_ocr' || value === 'copy_update' ? value : 'initial_preview'
 }
 
-async function createGenerationLog({ ownerEmail, body, photos, generationType, costCents }: { ownerEmail: string; body: SetupPayload; photos: string[]; generationType: GenerationType; costCents: number }) {
+async function createGenerationLog({ ownerEmail, body, photos, generationType, costCents }: { ownerEmail: string | null; body: SetupPayload; photos: string[]; generationType: GenerationType; costCents: number }) {
   try {
     const db = createServiceClient()
     const { data } = await db

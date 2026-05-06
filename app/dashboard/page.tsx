@@ -264,6 +264,7 @@ export default function DashboardPage() {
   const [email, setEmail] = useState('')
   const [accountEmail, setAccountEmail] = useState('')
   const [authLoading, setAuthLoading] = useState(true)
+  const [sessionAvailable, setSessionAvailable] = useState(false)
   const [phone, setPhone] = useState('')
   const [contactMethods, setContactMethods] = useState<ContactMethod[]>(['whatsapp'])
   const [bookingUrl, setBookingUrl] = useState('')
@@ -336,14 +337,17 @@ export default function DashboardPage() {
       .then(async (res) => {
         if (!active) return
         if (!res.ok) {
-          router.replace('/login?next=/dashboard')
+          setSessionAvailable(false)
           return
         }
         const json = await res.json()
-        if (json.email) setAccountEmail(json.email)
+        if (json.email) {
+          setAccountEmail(json.email)
+          setSessionAvailable(true)
+        }
       })
       .catch(() => {
-        if (active) router.replace('/login?next=/dashboard')
+        if (active) setSessionAvailable(false)
       })
       .finally(() => {
         if (active) setAuthLoading(false)
@@ -657,6 +661,17 @@ export default function DashboardPage() {
     setAiPreviewLoading(true)
     setAiPreviewError('')
     const localFallback = buildAiPreviewConfig()
+    if (!sessionAvailable) {
+      try {
+        localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify({ ...localFallback, source: 'guest_setup_preview' }))
+        router.push('/preview')
+      } catch (err) {
+        setAiPreviewError(err instanceof Error ? err.message : 'Could not prepare AI preview.')
+      } finally {
+        setAiPreviewLoading(false)
+      }
+      return
+    }
     try {
       const res = await fetch('/api/ai/generate-page-config', {
         method: 'POST',
@@ -1483,6 +1498,17 @@ export default function DashboardPage() {
                       )}
                     </button>
                   </div>
+                  {!sessionAvailable && (
+                    <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-gray-500">
+                      {lang === 'pt'
+                        ? 'A prévia IA abre sem trocar de tela para login. Para publicar de verdade, entre na conta e clique em publicar.'
+                        : lang === 'es'
+                        ? 'La vista previa IA abre sin enviarte al login. Para publicar, entra en tu cuenta y pulsa publicar.'
+                        : lang === 'fr'
+                        ? 'L’aperçu IA s’ouvre sans vous renvoyer au login. Pour publier, connectez-vous puis publiez.'
+                        : 'AI preview opens without sending you to login. To publish live, log in and publish.'}
+                    </p>
+                  )}
                 </>
               ) : (
                 <>

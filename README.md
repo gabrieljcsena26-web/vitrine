@@ -11,6 +11,7 @@ Vitrine is a SaaS platform where local business owners upload photos and basic i
 - **Login:** `/login` — secure customer dashboard login with email and password
 - **Billing:** `/billing` — secure Stripe Checkout for Starter/Pro
 - **Owner Dashboard:** `/admin` — private founder dashboard for customers, leads, plans and reports
+- **AI architecture:** [AI_LANDING_ARCHITECTURE.md](AI_LANDING_ARCHITECTURE.md) — plan for photo-driven landing generation with GPT-5.5 Vision
 
 ## 💻 Run Locally
 
@@ -62,6 +63,7 @@ Production owner login uses `VITRINE_OWNER_PASSWORD` or a hashed owner password 
 1. Run [supabase-schema.sql](supabase-schema.sql) in the Supabase SQL Editor.
 2. Create a public Storage bucket named `business-photos`.
 3. Confirm the `businesses`, `page_views`, `leads`, `channels`, and `dev_settings` tables exist.
+4. For the AI landing flow, also confirm `customers`, `subscriptions`, `business_assets`, `business_page_configs`, `ai_generation_logs`, `menu_items`, and `google_places_connections` exist.
 
 ## 📦 Plans
 

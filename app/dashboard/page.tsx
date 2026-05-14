@@ -661,17 +661,6 @@ export default function DashboardPage() {
     setAiPreviewLoading(true)
     setAiPreviewError('')
     const localFallback = buildAiPreviewConfig()
-    if (!sessionAvailable) {
-      try {
-        localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify({ ...localFallback, source: 'guest_setup_preview' }))
-        router.push('/preview')
-      } catch (err) {
-        setAiPreviewError(err instanceof Error ? err.message : 'Could not prepare AI preview.')
-      } finally {
-        setAiPreviewLoading(false)
-      }
-      return
-    }
     try {
       const res = await fetch('/api/ai/generate-page-config', {
         method: 'POST',
@@ -698,7 +687,7 @@ export default function DashboardPage() {
       router.push('/preview')
     } catch (err) {
       try {
-        localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify(localFallback))
+        localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify({ ...localFallback, source: 'local_preview_fallback' }))
         router.push('/preview')
       } catch {
         setAiPreviewError(err instanceof Error ? err.message : 'Could not prepare AI preview.')

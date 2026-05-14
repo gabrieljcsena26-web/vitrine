@@ -241,6 +241,18 @@ function sanitizeConfig(config: any, fallback: ReturnType<typeof buildFallbackCo
   const sections = Array.isArray(config?.sections)
     ? config.sections.filter((section: string) => allowedSections.includes(section)).slice(0, 10)
     : fallback.sections
+  const normalizePhotoRole = (value: unknown, fallbackValue: string | null) => {
+    if (typeof value !== 'string') return fallbackValue
+    return /^photo_\d+$/.test(value) ? value : fallbackValue
+  }
+  const normalizeGalleryRoles = (value: unknown, fallbackValue: string[]) => {
+    if (!Array.isArray(value)) return fallbackValue
+    const validRoles = value
+      .map((item) => String(item))
+      .filter((item) => /^photo_\d+$/.test(item))
+      .slice(0, 5)
+    return validRoles.length ? validRoles : fallbackValue
+  }
 
   return {
     template,
@@ -257,9 +269,9 @@ function sanitizeConfig(config: any, fallback: ReturnType<typeof buildFallbackCo
       secondaryCta: String(config?.copy?.secondaryCta || fallback.copy.secondaryCta).slice(0, 40),
     },
     photoRoles: {
-      hero: typeof config?.photoRoles?.hero === 'string' ? config.photoRoles.hero : fallback.photoRoles.hero,
-      about: typeof config?.photoRoles?.about === 'string' ? config.photoRoles.about : fallback.photoRoles.about,
-      gallery: Array.isArray(config?.photoRoles?.gallery) ? config.photoRoles.gallery.slice(0, 5).map(String) : fallback.photoRoles.gallery,
+      hero: normalizePhotoRole(config?.photoRoles?.hero, fallback.photoRoles.hero),
+      about: normalizePhotoRole(config?.photoRoles?.about, fallback.photoRoles.about),
+      gallery: normalizeGalleryRoles(config?.photoRoles?.gallery, fallback.photoRoles.gallery),
     },
     recommendations: Array.isArray(config?.recommendations) ? config.recommendations.slice(0, 6).map((item: unknown) => String(item).slice(0, 180)) : fallback.recommendations,
   }

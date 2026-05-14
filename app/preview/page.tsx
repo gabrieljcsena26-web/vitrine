@@ -70,6 +70,7 @@ const ALLOWED_PREVIEW_SECTIONS = ['about', 'benefits', 'services', 'menu', 'gall
 function getPageTemplate(category?: string | null) {
   const normalized = String(category ?? '').toLowerCase()
   if (FOOD_CATEGORIES.some((item) => normalized.includes(item))) return 'food'
+  if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'repair', 'clínica', 'advocacia'].some((item) => normalized.includes(item))) return 'technical'
   return 'service'
 }
 
@@ -108,7 +109,11 @@ export default function PreviewPage() {
   if (loading || !userData) return null
 
   const t = translations[lang]
-  const pageTemplate = aiConfig?.template === 'food' ? 'food' : getPageTemplate(userData.category)
+  const pageTemplate = aiConfig?.template === 'food'
+    ? 'food'
+    : aiConfig?.template === 'technical'
+    ? 'technical'
+    : getPageTemplate(userData.category)
   const contactMethods = userData.contactMethods?.length ? userData.contactMethods : ['whatsapp', 'booking', 'email']
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')

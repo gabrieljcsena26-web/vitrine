@@ -19,6 +19,8 @@ interface Props {
   tagline?: string | null
   headline?: string | null
   categoryLabel?: string | null
+  primaryCtaLabel?: string | null
+  secondaryCtaLabel?: string | null
 }
 
 export default function Hero({
@@ -34,6 +36,8 @@ export default function Hero({
   tagline,
   headline,
   categoryLabel,
+  primaryCtaLabel,
+  secondaryCtaLabel,
 }: Props) {
   const [leadAction, setLeadAction] = useState<{
     label: string
@@ -89,7 +93,7 @@ export default function Hero({
             className="inline-flex items-center justify-center gap-2 bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/30"
           >
             <CalendarDays className="w-5 h-5" />
-            {isFood ? 'Reserve or order' : t.hero.bookNow}
+            {primaryCtaLabel || (isFood ? 'Reserve or order' : t.hero.bookNow)}
           </a>
           {whatsappHref && (
             <a
@@ -108,7 +112,7 @@ export default function Hero({
             href={isFood ? '#menu' : '#services'}
             className="inline-flex items-center justify-center bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all"
           >
-            {isFood ? 'View menu' : t.hero.seeServices}
+            {secondaryCtaLabel || (isFood ? 'View menu' : t.hero.seeServices)}
           </a>
         </div>
       </div>

@@ -1,8 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { translations } from '@/lib/translations'
 import type { Language } from '@/lib/translations'
+import { BadgeCheck, Clock3, Coffee, MapPin, ShieldCheck, Sparkles, Store, UtensilsCrossed } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Hero from '@/components/Hero'
 import About from '@/components/About'
@@ -62,16 +64,338 @@ interface AiPreviewConfig {
   recommendations?: string[]
 }
 
+type VisualVariant = 'cafe' | 'restaurant' | 'service' | 'technical'
+
 const AI_PREVIEW_STORAGE_KEY = 'vitrine_ai_page_config'
 
 const FOOD_CATEGORIES = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria']
 const ALLOWED_PREVIEW_SECTIONS = ['about', 'benefits', 'services', 'menu', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact']
+
+const previewCopy = {
+  pt: {
+    setupReadout: 'Leitura do setup',
+    mood: 'Clima',
+    builtFrom: 'Montada com base em fotos, categoria e proposta do cliente',
+    signature: 'Assinatura visual',
+    experience: 'Experiência pensada para converter rápido',
+    servicesTitle: 'Destaques que o cliente entende em segundos',
+    galleryTitle: 'Galeria organizada para vender melhor',
+    quickFacts: 'Fatos rápidos',
+    storyTitle: 'História, espaço e proposta',
+    reserve: 'Reservar agora',
+    explore: 'Explorar detalhes',
+    trustTitle: 'Layout de confiança e clareza',
+  },
+  en: {
+    setupReadout: 'Setup readout',
+    mood: 'Mood',
+    builtFrom: 'Built from photos, category and client positioning',
+    signature: 'Visual signature',
+    experience: 'An experience shaped for quick conversion',
+    servicesTitle: 'Highlights customers understand in seconds',
+    galleryTitle: 'A gallery arranged to sell better',
+    quickFacts: 'Quick facts',
+    storyTitle: 'Story, place and positioning',
+    reserve: 'Book now',
+    explore: 'Explore details',
+    trustTitle: 'Trust-first layout with clarity',
+  },
+  es: {
+    setupReadout: 'Lectura del setup',
+    mood: 'Estilo',
+    builtFrom: 'Construida con fotos, categoría y propuesta del cliente',
+    signature: 'Firma visual',
+    experience: 'Experiencia pensada para convertir rápido',
+    servicesTitle: 'Destacados que el cliente entiende en segundos',
+    galleryTitle: 'Galería organizada para vender mejor',
+    quickFacts: 'Datos rápidos',
+    storyTitle: 'Historia, espacio y propuesta',
+    reserve: 'Reservar ahora',
+    explore: 'Explorar detalles',
+    trustTitle: 'Layout de confianza y claridad',
+  },
+  fr: {
+    setupReadout: 'Lecture du setup',
+    mood: 'Style',
+    builtFrom: 'Construit à partir des photos, de la catégorie et du positionnement',
+    signature: 'Signature visuelle',
+    experience: 'Une expérience pensée pour convertir vite',
+    servicesTitle: 'Des highlights compris en quelques secondes',
+    galleryTitle: 'Une galerie organisée pour mieux vendre',
+    quickFacts: 'Infos rapides',
+    storyTitle: 'Histoire, lieu et positionnement',
+    reserve: 'Réserver',
+    explore: 'Voir les détails',
+    trustTitle: 'Mise en page de confiance et clarté',
+  },
+} as const
 
 function getPageTemplate(category?: string | null) {
   const normalized = String(category ?? '').toLowerCase()
   if (FOOD_CATEGORIES.some((item) => normalized.includes(item))) return 'food'
   if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'repair', 'clínica', 'advocacia'].some((item) => normalized.includes(item))) return 'technical'
   return 'service'
+}
+
+function getVisualVariant(category: string, template: string, mood?: string | null): VisualVariant {
+  const normalizedCategory = category.toLowerCase()
+  const normalizedMood = String(mood ?? '').toLowerCase()
+  if (template === 'food') {
+    if (['café', 'cafe', 'bakery', 'confeitaria', 'coffee'].some((item) => normalizedCategory.includes(item)) || normalizedMood.includes('artesanal')) {
+      return 'cafe'
+    }
+    return 'restaurant'
+  }
+  if (template === 'technical') return 'technical'
+  return 'service'
+}
+
+function PreviewMoodBand({
+  lang,
+  accentColor,
+  mood,
+  recommendations,
+  variant,
+}: {
+  lang: Language
+  accentColor: string
+  mood?: string | null
+  recommendations?: string[]
+  variant: VisualVariant
+}) {
+  const copy = previewCopy[lang] ?? previewCopy.en
+  const cards = (recommendations ?? []).slice(0, 3)
+
+  return (
+    <section className={`relative overflow-hidden ${variant === 'restaurant' ? 'bg-[#111827] text-white' : variant === 'technical' ? 'bg-slate-100 text-slate-900' : 'bg-white text-slate-900'}`}>
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className={`rounded-[2rem] border p-6 shadow-xl ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.setupReadout}</p>
+              <h2 className="mt-3 text-3xl font-black">{copy.builtFrom}</h2>
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 font-bold ${variant === 'restaurant' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  <Sparkles className="h-4 w-4" style={{ color: accentColor }} />
+                  {copy.mood}: {mood || copy.signature}
+                </span>
+                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 font-bold ${variant === 'restaurant' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
+                  <BadgeCheck className="h-4 w-4" style={{ color: accentColor }} />
+                  {copy.experience}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-3 lg:max-w-xl lg:grid-cols-3">
+              {cards.map((item, index) => (
+                <div key={`${item}-${index}`} className={`rounded-3xl border p-4 text-sm leading-relaxed ${variant === 'restaurant' ? 'border-white/10 bg-white/5 text-gray-200' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function VariantAboutSection({
+  variant,
+  lang,
+  businessName,
+  description,
+  address,
+  email,
+  aboutPhoto,
+  accentColor,
+  services,
+}: {
+  variant: VisualVariant
+  lang: Language
+  businessName: string
+  description: string
+  address?: string
+  email?: string
+  aboutPhoto?: string
+  accentColor: string
+  services: { name: string; price: string; description?: string }[]
+}) {
+  const copy = previewCopy[lang] ?? previewCopy.en
+  const highlightItems = services.filter((item) => item.name).slice(0, 3)
+  const imageSrc = aboutPhoto || 'https://picsum.photos/seed/vitrine-preview-about/1200/900'
+
+  if (variant === 'technical') {
+    return (
+      <section id="about" className="bg-slate-50 py-24">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8">
+          <div className="rounded-[2rem] bg-white p-8 shadow-xl shadow-slate-200/70">
+            <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.trustTitle}</p>
+            <h2 className="mt-3 text-4xl font-black text-slate-900">{businessName}</h2>
+            <p className="mt-5 text-lg leading-relaxed text-slate-600">{description}</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <ShieldCheck className="h-6 w-6" style={{ color: accentColor }} />
+                <p className="mt-3 font-bold text-slate-900">{copy.quickFacts}</p>
+                <p className="mt-2 text-sm text-slate-600">{highlightItems[0]?.description || description}</p>
+              </div>
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <Clock3 className="h-6 w-6" style={{ color: accentColor }} />
+                <p className="mt-3 font-bold text-slate-900">{copy.signature}</p>
+                <p className="mt-2 text-sm text-slate-600">{highlightItems[1]?.name || businessName}</p>
+              </div>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-[2rem] bg-slate-900 shadow-2xl">
+            <Image src={imageSrc} alt={businessName} fill className="object-cover opacity-80" unoptimized={imageSrc.startsWith('data:')} />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+              {address && <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm"><MapPin className="h-4 w-4" />{address}</p>}
+              {email && <p className="mt-3 text-sm text-slate-200">{email}</p>}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section id="about" className={variant === 'restaurant' ? 'bg-[#111827] py-24 text-white' : variant === 'cafe' ? 'bg-[#fff8ef] py-24' : 'bg-white py-24'}>
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
+        <div className="relative min-h-[420px] overflow-hidden rounded-[2rem] shadow-2xl">
+          <Image src={imageSrc} alt={businessName} fill className="object-cover" unoptimized={imageSrc.startsWith('data:')} />
+          <div className={`absolute inset-0 ${variant === 'restaurant' ? 'bg-gradient-to-t from-black/70 to-transparent' : 'bg-gradient-to-t from-navy/45 to-transparent'}`} />
+          <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-2">
+            {highlightItems.map((item) => (
+              <span key={item.name} className="rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-900">{item.name}</span>
+            ))}
+          </div>
+        </div>
+        <div className={variant === 'restaurant' ? 'self-center' : 'self-center'}>
+          <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.storyTitle}</p>
+          <h2 className={`mt-3 text-4xl font-black ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{businessName}</h2>
+          <p className={`mt-5 text-lg leading-relaxed ${variant === 'restaurant' ? 'text-slate-300' : 'text-slate-600'}`}>{description}</p>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className={`rounded-3xl border p-5 ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
+              <Store className="h-6 w-6" style={{ color: accentColor }} />
+              <p className={`mt-3 font-bold ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{copy.signature}</p>
+              <p className={`mt-2 text-sm ${variant === 'restaurant' ? 'text-slate-300' : 'text-slate-600'}`}>{highlightItems[0]?.description || description}</p>
+            </div>
+            <div className={`rounded-3xl border p-5 ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
+              <MapPin className="h-6 w-6" style={{ color: accentColor }} />
+              <p className={`mt-3 font-bold ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{copy.quickFacts}</p>
+              <p className={`mt-2 text-sm ${variant === 'restaurant' ? 'text-slate-300' : 'text-slate-600'}`}>{address || email || businessName}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function VariantOffersSection({
+  variant,
+  lang,
+  businessName,
+  services,
+  photos,
+  menuUrl,
+  menuImageUrl,
+  bookingUrl,
+  whatsappNumber,
+  whatsappMessage,
+  accentColor,
+}: {
+  variant: VisualVariant
+  lang: Language
+  businessName: string
+  services: { name: string; price: string; description?: string; photo?: string }[]
+  photos: string[]
+  menuUrl?: string
+  menuImageUrl?: string
+  bookingUrl?: string
+  whatsappNumber?: string
+  whatsappMessage?: string
+  accentColor: string
+}) {
+  if (variant === 'cafe' || variant === 'restaurant') {
+    return <FoodMenuBlock businessName={businessName} services={services} photos={photos} bookingUrl={bookingUrl} whatsappNumber={whatsappNumber} whatsappMessage={whatsappMessage} menuUrl={menuUrl} menuImageUrl={menuImageUrl} lang={lang} />
+  }
+
+  const copy = previewCopy[lang] ?? previewCopy.en
+  const offerItems = services.filter((item) => item.name).slice(0, 6)
+
+  return (
+    <section id="services" className={variant === 'technical' ? 'bg-slate-900 py-24 text-white' : 'bg-[#0f172a] py-24 text-white'}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.servicesTitle}</p>
+            <h2 className="mt-3 text-4xl font-black">{businessName}</h2>
+          </div>
+          <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300">{variant === 'technical' ? copy.trustTitle : copy.experience}</div>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {offerItems.map((item, index) => (
+            <div key={`${item.name}-${index}`} className={`rounded-[1.75rem] border p-6 ${variant === 'technical' ? 'border-white/10 bg-white/[0.04]' : 'border-white/10 bg-white/[0.05]'}`}>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xl font-black text-white">{item.name}</p>
+                  {item.description && <p className="mt-3 text-sm leading-relaxed text-slate-300">{item.description}</p>}
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10" style={{ color: accentColor }}>
+                  {variant === 'technical' ? <ShieldCheck className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+                </div>
+              </div>
+              {item.price && <p className="mt-6 text-3xl font-black" style={{ color: accentColor }}>{item.price}€</p>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function VariantGallerySection({
+  variant,
+  lang,
+  photos,
+  accentColor,
+}: {
+  variant: VisualVariant
+  lang: Language
+  photos: string[]
+  accentColor: string
+}) {
+  const copy = previewCopy[lang] ?? previewCopy.en
+  const displayPhotos = photos.filter(Boolean).slice(0, 5)
+  if (displayPhotos.length === 0) {
+    return <Gallery t={translations[lang]} photos={photos} />
+  }
+
+  return (
+    <section id="gallery" className={variant === 'cafe' ? 'bg-[#fffdf7] py-24' : variant === 'restaurant' ? 'bg-[#0b1120] py-24 text-white' : 'bg-slate-50 py-24'}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.galleryTitle}</p>
+            <h2 className={`mt-3 text-4xl font-black ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{copy.signature}</h2>
+          </div>
+          <div className={`rounded-full px-4 py-2 text-sm ${variant === 'restaurant' ? 'bg-white/10 text-slate-200' : 'bg-white text-slate-600 shadow-sm'}`}>{displayPhotos.length} fotos</div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-12">
+          {displayPhotos.map((src, index) => (
+            <div
+              key={`${src}-${index}`}
+              className={`relative overflow-hidden rounded-[1.75rem] ${index === 0 ? 'md:col-span-7 md:row-span-2 min-h-[420px]' : index === 1 ? 'md:col-span-5 min-h-[200px]' : 'md:col-span-4 min-h-[220px]'}`}
+            >
+              <Image src={src} alt={`Preview gallery ${index + 1}`} fill className="object-cover transition-transform duration-500 hover:scale-105" unoptimized={src.startsWith('data:')} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 
 export default function PreviewPage() {
@@ -122,7 +446,10 @@ export default function PreviewPage() {
   const previewAccent = aiConfig?.style?.accentColor || '#D4AF37'
   const previewHeadline = aiConfig?.copy?.headline?.trim() || userData.businessName
   const previewTagline = aiConfig?.copy?.subheadline?.trim() || null
+  const previewPrimaryCta = aiConfig?.copy?.primaryCta?.trim() || null
+  const previewSecondaryCta = aiConfig?.copy?.secondaryCta?.trim() || null
   const previewCategoryLabel = aiConfig?.template ? `${userData.category} · ${aiConfig.template}` : userData.category
+  const visualVariant = getVisualVariant(userData.category, pageTemplate, aiConfig?.style?.mood)
   const resolvePhotoRole = (role?: string | null) => {
     const match = typeof role === 'string' ? role.match(/^photo_(\d+)$/) : null
     if (!match) return null
@@ -155,17 +482,15 @@ export default function PreviewPage() {
   const renderSection = (section: string) => {
     switch (section) {
       case 'about':
-        return <About key="about" t={t} address={userData.address} email={showEmail ? userData.email : undefined} description={userData.description} businessName={userData.businessName} aboutPhoto={aboutPhoto} />
+        return <VariantAboutSection key="about" variant={visualVariant} lang={lang} businessName={userData.businessName} description={userData.description} address={userData.address} email={showEmail ? userData.email : undefined} aboutPhoto={aboutPhoto} accentColor={previewAccent} services={userData.services} />
       case 'benefits':
         return <Benefits key="benefits" businessName={userData.businessName} />
       case 'menu':
-        return <FoodMenuBlock key="menu" businessName={userData.businessName} services={userData.services} photos={galleryPhotos} bookingUrl={showBooking ? userData.bookingUrl : undefined} whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined} whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined} menuUrl={userData.menuUrl} menuImageUrl={userData.menuImageUrl} lang={lang} />
+        return <VariantOffersSection key="menu" variant={visualVariant} lang={lang} businessName={userData.businessName} services={userData.services} photos={galleryPhotos} bookingUrl={showBooking ? userData.bookingUrl : undefined} whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined} whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined} menuUrl={userData.menuUrl} menuImageUrl={userData.menuImageUrl} accentColor={previewAccent} />
       case 'services':
-        return pageTemplate === 'food'
-          ? <FoodMenuBlock key="services" businessName={userData.businessName} services={userData.services} photos={galleryPhotos} bookingUrl={showBooking ? userData.bookingUrl : undefined} whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined} whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined} menuUrl={userData.menuUrl} menuImageUrl={userData.menuImageUrl} lang={lang} />
-          : <Services key="services" t={t} services={userData.services} />
+        return <VariantOffersSection key="services" variant={visualVariant} lang={lang} businessName={userData.businessName} services={userData.services} photos={galleryPhotos} bookingUrl={showBooking ? userData.bookingUrl : undefined} whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined} whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined} menuUrl={userData.menuUrl} menuImageUrl={userData.menuImageUrl} accentColor={previewAccent} />
       case 'gallery':
-        return <Gallery key="gallery" t={t} photos={galleryPhotos} />
+        return <VariantGallerySection key="gallery" variant={visualVariant} lang={lang} photos={galleryPhotos} accentColor={previewAccent} />
       case 'reviews':
         return <Testimonials key="reviews" showDefaults />
       case 'hours':
@@ -226,10 +551,13 @@ export default function PreviewPage() {
         heroPhoto={heroPhoto}
         headline={previewHeadline}
         tagline={previewTagline}
+        primaryCtaLabel={previewPrimaryCta}
+        secondaryCtaLabel={previewSecondaryCta}
         bookingUrl={showBooking ? userData.bookingUrl : undefined}
         whatsappNumber={showWhatsapp ? userData.whatsappNumber : undefined}
         whatsappMessage={showWhatsapp ? userData.whatsappMessage : undefined}
       />
+      <PreviewMoodBand lang={lang} accentColor={previewAccent} mood={aiConfig?.style?.mood || null} recommendations={aiConfig?.recommendations} variant={visualVariant} />
       {orderedSections.map(renderSection)}
       <ChatbotWidget
         t={t}

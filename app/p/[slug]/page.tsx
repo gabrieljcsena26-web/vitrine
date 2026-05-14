@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase'
 import { getBaseUrl } from '@/lib/utils'
 import PublicPageClient from './PublicPageClient'
 import type { BusinessData } from './PublicPageClient'
+import type { AiPageConfig } from '@/components/AiLandingRenderer'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -19,6 +20,26 @@ async function getBusiness(slug: string): Promise<BusinessData | null> {
 
   if (error || !data) return null
   return data as BusinessData
+}
+
+async function getBusinessPageConfig(businessId: string): Promise<AiPageConfig | null> {
+  const db = createServiceClient()
+  const { data, error } = await db
+    .from('business_page_configs')
+    .select('template, style, sections, copy, photo_roles, recommendations')
+    .eq('business_id', businessId)
+    .maybeSingle()
+
+  if (error || !data) return null
+
+  return {
+    template: typeof data.template === 'string' ? data.template : undefined,
+    style: data.style && typeof data.style === 'object' ? data.style : undefined,
+    sections: Array.isArray(data.sections) ? data.sections.filter((item) => typeof item === 'string') : undefined,
+    copy: data.copy && typeof data.copy === 'object' ? data.copy : undefined,
+    photoRoles: data.photo_roles && typeof data.photo_roles === 'object' ? data.photo_roles : undefined,
+    recommendations: Array.isArray(data.recommendations) ? data.recommendations.filter((item) => typeof item === 'string') : undefined,
+  }
 }
 
 function getDescription(business: Pick<BusinessData, 'description' | 'category' | 'address' | 'owner_name'>) {
@@ -70,6 +91,8 @@ export default async function PublicPage({ params }: PageProps) {
 
   if (!business) notFound()
 
+  const aiConfig = await getBusinessPageConfig(business.id)
+
   const contactMethods = business.social_links?.contactMethods?.length
     ? business.social_links.contactMethods
     : ['whatsapp', 'booking', 'email']
@@ -97,7 +120,7 @@ export default async function PublicPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <PublicPageClient business={business} />
+      <PublicPageClient business={business} aiConfig={aiConfig} />
     </>
   )
 }

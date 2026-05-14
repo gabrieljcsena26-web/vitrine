@@ -33,6 +33,47 @@ const normalizeLang = (lang: unknown): EmailLang => {
   return value === 'pt' || value === 'es' || value === 'fr' || value === 'en' ? value : 'en'
 }
 
+const ALLOWED_AI_SECTIONS = ['about', 'benefits', 'services', 'menu', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact']
+
+function normalizeAiPageConfig(value: unknown) {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, any>
+  const template = ['service', 'food', 'technical'].includes(String(raw.template)) ? String(raw.template) : 'service'
+  const photoRoles = raw.photoRoles && typeof raw.photoRoles === 'object'
+    ? {
+        hero: typeof raw.photoRoles.hero === 'string' ? raw.photoRoles.hero : null,
+        about: typeof raw.photoRoles.about === 'string' ? raw.photoRoles.about : null,
+        gallery: Array.isArray(raw.photoRoles.gallery) ? raw.photoRoles.gallery.filter((item: unknown) => typeof item === 'string').slice(0, 6) : [],
+      }
+    : { hero: null, about: null, gallery: [] }
+
+  return {
+    template,
+    style: raw.style && typeof raw.style === 'object'
+      ? {
+          primaryColor: typeof raw.style.primaryColor === 'string' ? raw.style.primaryColor : null,
+          accentColor: typeof raw.style.accentColor === 'string' ? raw.style.accentColor : null,
+          mood: typeof raw.style.mood === 'string' ? raw.style.mood : null,
+        }
+      : {},
+    sections: Array.isArray(raw.sections)
+      ? raw.sections.filter((item: unknown) => typeof item === 'string' && ALLOWED_AI_SECTIONS.includes(item)).slice(0, 9)
+      : [],
+    copy: raw.copy && typeof raw.copy === 'object'
+      ? {
+          headline: typeof raw.copy.headline === 'string' ? raw.copy.headline.slice(0, 180) : null,
+          subheadline: typeof raw.copy.subheadline === 'string' ? raw.copy.subheadline.slice(0, 320) : null,
+          primaryCta: typeof raw.copy.primaryCta === 'string' ? raw.copy.primaryCta.slice(0, 60) : null,
+          secondaryCta: typeof raw.copy.secondaryCta === 'string' ? raw.copy.secondaryCta.slice(0, 60) : null,
+        }
+      : {},
+    photoRoles,
+    recommendations: Array.isArray(raw.recommendations)
+      ? raw.recommendations.filter((item: unknown) => typeof item === 'string').slice(0, 6)
+      : [],
+  }
+}
+
 const welcomeCopy = {
   pt: {
     subject: 'Sua página Vitrine está online — guarde seu dashboard',
@@ -114,6 +155,7 @@ export async function POST(req: NextRequest) {
       whatsappNumber,
       whatsappMessage,
       plan,
+      aiPageConfig,
     } = body
 
     const normalizedSlug = normalizeSlug(slug)
@@ -279,6 +321,26 @@ export async function POST(req: NextRequest) {
     if (error || !data) {
       console.error('Supabase upsert error:', error)
       return NextResponse.json({ error: error?.message ?? 'Could not save business' }, { status: 500 })
+    }
+
+    const normalizedAiPageConfig = normalizeAiPageConfig(aiPageConfig)
+    if (normalizedAiPageConfig) {
+      const { error: pageConfigError } = await db
+        .from('business_page_configs')
+        .upsert({
+          business_id: data.id,
+          template: normalizedAiPageConfig.template,
+          style: normalizedAiPageConfig.style,
+          sections: normalizedAiPageConfig.sections,
+          copy: normalizedAiPageConfig.copy,
+          photo_roles: normalizedAiPageConfig.photoRoles,
+          recommendations: normalizedAiPageConfig.recommendations,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'business_id' })
+
+      if (pageConfigError) {
+        console.error('Could not persist AI page config:', pageConfigError)
+      }
     }
 
     // Fire-and-forget welcome email with the public page and secure login link (first creation only).

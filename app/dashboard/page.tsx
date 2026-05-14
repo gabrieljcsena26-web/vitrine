@@ -513,6 +513,14 @@ export default function DashboardPage() {
       return
     }
     try {
+      const aiPageConfig = (() => {
+        try {
+          const saved = localStorage.getItem(AI_PREVIEW_STORAGE_KEY)
+          return saved ? JSON.parse(saved) : buildAiPreviewConfig()
+        } catch {
+          return buildAiPreviewConfig()
+        }
+      })()
       const res = await fetch('/api/businesses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -535,6 +543,7 @@ export default function DashboardPage() {
           services,
           hours,
           photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
+          aiPageConfig,
         }),
       })
       if (res.ok) {

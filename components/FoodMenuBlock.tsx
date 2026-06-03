@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { ExternalLink, MessageCircle, QrCode, Utensils } from 'lucide-react'
 import { safeBookingHref, whatsAppHref } from '@/lib/utils'
@@ -123,10 +124,21 @@ export default function FoodMenuBlock({
 }: Props) {
   const text = copy[lang] ?? copy.en
   const menuItems: MenuItem[] = services && services.length > 0 ? services : text.defaultMenu
-  const firstDishPhoto = menuItems.find((item) => item.photo)?.photo
+  const [activeIndex, setActiveIndex] = useState(0)
+  const highlightedItems = menuItems.slice(0, 5)
+  const activeItem = highlightedItems[activeIndex] ?? highlightedItems[0]
+  const firstDishPhoto = activeItem?.photo || menuItems.find((item) => item.photo)?.photo
   const menuPhoto = firstDishPhoto || menuImageUrl || photos?.[1] || photos?.[0]
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
+
+  useEffect(() => {
+    if (highlightedItems.length <= 1) return
+    const interval = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % highlightedItems.length)
+    }, 3600)
+    return () => window.clearInterval(interval)
+  }, [highlightedItems.length])
 
   return (
     <section id="menu" className="py-24 bg-[#fffaf0] text-navy overflow-hidden relative">
@@ -196,7 +208,8 @@ export default function FoodMenuBlock({
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/20 to-transparent" />
                 <div className="absolute left-5 right-5 bottom-5 text-white">
                   <span className="bg-gold text-navy text-[10px] font-black px-2 py-1 rounded-full">{businessName}</span>
-                  <h3 className="text-3xl font-black mt-3">{text.today}</h3>
+                  <h3 className="text-3xl font-black mt-3">{activeItem?.name || text.today}</h3>
+                  {activeItem?.description && <p className="mt-2 line-clamp-2 text-sm text-white/80">{activeItem.description}</p>}
                 </div>
               </div>
 
@@ -212,11 +225,14 @@ export default function FoodMenuBlock({
                 </div>
 
                 <div className="space-y-3">
-                  {menuItems.slice(0, 5).map((item, index) => (
-                    <div key={`${item.name}-${index}`} className="flex items-center justify-between gap-4 rounded-2xl border border-stone-100 bg-stone-50 p-3 hover:border-gold/30 transition-colors">
+                  {highlightedItems.map((item, index) => {
+                    const active = index === activeIndex
+                    return (
+                    <button key={`${item.name}-${index}`} type="button" onClick={() => setActiveIndex(index)} className={`flex w-full items-center justify-between gap-4 rounded-2xl border p-3 text-left transition-all ${active ? 'border-gold/50 bg-gold/10 shadow-sm' : 'border-stone-100 bg-stone-50 hover:border-gold/30 hover:bg-white'}`}>
                       <div className="flex items-center gap-3 min-w-0">
-                        {item.photo && (
+                        {(item.photo || active) && (
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-200">
+                            {item.photo ? (
                             <Image
                               src={item.photo}
                               alt={item.name || text.itemAlt}
@@ -224,6 +240,9 @@ export default function FoodMenuBlock({
                               className="object-cover"
                               unoptimized={item.photo.startsWith('data:')}
                             />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-gold/40 to-navy/80" />
+                            )}
                           </div>
                         )}
                         <div className="min-w-0">
@@ -232,8 +251,8 @@ export default function FoodMenuBlock({
                         </div>
                       </div>
                       {item.price && <span className="text-gold font-black whitespace-nowrap">{item.price}€</span>}
-                    </div>
-                  ))}
+                    </button>
+                  )})}
                 </div>
 
                 <div className="mt-5 rounded-2xl bg-navy text-white p-4 flex items-center gap-3">

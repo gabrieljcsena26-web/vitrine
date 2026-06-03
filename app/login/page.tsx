@@ -84,7 +84,8 @@ export default function LoginPage() {
       const nextDashboards = Array.isArray(json.dashboards) ? json.dashboards : []
       goAfterAuth(nextDashboards)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid email or password')
+      const message = err instanceof Error ? err.message : 'Invalid email or password'
+      setError(message.includes('Missing environment variable') ? 'Dashboard login is not configured in this local environment. Check the Supabase variables in .env.local.' : message)
     } finally {
       setLoading(false)
     }

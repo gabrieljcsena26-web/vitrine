@@ -509,7 +509,6 @@ export default function AiLandingRenderer({
         whatsappNumber={showWhatsapp ? business.whatsappNumber : undefined}
         whatsappMessage={showWhatsapp ? business.whatsappMessage : undefined}
       />
-      {aiConfig && <PreviewMoodBand lang={lang} accentColor={previewAccent} mood={aiConfig?.style?.mood || null} recommendations={aiConfig?.recommendations} variant={visualVariant} categoryLabel={previewCategoryLabel} imageCount={aiConfig.imageCount ?? business.photos?.length ?? 0} sectionCount={orderedSections.length} primaryCta={previewPrimaryCta} secondaryCta={previewSecondaryCta} />}
       {orderedSections.map(renderSection)}
       <ChatbotWidget
         t={t}

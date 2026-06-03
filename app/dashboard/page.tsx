@@ -3,6 +3,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X } from 'lucide-react'
+import { CATEGORY_LABELS_PT, DEFAULT_SERVICE_PRESETS, getCategoriesByTemplate, inferBusinessTemplate, type BusinessTemplate } from '@/lib/business-categories'
 
 interface Service {
   name: string
@@ -70,44 +71,12 @@ const setupCopy = {
   },
 } as const
 
-const CATEGORIES = [
-  'Hair Salon', 'Barber Shop', 'Nail Salon', 'Spa & Wellness', 'Beauty Clinic',
-  'Tattoo Studio', 'Massage Therapy', 'Makeup Artist', 'Personal Trainer',
-  'Restaurant', 'Café', 'Bar', 'Food Truck', 'Bakery', 'Home Cleaning',
-  'Auto Detailing', 'Mechanic', 'Pet Grooming', 'Veterinary Clinic', 'Dental Clinic',
-  'Law Office', 'Consulting Office', 'Accounting Office', 'Yoga Studio', 'Other',
-]
-
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 const PLANS = [
   { id: 'starter', name: 'Starter', pages: '1 page', price: '€10', period: '/month', description: 'Best for one business page' },
   { id: 'pro', name: 'Pro', pages: '3 pages', price: '€15', period: '/month', description: 'For multiple services or locations' },
 ]
-
-const DEFAULT_SERVICES: Record<string, Service[]> = {
-  food: [
-    { name: 'Chef special', price: '14', description: 'Signature dish with your best ingredients' },
-    { name: 'Lunch menu', price: '12', description: 'Daily option for quick decisions' },
-    { name: 'House dessert', price: '6', description: 'Sweet finish customers remember' },
-  ],
-  technical: [
-    { name: 'Initial consultation', price: 'consultation', description: 'First conversation with clear next steps' },
-    { name: 'Case or needs review', price: 'quote', description: 'Objective analysis before booking or hiring' },
-    { name: 'Ongoing support', price: 'monthly', description: 'Professional follow-up for recurring clients' },
-  ],
-  service: [
-    { name: 'Haircut', price: '25', description: 'Clean, professional finish' },
-    { name: 'Color', price: '65', description: 'Personalized color service' },
-  ],
-}
-
-function getTemplateForCategory(category: string): 'service' | 'food' | 'technical' {
-  const value = category.toLowerCase()
-  if (['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => value.includes(item))) return 'food'
-  if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'detailing', 'repair'].some((item) => value.includes(item))) return 'technical'
-  return 'service'
-}
 
 const TEMPLATE_DETAILS = {
   service: {
@@ -146,37 +115,15 @@ const TEMPLATE_COPY: Record<SetupLang, Record<'service' | 'food' | 'technical', 
   },
 }
 
-const CATEGORY_LABELS_PT: Record<string, string> = {
-  'Hair Salon': 'Salão de cabelo',
-  'Barber Shop': 'Barbearia',
-  'Nail Salon': 'Unhas',
-  'Spa & Wellness': 'Spa e bem-estar',
-  'Beauty Clinic': 'Clínica de estética',
-  'Tattoo Studio': 'Estúdio de tatuagem',
-  'Massage Therapy': 'Massagem terapêutica',
-  'Makeup Artist': 'Maquiagem',
-  'Personal Trainer': 'Personal trainer',
-  Restaurant: 'Restaurante',
-  'Café': 'Café',
-  Bar: 'Bar',
-  'Food Truck': 'Food truck',
-  Bakery: 'Padaria',
-  'Home Cleaning': 'Limpeza doméstica',
-  'Auto Detailing': 'Detalhamento automóvel',
-  Mechanic: 'Mecânico',
-  'Pet Grooming': 'Banho e tosa',
-  'Veterinary Clinic': 'Clínica veterinária',
-  'Dental Clinic': 'Clínica dentária',
-  'Law Office': 'Escritório de advocacia',
-  'Consulting Office': 'Consultoria',
-  'Accounting Office': 'Contabilidade',
-  'Yoga Studio': 'Estúdio de yoga',
-  Other: 'Outro',
-}
+const CATEGORY_GROUPS: { template: BusinessTemplate; title: string }[] = [
+  { template: 'service', title: 'Services & appointments' },
+  { template: 'food', title: 'Food, menu & orders' },
+  { template: 'technical', title: 'Trust & professional services' },
+]
 
 function isDefaultServiceList(items: Service[]) {
   const names = items.map((item) => item.name).join('|')
-  return Object.values(DEFAULT_SERVICES).some((list) => list.map((item) => item.name).join('|') === names)
+  return Object.values(DEFAULT_SERVICE_PRESETS).some((list) => list.map((item) => item.name).join('|') === names)
 }
 
 // Configuration
@@ -306,7 +253,7 @@ export default function DashboardPage() {
 
   // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
-  const selectedTemplate = getTemplateForCategory(category)
+  const selectedTemplate = inferBusinessTemplate(category)
   const t = setupCopy[lang]
   const steps = t.stepLabels
   const selectedTemplateDetails = TEMPLATE_COPY[lang][selectedTemplate]
@@ -407,9 +354,9 @@ export default function DashboardPage() {
   }
   const handleCategoryChange = (nextCategory: string) => {
     setCategory(nextCategory)
-    const template = getTemplateForCategory(nextCategory)
+    const template = inferBusinessTemplate(nextCategory)
     if (services.length === 0 || isDefaultServiceList(services)) {
-      setServices(DEFAULT_SERVICES[template])
+      setServices(DEFAULT_SERVICE_PRESETS[template])
     }
   }
   const toggleDay = (i: number) => {
@@ -869,8 +816,12 @@ export default function DashboardPage() {
                     onChange={(e) => handleCategoryChange(e.target.value)}
                     className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
                   >
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{categoryLabel(c)}</option>
+                    {CATEGORY_GROUPS.map((group) => (
+                      <optgroup key={group.template} label={group.title}>
+                        {getCategoriesByTemplate(group.template).map((c) => (
+                          <option key={c.value} value={c.value}>{categoryLabel(c.value)}</option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                   <div className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 to-white p-4">

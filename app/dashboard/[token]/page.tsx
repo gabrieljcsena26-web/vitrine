@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import QRCode from 'qrcode'
 import { generateCampaignSlug, safeBookingHref } from '@/lib/utils'
+import { isFoodBusinessCategory } from '@/lib/business-categories'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type DashboardLang = 'pt' | 'es' | 'en' | 'fr'
@@ -511,6 +512,9 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   const [bookingInput, setBookingInput] = useState('')
   const [whatsappInput, setWhatsappInput] = useState('')
   const [whatsappMessageInput, setWhatsappMessageInput] = useState('')
+  const [menuUrlInput, setMenuUrlInput] = useState('')
+  const [menuImageUrlInput, setMenuImageUrlInput] = useState('')
+  const [menuImageUploading, setMenuImageUploading] = useState(false)
   const [contactSaving, setContactSaving] = useState(false)
   const [contactSaved, setContactSaved] = useState(false)
   const [quickMenuOpen, setQuickMenuOpen] = useState(false)
@@ -565,6 +569,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
       setBookingInput(json.business.bookingUrl ?? '')
       setWhatsappInput(json.business.whatsappNumber ?? '')
       setWhatsappMessageInput(json.business.whatsappMessage ?? '')
+      setMenuUrlInput(json.business.menuUrl ?? '')
+      setMenuImageUrlInput(json.business.menuImageUrl ?? '')
       setDescriptionInput(json.business.description ?? '')
       setAddressInput(json.business.address ?? '')
       setServicesInput(normalizeServiceItems(json.business.services))
@@ -751,6 +757,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
           bookingUrl: bookingInput.trim() || null,
           whatsappNumber: whatsappInput.trim() || null,
           whatsappMessage: whatsappMessageInput.trim() || null,
+          menuUrl: menuUrlInput.trim() || null,
+          menuImageUrl: menuImageUrlInput.trim() || null,
         }),
       })
       setContactSaved(true)
@@ -762,6 +770,8 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             bookingUrl: bookingInput.trim() || null,
             whatsappNumber: whatsappInput.trim() || null,
             whatsappMessage: whatsappMessageInput.trim() || null,
+            menuUrl: menuUrlInput.trim() || null,
+            menuImageUrl: menuImageUrlInput.trim() || null,
           },
         })
       }
@@ -794,6 +804,22 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
 
   const handleRemovePhotoInput = (index: number) => {
     setPhotosInput((items) => items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const handleUploadMenuImageInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setMenuImageUploading(true)
+    try {
+      const dataUrl = await compressQuickEditImage(file)
+      const uploadedUrl = await uploadQuickEditImage(dataUrl, file.name)
+      setMenuImageUrlInput(uploadedUrl)
+    } catch {
+      alert('Nao foi possivel enviar a imagem do menu agora. Tente outra imagem.')
+    } finally {
+      setMenuImageUploading(false)
+    }
   }
 
   const handleUploadPhotoInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -924,7 +950,7 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
   }
   const canQuickEditCurrentPage = business.id === currentBusiness.id
   const stats = selectedPage?.stats ?? data.stats
-  const isFoodBusiness = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery'].some((item) => String(business.category ?? '').toLowerCase().includes(item))
+  const isFoodBusiness = isFoodBusinessCategory(business.category)
   const viewsBySource = data.viewsBySource.length > 0 ? data.viewsBySource : []
   const recentEvents = data.recentEvents.length > 0 ? data.recentEvents : []
   const leads = data.leads.length > 0 ? data.leads : []
@@ -1467,6 +1493,69 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
               </div>
             </div>
 
+            <div className="mb-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="rounded-3xl border border-stone-200/70 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-start gap-4">
+                  <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-navy text-gold">
+                    <QrCode className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-navy">QR Code & Share</h2>
+                    <p className="mt-1 text-sm text-gray-500">Crie um QR rastreavel da landing e copie o link publico para Instagram, WhatsApp, Google ou material impresso.</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-stone-100 bg-stone-50 px-4 py-3">
+                  <p className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-gray-400">{t.publicUrl}</p>
+                  <p className="break-all font-mono text-xs text-navy">{pageUrl}</p>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button onClick={handleCopyPageUrl} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-navy hover:border-gold/40">
+                    {pageUrlCopied ? <><Check className="h-4 w-4 text-green-500" />{t.copied}</> : <><Copy className="h-4 w-4" />{t.copyPage}</>}
+                  </button>
+                  <button onClick={handleCreateTrackedQr} disabled={qrCreating} className="inline-flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-black text-navy hover:bg-yellow-400 disabled:opacity-60">
+                    <QrCode className="h-4 w-4" />
+                    {qrCreating ? t.qrCreating : qrPreviewUrl ? t.qrReady : t.qrCreate}
+                  </button>
+                  <button onClick={() => setActiveSection('channels')} className="inline-flex items-center gap-2 rounded-xl bg-navy px-4 py-2.5 text-sm font-bold text-white hover:bg-navy/90">
+                    <BarChart3 className="h-4 w-4" />
+                    {t.manage}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-gold/20 bg-gradient-to-br from-white via-gold/5 to-stone-50 p-5 shadow-sm">
+                {qrPreviewUrl ? (
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-2xl border border-stone-100 bg-white p-3 shadow-sm">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={qrPreviewUrl} alt="Tracked QR Code preview" className="h-28 w-28" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-black text-navy">{t.qrReady}</p>
+                      <p className="mt-1 text-xs text-gray-500">{t.qrStats}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button onClick={() => downloadQrDataUrl(qrPreviewUrl, `vitrine-${business.slug}-tracked-qr.png`)} className="inline-flex items-center gap-2 rounded-xl bg-navy px-3 py-2 text-xs font-bold text-white hover:bg-navy/90">
+                          <Download className="h-3.5 w-3.5" />
+                          {t.qrDownload}
+                        </button>
+                        <button onClick={handleCopyQrLink} className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-bold text-navy hover:border-gold/40">
+                          {qrCopied ? <><Check className="h-3.5 w-3.5 text-green-500" />{t.qrCopied}</> : <><Copy className="h-3.5 w-3.5" />{t.qrCopy}</>}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[150px] items-center justify-center rounded-2xl border border-dashed border-gold/30 bg-white/70 p-5 text-center">
+                    <div>
+                      <QrCode className="mx-auto h-8 w-8 text-gold" />
+                      <p className="mt-3 text-sm font-black text-navy">{t.qrTitle}</p>
+                      <p className="mt-1 text-xs text-gray-500">{t.qrHint}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <div className="bg-white rounded-2xl shadow-sm border border-stone-200/60 p-6">
                 <div className="flex items-center justify-between mb-5">
@@ -1901,6 +1990,57 @@ export default function OwnerDashboard({ params }: { params: Promise<{ token: st
             />
             <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessageInput.length}/500</p>
           </div>
+
+          {isFoodBusiness && canQuickEditCurrentPage && (
+            <div className="mb-6 rounded-3xl border border-orange-100 bg-orange-50/40 p-5">
+              <div className="mb-4 flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-gold text-navy">
+                  <QrCode className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-navy">Menu, QR Code e cardapio</h3>
+                  <p className="mt-1 text-sm text-gray-500">Atualize o link ou a imagem do menu. O QR do menu passa a apontar para a pagina /menu e fica rastreado com origem menu-qr.</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Menu URL</label>
+                  <input
+                    type="url"
+                    value={menuUrlInput}
+                    onChange={(e) => setMenuUrlInput(e.target.value)}
+                    placeholder="https://example.com/menu.pdf"
+                    className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:border-gold focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-gray-700">Imagem do menu</label>
+                  <div className="grid gap-3 md:grid-cols-[1fr_auto] md:items-center">
+                    <input
+                      type="url"
+                      value={menuImageUrlInput}
+                      onChange={(e) => setMenuImageUrlInput(e.target.value)}
+                      placeholder="https://example.com/menu.jpg"
+                      className="w-full rounded-xl border border-stone-200 px-4 py-3 text-sm focus:border-gold focus:outline-none"
+                    />
+                    <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm font-bold text-navy hover:border-gold/40">
+                      <ImagePlus className="h-4 w-4 text-gold" />
+                      {menuImageUploading ? 'Enviando...' : 'Enviar imagem'}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleUploadMenuImageInput} disabled={menuImageUploading} />
+                    </label>
+                  </div>
+                  {menuImageUrlInput && (
+                    <div className="mt-3 overflow-hidden rounded-2xl border border-orange-100 bg-white p-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={menuImageUrlInput} alt="Menu preview" className="max-h-48 w-full rounded-xl object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleSaveContact}

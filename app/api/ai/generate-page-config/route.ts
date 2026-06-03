@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase'
 import { getCustomerEmailFromRequest } from '@/lib/customer-auth'
 import { rateLimit, rateLimitKey } from '@/lib/rate-limit'
+import { inferBusinessTemplate, type BusinessTemplate } from '@/lib/business-categories'
 
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
 const DEFAULT_MODEL = process.env.OPENAI_VISION_MODEL || 'gpt-5.5'
 const MAX_PHOTOS = 7
 
-type Template = 'food' | 'service' | 'technical'
 type GenerationType = 'initial_preview' | 'full_redesign' | 'menu_ocr' | 'copy_update'
 
 interface SetupPayload {
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     const costCents = generationType === 'full_redesign' || generationType === 'menu_ocr' ? 100 : 0
-    const template = inferTemplate(body.category, body.description)
+    const template = inferBusinessTemplate(body.category, body.description)
 
     const logId = await createGenerationLog({ ownerEmail: ownerEmail ?? null, body, photos, generationType, costCents })
     const fallbackConfig = buildFallbackConfig(body, photos, template)
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function generateWithOpenAI(body: SetupPayload, photos: string[], template: Template) {
+async function generateWithOpenAI(body: SetupPayload, photos: string[], template: BusinessTemplate) {
   const prompt = `You are Vitrine GPT-5.5 Vision. Create a landing-page JSON config only.\n\nBusiness setup:\n- Name: ${body.businessName || 'Unknown'}\n- Category: ${body.category || template}\n- Short intro: ${body.description || 'No description'}\n- Address/city: ${body.address || 'Not provided'}\n- Contact methods: ${(body.contactMethods ?? []).join(', ') || 'not provided'}\n- Has booking link: ${Boolean(body.bookingUrl)}\n- Has WhatsApp: ${Boolean(body.whatsappNumber)}\n- Has menu URL/image: ${Boolean(body.menuUrl)}\n- Existing service/menu items: ${(body.services ?? []).map((item) => item.name).filter(Boolean).join(', ') || 'none'}\n\nRules:\n- Use setup as truth and photos as visual/context evidence.\n- Choose from allowed Vitrine sections only.\n- Do not invent phone, address, prices or legal claims.\n- Prefer conversion: WhatsApp/booking/menu/contact.\n- Return JSON matching the schema.`
 
   const response = await fetch(OPENAI_RESPONSES_URL, {
@@ -185,14 +185,7 @@ function extractOutputText(data: any): string {
   return textChunk?.text ?? ''
 }
 
-function inferTemplate(category?: string, description?: string): Template {
-  const value = `${category ?? ''} ${description ?? ''}`.toLowerCase()
-  if (['restaurant', 'café', 'cafe', 'bar', 'food', 'bakery', 'menu', 'cardápio', 'restaurante'].some((item) => value.includes(item))) return 'food'
-  if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'repair', 'clínica', 'advocacia'].some((item) => value.includes(item))) return 'technical'
-  return 'service'
-}
-
-function buildFallbackConfig(body: SetupPayload, photos: string[], template: Template) {
+function buildFallbackConfig(body: SetupPayload, photos: string[], template: BusinessTemplate) {
   const hasBooking = Boolean(body.bookingUrl)
   const hasWhatsapp = Boolean(body.whatsappNumber)
   const hasMenu = template === 'food' && Boolean(body.menuUrl || body.services?.length)

@@ -17,6 +17,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
 import FoodMenuBlock from '@/components/FoodMenuBlock'
 import PreviewWatermark from '@/components/PreviewWatermark'
+import { inferBusinessTemplate } from '@/lib/business-categories'
 
 export interface AiBusinessData {
   id?: string
@@ -67,7 +68,6 @@ export interface AiPageConfig {
 
 type VisualVariant = 'cafe' | 'restaurant' | 'service' | 'technical'
 
-const FOOD_CATEGORIES = ['restaurant', 'café', 'cafe', 'bar', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria']
 const ALLOWED_PREVIEW_SECTIONS = ['about', 'benefits', 'services', 'menu', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact']
 
 const previewCopy = {
@@ -75,6 +75,13 @@ const previewCopy = {
     setupReadout: 'Leitura do setup',
     mood: 'Clima',
     builtFrom: 'Montada com base em fotos, categoria e proposta do cliente',
+    setupSummary: 'Resumo inteligente',
+    category: 'Categoria',
+    photos: 'Fotos',
+    sections: 'Secoes',
+    ctas: 'CTAs',
+    strategy: 'Direcao da IA',
+    ready: 'Pronta para publicar',
     signature: 'Assinatura visual',
     experience: 'Experiência pensada para converter rápido',
     servicesTitle: 'Destaques que o cliente entende em segundos',
@@ -87,6 +94,13 @@ const previewCopy = {
     setupReadout: 'Setup readout',
     mood: 'Mood',
     builtFrom: 'Built from photos, category and client positioning',
+    setupSummary: 'Intelligent summary',
+    category: 'Category',
+    photos: 'Photos',
+    sections: 'Sections',
+    ctas: 'CTAs',
+    strategy: 'AI direction',
+    ready: 'Ready to publish',
     signature: 'Visual signature',
     experience: 'An experience shaped for quick conversion',
     servicesTitle: 'Highlights customers understand in seconds',
@@ -99,6 +113,13 @@ const previewCopy = {
     setupReadout: 'Lectura del setup',
     mood: 'Estilo',
     builtFrom: 'Construida con fotos, categoría y propuesta del cliente',
+    setupSummary: 'Resumen inteligente',
+    category: 'Categoría',
+    photos: 'Fotos',
+    sections: 'Secciones',
+    ctas: 'CTAs',
+    strategy: 'Dirección de IA',
+    ready: 'Lista para publicar',
     signature: 'Firma visual',
     experience: 'Experiencia pensada para convertir rápido',
     servicesTitle: 'Destacados que el cliente entiende en segundos',
@@ -111,6 +132,13 @@ const previewCopy = {
     setupReadout: 'Lecture du setup',
     mood: 'Style',
     builtFrom: 'Construit à partir des photos, de la catégorie et du positionnement',
+    setupSummary: 'Résumé intelligent',
+    category: 'Catégorie',
+    photos: 'Photos',
+    sections: 'Sections',
+    ctas: 'CTAs',
+    strategy: 'Direction IA',
+    ready: 'Prête à publier',
     signature: 'Signature visuelle',
     experience: 'Une expérience pensée pour convertir vite',
     servicesTitle: 'Des highlights compris en quelques secondes',
@@ -120,13 +148,6 @@ const previewCopy = {
     trustTitle: 'Mise en page de confiance et clarté',
   },
 } as const
-
-function getPageTemplate(category?: string | null) {
-  const normalized = String(category ?? '').toLowerCase()
-  if (FOOD_CATEGORIES.some((item) => normalized.includes(item))) return 'food'
-  if (['clinic', 'dental', 'veterinary', 'law', 'consulting', 'accounting', 'office', 'cleaning', 'auto', 'mechanic', 'repair', 'clínica', 'advocacia'].some((item) => normalized.includes(item))) return 'technical'
-  return 'service'
-}
 
 function getVisualVariant(category: string, template: string, mood?: string | null): VisualVariant {
   const normalizedCategory = category.toLowerCase()
@@ -141,36 +162,73 @@ function getVisualVariant(category: string, template: string, mood?: string | nu
   return 'service'
 }
 
-function PreviewMoodBand({ lang, accentColor, mood, recommendations, variant }: { lang: Language; accentColor: string; mood?: string | null; recommendations?: string[]; variant: VisualVariant }) {
+function PreviewMoodBand({ lang, accentColor, mood, recommendations, variant, categoryLabel, imageCount, sectionCount, primaryCta, secondaryCta }: { lang: Language; accentColor: string; mood?: string | null; recommendations?: string[]; variant: VisualVariant; categoryLabel: string; imageCount: number; sectionCount: number; primaryCta?: string | null; secondaryCta?: string | null }) {
   const copy = previewCopy[lang] ?? previewCopy.en
-  const cards = (recommendations ?? []).slice(0, 3)
+  const cards = (recommendations ?? []).filter(Boolean).slice(0, 3)
+  const ctaLabel = [primaryCta, secondaryCta].filter(Boolean).join(' + ') || copy.experience
+  const surfaceClass = variant === 'restaurant'
+    ? 'bg-[#0b1120] text-white'
+    : variant === 'technical'
+    ? 'bg-slate-50 text-slate-900'
+    : 'bg-[#fffaf0] text-slate-900'
+  const panelClass = variant === 'restaurant'
+    ? 'border-white/10 bg-white/[0.06] shadow-2xl shadow-black/20'
+    : 'border-slate-200 bg-white shadow-xl shadow-slate-200/70'
+  const mutedTextClass = variant === 'restaurant' ? 'text-slate-300' : 'text-slate-500'
 
   return (
-    <section className={`relative overflow-hidden ${variant === 'restaurant' ? 'bg-[#111827] text-white' : variant === 'technical' ? 'bg-slate-100 text-slate-900' : 'bg-white text-slate-900'}`}>
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className={`rounded-[2rem] border p-6 shadow-xl ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.setupReadout}</p>
-              <h2 className="mt-3 text-3xl font-black">{copy.builtFrom}</h2>
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 font-bold ${variant === 'restaurant' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                  <Sparkles className="h-4 w-4" style={{ color: accentColor }} />
-                  {copy.mood}: {mood || copy.signature}
-                </span>
-                <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 font-bold ${variant === 'restaurant' ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-700'}`}>
+    <section className={`relative overflow-hidden ${surfaceClass}`}>
+      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+          <div className="flex flex-col justify-center">
+            <p className="text-xs font-black uppercase tracking-[0.24em]" style={{ color: accentColor }}>{copy.setupReadout}</p>
+            <h2 className="mt-3 max-w-xl text-3xl font-black leading-tight md:text-4xl">{copy.builtFrom}</h2>
+            <p className={`mt-4 max-w-xl text-base leading-relaxed ${mutedTextClass}`}>
+              {copy.strategy}: {mood ? mood.replace(/_/g, ' ') : copy.signature}. {copy.ready}.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              {[categoryLabel, `${imageCount} ${copy.photos.toLowerCase()}`, `${sectionCount} ${copy.sections.toLowerCase()}`].map((item) => (
+                <span key={item} className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold ${variant === 'restaurant' ? 'border-white/10 bg-white/10 text-white' : 'border-slate-200 bg-white text-slate-700'}`}>
                   <BadgeCheck className="h-4 w-4" style={{ color: accentColor }} />
-                  {copy.experience}
+                  {item}
                 </span>
+              ))}
+            </div>
+          </div>
+
+          <div className={`rounded-[1.75rem] border p-5 ${panelClass}`}>
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em]" style={{ color: accentColor }}>{copy.setupSummary}</p>
+                <p className={`mt-1 text-sm ${mutedTextClass}`}>{copy.ctas}: {ctaLabel}</p>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: `${accentColor}22`, color: accentColor }}>
+                <Sparkles className="h-5 w-5" />
               </div>
             </div>
-            <div className="grid gap-3 lg:max-w-xl lg:grid-cols-3">
-              {cards.map((item, index) => (
-                <div key={`${item}-${index}`} className={`rounded-3xl border p-4 text-sm leading-relaxed ${variant === 'restaurant' ? 'border-white/10 bg-white/5 text-gray-200' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
-                  {item}
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { label: copy.category, value: categoryLabel },
+                { label: copy.photos, value: String(imageCount) },
+                { label: copy.sections, value: String(sectionCount) },
+              ].map((item) => (
+                <div key={item.label} className={`rounded-2xl border p-4 ${variant === 'restaurant' ? 'border-white/10 bg-white/[0.04]' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-[10px] font-black uppercase tracking-[0.18em] ${mutedTextClass}`}>{item.label}</p>
+                  <p className="mt-2 text-lg font-black">{item.value}</p>
                 </div>
               ))}
             </div>
+
+            {cards.length > 0 && (
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {cards.map((item, index) => (
+                <div key={`${item}-${index}`} className={`rounded-2xl border p-4 text-sm leading-relaxed ${variant === 'restaurant' ? 'border-white/10 bg-white/[0.04] text-slate-200' : 'border-slate-200 bg-white text-slate-600'}`}>
+                  {item}
+                </div>
+              ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -341,7 +399,9 @@ export default function AiLandingRenderer({
   via?: string
 }) {
   const t = translations[lang]
-  const pageTemplate = aiConfig?.template === 'food' ? 'food' : aiConfig?.template === 'technical' ? 'technical' : getPageTemplate(business.category)
+  const pageTemplate = aiConfig?.template === 'food' || aiConfig?.template === 'technical' || aiConfig?.template === 'service'
+    ? aiConfig.template
+    : inferBusinessTemplate(business.category, business.description)
   const contactMethods = business.contactMethods?.length ? business.contactMethods : ['whatsapp', 'booking', 'email']
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')
@@ -449,7 +509,7 @@ export default function AiLandingRenderer({
         whatsappNumber={showWhatsapp ? business.whatsappNumber : undefined}
         whatsappMessage={showWhatsapp ? business.whatsappMessage : undefined}
       />
-      {aiConfig && <PreviewMoodBand lang={lang} accentColor={previewAccent} mood={aiConfig?.style?.mood || null} recommendations={aiConfig?.recommendations} variant={visualVariant} />}
+      {aiConfig && <PreviewMoodBand lang={lang} accentColor={previewAccent} mood={aiConfig?.style?.mood || null} recommendations={aiConfig?.recommendations} variant={visualVariant} categoryLabel={previewCategoryLabel} imageCount={aiConfig.imageCount ?? business.photos?.length ?? 0} sectionCount={orderedSections.length} primaryCta={previewPrimaryCta} secondaryCta={previewSecondaryCta} />}
       {orderedSections.map(renderSection)}
       <ChatbotWidget
         t={t}

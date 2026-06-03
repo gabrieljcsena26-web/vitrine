@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Scissors, Mail, ArrowRight, CheckCircle, Lock, UserPlus, KeyRound, Eye, EyeOff, Bot, Sparkles, Heart } from 'lucide-react'
+import { Scissors, Mail, ArrowRight, CheckCircle, Lock, UserPlus, KeyRound, Eye, EyeOff } from 'lucide-react'
 
 interface DashboardLink {
   name: string | null
@@ -13,8 +13,6 @@ interface DashboardLink {
 }
 
 type Mode = 'login' | 'signup' | 'verify'
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,8 +27,6 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [lastToken, setLastToken] = useState('')
-  const [passwordFocusDepth, setPasswordFocusDepth] = useState(0)
-  const [mascotPointer, setMascotPointer] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     try {
@@ -155,18 +151,6 @@ export default function LoginPage() {
     : mode === 'verify'
     ? 'Enter the 6-digit code sent to your email to activate your account.'
     : 'Log in with your email and password to continue building and managing your pages.'
-  const passwordGuardActive = passwordFocusDepth > 0
-
-  const handleCardMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1
-    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1
-    setMascotPointer({ x: clamp(x, -1, 1), y: clamp(y, -1, 1) })
-  }
-
-  const handleCardMouseLeave = () => {
-    setMascotPointer({ x: 0, y: 0 })
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -185,15 +169,9 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-5xl" onMouseMove={handleCardMouseMove} onMouseLeave={handleCardMouseLeave}>
-          <div className={`mx-auto grid items-center gap-6 ${dashboards.length > 1 ? 'max-w-md' : 'max-w-4xl lg:grid-cols-[250px_minmax(0,460px)]'}`}>
-            {dashboards.length <= 1 && (
-              <div className="order-2 lg:order-1">
-                <LoginMascot mode={mode} pointer={mascotPointer} guarding={passwordGuardActive} />
-              </div>
-            )}
-
-            <div className={`rounded-2xl border border-slate-200 bg-white p-8 shadow-sm ${dashboards.length > 1 ? '' : 'order-1 lg:order-2'}`}>
+        <div className="w-full max-w-md">
+          <div className="mx-auto">
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
               {dashboards.length > 1 ? (
                 <div className="text-center py-4">
                 <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-5">
@@ -256,8 +234,6 @@ export default function LoginPage() {
                       value={password}
                       setValue={setPassword}
                       placeholder="Your password"
-                      onFocus={() => setPasswordFocusDepth((current) => current + 1)}
-                      onBlur={() => setPasswordFocusDepth((current) => Math.max(0, current - 1))}
                     />
                     <SubmitButton loading={loading} disabled={!email.trim() || !password} label="Open my dashboard" />
                   </form>
@@ -271,16 +247,12 @@ export default function LoginPage() {
                       value={password}
                       setValue={setPassword}
                       placeholder="12+ characters"
-                      onFocus={() => setPasswordFocusDepth((current) => current + 1)}
-                      onBlur={() => setPasswordFocusDepth((current) => Math.max(0, current - 1))}
                     />
                     <PasswordInput
                       label="Repeat password"
                       value={confirmPassword}
                       setValue={setConfirmPassword}
                       placeholder="Repeat your password"
-                      onFocus={() => setPasswordFocusDepth((current) => current + 1)}
-                      onBlur={() => setPasswordFocusDepth((current) => Math.max(0, current - 1))}
                     />
                     <SubmitButton loading={loading} disabled={!email.trim() || password.length < 12 || password !== confirmPassword} label="Send confirmation code" />
                   </form>
@@ -351,106 +323,6 @@ function EmailInput({ email, setEmail, autoFocus }: { email: string; setEmail: (
           placeholder="your@email.com"
           className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-gold transition-colors bg-slate-50 focus:bg-white"
         />
-      </div>
-    </div>
-  )
-}
-
-function LoginMascot({
-  mode,
-  pointer,
-  guarding,
-}: {
-  mode: Mode
-  pointer: { x: number; y: number }
-  guarding: boolean
-}) {
-  const bubbleTitle = guarding ? 'Olhinhos fechados' : mode === 'signup' ? 'Seu robo guia' : mode === 'verify' ? 'Quase la' : 'Bem-vindo de volta'
-  const bubbleText = guarding
-    ? 'Quando voce digita a senha, eu cubro os olhos com as maos e espero quietinho.'
-    : mode === 'signup'
-    ? 'Vou acompanhar seu mouse, piscar os olhos e te guiar com calma ate o painel.'
-    : mode === 'verify'
-    ? 'Falta so confirmar o codigo para abrir seu novo espaco.'
-    : 'Move o mouse devagar e repara nos olhos, maos e anteninha respondendo.'
-  const pupilX = Math.round(pointer.x * 5)
-  const pupilY = Math.round(pointer.y * 3)
-
-  return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_25%_0%,_rgba(34,211,238,0.18),_transparent_34%),radial-gradient(circle_at_80%_20%,_rgba(251,191,36,0.22),_transparent_32%),linear-gradient(155deg,#ffffff_0%,#eef6ff_58%,#fff9ed_100%)] p-5 shadow-sm">
-      <div className="absolute inset-x-8 top-0 h-20 rounded-full bg-gold/10 blur-2xl" />
-      <div className="absolute -right-8 bottom-6 h-28 w-28 rounded-full bg-cyan-200/25 blur-2xl" />
-      <div className="relative">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-          <Bot className="h-3.5 w-3.5 text-gold" />
-          Robo companheiro
-        </div>
-        <h2 className="mt-3 text-base font-black text-slate-800">{bubbleTitle}</h2>
-        <p className="mt-1 max-w-[210px] text-sm leading-relaxed text-slate-500">{bubbleText}</p>
-
-        <div className="mt-5 flex items-end justify-between gap-3">
-          <div className="rounded-2xl border border-white/70 bg-white/75 px-3 py-2 shadow-sm backdrop-blur">
-            <p className="text-[11px] font-semibold text-slate-500">{guarding ? 'Maos nos olhinhos' : 'Seguindo seu movimento'}</p>
-            <div className="mt-2 flex gap-1">
-              {[0, 1, 2].map((dot) => (
-                <span key={dot} className="h-1.5 w-1.5 rounded-full bg-gold/70" style={{ opacity: 0.45 + Math.abs(pointer.x) * 0.3 + dot * 0.08 }} />
-              ))}
-            </div>
-          </div>
-
-          <div className="relative h-48 w-36 shrink-0">
-            <div className="absolute right-0 top-5 flex h-8 w-8 items-center justify-center rounded-2xl border border-gold/30 bg-white/85 text-gold shadow-sm transition-transform" style={{ transform: `translate(${pointer.x * 6}px, ${pointer.y * 3}px) rotate(${pointer.x * 12}deg)` }}>
-              {guarding ? <Heart className="h-4 w-4 fill-gold/30" /> : <Sparkles className="h-4 w-4" />}
-            </div>
-            <div className="absolute left-[67px] top-0 h-2.5 w-2.5 rounded-full bg-gold animate-pulse shadow-[0_0_18px_rgba(212,175,55,0.8)]" />
-            <div className="absolute left-[70px] top-2 h-8 w-1.5 origin-bottom rounded-full bg-slate-600 transition-transform" style={{ transform: `rotate(${pointer.x * 16}deg)` }} />
-            <div className="absolute left-[42px] top-8 h-[74px] w-[74px] rounded-[30px] border border-slate-700 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 shadow-[0_20px_40px_rgba(15,23,42,0.24)] transition-transform" style={{ transform: `translate(${pointer.x * 5}px, ${pointer.y * 2}px) rotate(${pointer.x * 2}deg)` }}>
-              <div className="absolute left-1/2 top-2 h-2.5 w-9 -translate-x-1/2 rounded-full bg-white/10" />
-              <div className="absolute inset-x-2.5 top-5 h-8 overflow-hidden rounded-2xl border border-cyan-200/40 bg-gradient-to-b from-cyan-100 to-cyan-200 shadow-inner">
-                {guarding ? (
-                  <>
-                    <div className="absolute left-3 top-3 h-1.5 w-5 rounded-full bg-slate-800/80" />
-                    <div className="absolute right-3 top-3 h-1.5 w-5 rounded-full bg-slate-800/80" />
-                    <div className="absolute bottom-1 left-1/2 h-1 w-3 -translate-x-1/2 rounded-full bg-rose-300" />
-                  </>
-                ) : (
-                  <>
-                    <div className="absolute left-2.5 top-1.5 h-5 w-5 rounded-full bg-slate-900 shadow-inner">
-                      <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
-                      <div className="absolute left-1.5 top-1 h-1.5 w-1.5 rounded-full bg-white/80" />
-                    </div>
-                    <div className="absolute right-2.5 top-1.5 h-5 w-5 rounded-full bg-slate-900 shadow-inner">
-                      <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-300 transition-transform" style={{ transform: `translate(calc(-50% + ${pupilX}px), calc(-50% + ${pupilY}px))` }} />
-                      <div className="absolute left-1.5 top-1 h-1.5 w-1.5 rounded-full bg-white/80" />
-                    </div>
-                    <div className="absolute bottom-1.5 left-1/2 h-1.5 w-5 -translate-x-1/2 rounded-full bg-slate-700/70" />
-                  </>
-                )}
-              </div>
-              <div className="absolute -bottom-1 left-1/2 h-3 w-9 -translate-x-1/2 rounded-t-xl bg-slate-700" />
-            </div>
-            <div className="absolute left-4 top-[92px] h-4 w-9 origin-right rounded-full bg-slate-800 transition-all" style={{ transform: guarding ? 'translate(22px, -8px) rotate(-28deg)' : `translate(${pointer.x * 2}px, ${pointer.y}px) rotate(18deg)` }} />
-            <div className="absolute left-3 top-[105px] h-6 w-6 rounded-full border border-slate-700 bg-slate-800 transition-all" style={{ transform: guarding ? 'translate(38px, -24px) rotate(-8deg)' : `translate(${pointer.x * 3}px, ${pointer.y * 2}px)` }}>
-              <div className="absolute bottom-0 left-1 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-              <div className="absolute bottom-0 left-2.5 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-              <div className="absolute bottom-0 right-1 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-            </div>
-            <div className="absolute right-3 top-[92px] h-4 w-9 origin-left rounded-full bg-slate-800 transition-all" style={{ transform: guarding ? 'translate(-22px, -8px) rotate(28deg)' : `translate(${pointer.x * 2}px, ${pointer.y}px) rotate(-18deg)` }} />
-            <div className="absolute right-2 top-[105px] h-6 w-6 rounded-full border border-slate-700 bg-slate-800 transition-all" style={{ transform: guarding ? 'translate(-38px, -24px) rotate(8deg)' : `translate(${pointer.x * 3}px, ${pointer.y * 2}px)` }}>
-              <div className="absolute bottom-0 left-1 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-              <div className="absolute bottom-0 left-2.5 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-              <div className="absolute bottom-0 right-1 h-1.5 w-1.5 rounded-full bg-cyan-200" />
-            </div>
-            <div className="absolute left-[51px] top-[101px] h-14 w-12 rounded-[20px] border border-slate-700 bg-gradient-to-br from-slate-800 to-slate-950 shadow-[0_12px_20px_rgba(15,23,42,0.14)] transition-transform" style={{ transform: `translate(${pointer.x * 3}px, ${pointer.y}px)` }}>
-              <div className="absolute left-1/2 top-2 h-1.5 w-6 -translate-x-1/2 rounded-full bg-cyan-200/70" />
-              <div className="absolute left-1/2 top-5 h-5 w-5 -translate-x-1/2 rounded-full border border-gold/40 bg-gold/15" />
-            </div>
-            <div className="absolute left-[54px] top-[150px] h-8 w-3 rounded-full bg-slate-800" />
-            <div className="absolute left-[84px] top-[150px] h-8 w-3 rounded-full bg-slate-800" />
-            <div className="absolute left-[42px] top-[174px] h-3.5 w-8 rounded-full bg-slate-900/85" />
-            <div className="absolute left-[76px] top-[174px] h-3.5 w-8 rounded-full bg-slate-900/85" />
-          </div>
-        </div>
       </div>
     </div>
   )

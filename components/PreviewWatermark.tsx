@@ -50,16 +50,16 @@ export default function PreviewWatermark({ lang = 'en', businessName }: Props) {
   return (
     <>
       <div className="fixed inset-0 z-[60] pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute inset-0 opacity-[0.075]">
-          <div className="absolute left-1/2 top-1/2 w-[140vw] -translate-x-1/2 -translate-y-1/2 -rotate-12 grid grid-cols-2 md:grid-cols-3 gap-12 text-center">
+        <div className="absolute inset-0 opacity-[0.035]">
+          <div className="absolute left-1/2 top-1/2 w-[130vw] -translate-x-1/2 -translate-y-1/2 -rotate-12 grid grid-cols-2 md:grid-cols-3 gap-16 text-center">
             {Array.from({ length: 18 }).map((_, index) => (
-              <span key={index} className="text-4xl md:text-6xl font-black tracking-[0.18em] text-navy whitespace-nowrap">
+              <span key={index} className="text-3xl md:text-5xl font-black tracking-[0.18em] text-navy whitespace-nowrap">
                 {t.watermark}
               </span>
             ))}
           </div>
         </div>
-        <div className="absolute top-24 -right-16 rotate-45 bg-gold text-navy px-20 py-2 text-xs font-black uppercase tracking-[0.2em] shadow-lg">
+        <div className="absolute top-24 -right-16 rotate-45 bg-gold/95 text-navy px-20 py-2 text-[10px] font-black uppercase tracking-[0.2em] shadow-lg">
           {t.ribbon}
         </div>
       </div>

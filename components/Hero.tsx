@@ -4,6 +4,7 @@ import type { Translations } from '@/lib/translations'
 import Image from 'next/image'
 import { CalendarDays, MessageCircle } from 'lucide-react'
 import { safeBookingHref, whatsAppHref } from '@/lib/utils'
+import { isFoodBusinessCategory } from '@/lib/business-categories'
 import LeadCaptureModal from './LeadCaptureModal'
 
 interface Props {
@@ -45,7 +46,7 @@ export default function Hero({
     eventType: 'booking_click' | 'whatsapp_click'
   } | null>(null)
   const normalizedCategory = String(category ?? '').toLowerCase()
-  const isFood = normalizedCategory.includes('restaurant') || normalizedCategory.includes('café') || normalizedCategory.includes('cafe') || normalizedCategory.includes('bar') || normalizedCategory.includes('food') || normalizedCategory.includes('bakery')
+  const isFood = isFoodBusinessCategory(category)
   const defaultHero = isFood
     ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1920&auto=format&fit=crop'
     : normalizedCategory.includes('cleaning') || normalizedCategory.includes('auto') || normalizedCategory.includes('mechanic')

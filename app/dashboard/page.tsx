@@ -838,6 +838,34 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
+                  <div className="mt-3 rounded-[1.75rem] border border-stone-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Onde isso aparece' : 'Where this appears'}</p>
+                        <h3 className="mt-1 font-black text-navy">{lang === 'pt' ? 'Mapa da landing que a IA vai montar' : 'Landing map generated from your setup'}</h3>
+                      </div>
+                      <Sparkles className="h-5 w-5 flex-shrink-0 text-gold" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {[
+                        { icon: Upload, title: lang === 'pt' ? 'Foto principal + nome' : 'Hero photo + name', text: lang === 'pt' ? 'Primeira dobra da landing, com CTA principal.' : 'First screen of the landing, with the main CTA.' },
+                        { icon: Info, title: lang === 'pt' ? 'Descrição + proposta' : 'Description + positioning', text: lang === 'pt' ? 'Bloco sobre o negócio e motivo para confiar.' : 'About block and reason to trust the business.' },
+                        { icon: selectedTemplate === 'food' ? Utensils : CalendarDays, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu e destaques' : 'Menu and highlights') : (lang === 'pt' ? 'Serviços e preços' : 'Services and prices'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Itens do menu viram cards clicáveis e área de decisão.' : 'Menu items become clickable cards and decision blocks.') : (lang === 'pt' ? 'Itens aparecem em cards de oferta claros.' : 'Items appear as clear offer cards.') },
+                        { icon: MessageCircle, title: lang === 'pt' ? 'Contato e conversão' : 'Contact and conversion', text: lang === 'pt' ? 'WhatsApp, reserva, email, horários e localização.' : 'WhatsApp, booking, email, hours and location.' },
+                      ].map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <div key={item.title} className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
+                            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-gold/10 text-gold">
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <p className="font-black text-navy">{item.title}</p>
+                            <p className="mt-1 text-sm leading-relaxed text-gray-500">{item.text}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t.shortDescription}</label>

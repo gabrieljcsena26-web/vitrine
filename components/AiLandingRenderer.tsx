@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import { BadgeCheck, Clock3, MapPin, ShieldCheck, Sparkles, Store } from 'lucide-react'
 import { translations } from '@/lib/translations'
@@ -239,6 +240,8 @@ function PreviewMoodBand({ lang, accentColor, mood, recommendations, variant, ca
 function VariantAboutSection({ variant, lang, businessName, description, address, email, aboutPhoto, accentColor, services }: { variant: VisualVariant; lang: Language; businessName: string; description: string; address?: string; email?: string; aboutPhoto?: string; accentColor: string; services: { name: string; price: string; description?: string }[] }) {
   const copy = previewCopy[lang] ?? previewCopy.en
   const highlightItems = services.filter((item) => item.name).slice(0, 3)
+  const [activeHighlightIndex, setActiveHighlightIndex] = useState(0)
+  const activeHighlight = highlightItems[activeHighlightIndex] ?? highlightItems[0]
   const imageSrc = aboutPhoto || 'https://picsum.photos/seed/vitrine-preview-about/1200/900'
 
   if (variant === 'technical') {
@@ -282,8 +285,8 @@ function VariantAboutSection({ variant, lang, businessName, description, address
           <Image src={imageSrc} alt={businessName} fill className="object-cover" unoptimized={imageSrc.startsWith('data:')} />
           <div className={`absolute inset-0 ${variant === 'restaurant' ? 'bg-gradient-to-t from-black/70 to-transparent' : 'bg-gradient-to-t from-navy/45 to-transparent'}`} />
           <div className="absolute bottom-6 left-6 right-6 flex flex-wrap gap-2">
-            {highlightItems.map((item) => (
-              <span key={item.name} className="rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-900">{item.name}</span>
+            {highlightItems.map((item, index) => (
+              <button key={item.name} type="button" onClick={() => setActiveHighlightIndex(index)} className={`rounded-full px-4 py-2 text-sm font-bold transition-all ${activeHighlightIndex === index ? 'bg-gold text-navy shadow-lg shadow-black/10' : 'bg-white/90 text-slate-900 hover:bg-white'}`}>{item.name}</button>
             ))}
           </div>
         </div>
@@ -294,8 +297,9 @@ function VariantAboutSection({ variant, lang, businessName, description, address
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className={`rounded-3xl border p-5 ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
               <Store className="h-6 w-6" style={{ color: accentColor }} />
-              <p className={`mt-3 font-bold ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{copy.signature}</p>
-              <p className={`mt-2 text-sm ${variant === 'restaurant' ? 'text-slate-300' : 'text-slate-600'}`}>{highlightItems[0]?.description || description}</p>
+              <p className={`mt-3 font-bold ${variant === 'restaurant' ? 'text-white' : 'text-slate-900'}`}>{activeHighlight?.name || copy.signature}</p>
+              <p className={`mt-2 text-sm ${variant === 'restaurant' ? 'text-slate-300' : 'text-slate-600'}`}>{activeHighlight?.description || description}</p>
+              {activeHighlight?.price && <p className="mt-4 inline-flex rounded-full px-3 py-1 text-sm font-black" style={{ backgroundColor: `${accentColor}22`, color: accentColor }}>{activeHighlight.price}€</p>}
             </div>
             <div className={`rounded-3xl border p-5 ${variant === 'restaurant' ? 'border-white/10 bg-white/5' : 'border-slate-200 bg-white'}`}>
               <MapPin className="h-6 w-6" style={{ color: accentColor }} />
@@ -412,7 +416,7 @@ export default function AiLandingRenderer({
   const previewTagline = aiConfig?.copy?.subheadline?.trim() || null
   const previewPrimaryCta = aiConfig?.copy?.primaryCta?.trim() || null
   const previewSecondaryCta = aiConfig?.copy?.secondaryCta?.trim() || null
-  const previewCategoryLabel = aiConfig?.template ? `${business.category} · ${aiConfig.template}` : business.category
+  const previewCategoryLabel = business.category
   const visualVariant = getVisualVariant(business.category, pageTemplate, aiConfig?.style?.mood)
   const resolvePhotoRole = (role?: string | null) => {
     const match = typeof role === 'string' ? role.match(/^photo_(\d+)$/) : null
@@ -448,7 +452,7 @@ export default function AiLandingRenderer({
       case 'about':
         return <VariantAboutSection key="about" variant={visualVariant} lang={lang} businessName={business.businessName} description={business.description} address={business.address} email={publicEmail} aboutPhoto={aboutPhoto} accentColor={previewAccent} services={business.services} />
       case 'benefits':
-        return <Benefits key="benefits" businessName={business.businessName} benefits={business.benefits ?? undefined} />
+        return <Benefits key="benefits" businessName={business.businessName} benefits={business.benefits ?? undefined} lang={lang} />
       case 'menu':
       case 'services':
         return <VariantOffersSection key={section} variant={visualVariant} lang={lang} businessName={business.businessName} services={business.services} photos={galleryPhotos} bookingUrl={showBooking ? business.bookingUrl : undefined} whatsappNumber={showWhatsapp ? business.whatsappNumber : undefined} whatsappMessage={showWhatsapp ? business.whatsappMessage : undefined} menuUrl={business.menuUrl} menuImageUrl={business.menuImageUrl} accentColor={previewAccent} />
@@ -472,16 +476,6 @@ export default function AiLandingRenderer({
   return (
     <main className="bg-white" style={{ ['--vitrine-ai-primary' as string]: aiConfig?.style?.primaryColor || '#0F172A', ['--vitrine-ai-accent' as string]: previewAccent }}>
       {showWatermark && <PreviewWatermark lang={lang} businessName={business.businessName} />}
-      {aiConfig && previewMode && (
-        <div className="fixed left-4 top-20 z-[75] max-w-sm rounded-3xl border border-white/10 bg-navy/95 p-4 text-white shadow-2xl backdrop-blur">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full" style={{ backgroundColor: previewAccent }} />
-            <p className="text-[10px] font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Prévia estruturada por IA' : lang === 'es' ? 'Vista previa estructurada por IA' : lang === 'fr' ? 'Aperçu structuré par IA' : 'AI structured preview'}</p>
-          </div>
-          <p className="mt-2 text-sm font-bold">{aiConfig.template ?? pageTemplate} layout · {aiConfig.imageCount ?? business.photos?.length ?? 0} {lang === 'pt' ? 'fotos analisadas' : lang === 'es' ? 'fotos analizadas' : lang === 'fr' ? 'photos analysées' : 'photos analyzed'}</p>
-          {aiConfig.style?.mood && <p className="mt-1 text-xs text-gray-300">{lang === 'pt' ? 'Estilo' : lang === 'es' ? 'Estilo' : lang === 'fr' ? 'Style' : 'Mood'}: {aiConfig.style.mood.replace(/_/g, ' ')}</p>}
-        </div>
-      )}
       <Navbar
         t={t}
         lang={lang}

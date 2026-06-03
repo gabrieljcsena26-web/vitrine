@@ -55,6 +55,10 @@ export default function Hero({
   const bgSrc = heroPhoto || defaultHero
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
+  const foodPrimaryLabel = t.hero.bookNow === 'Agendar' ? 'Pedir ou reservar' : t.hero.bookNow === 'Reservar' ? 'Pedir ou reservar' : 'Reserve or order'
+  const foodSecondaryLabel = t.hero.seeServices === 'Ver serviços' ? 'Ver menu' : 'View menu'
+  const resolvedPrimaryLabel = primaryCtaLabel && !['Contact us', 'Book now'].includes(primaryCtaLabel) ? primaryCtaLabel : (isFood ? foodPrimaryLabel : t.hero.bookNow)
+  const resolvedSecondaryLabel = secondaryCtaLabel && !['View services'].includes(secondaryCtaLabel) ? secondaryCtaLabel : (isFood ? foodSecondaryLabel : t.hero.seeServices)
 
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -73,7 +77,7 @@ export default function Hero({
 
       {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 rounded-full px-4 py-2 mb-6">
+        <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 rounded-full px-4 py-2 mb-6 backdrop-blur">
           <span className="w-2 h-2 bg-gold rounded-full animate-pulse" />
           <span className="text-gold text-sm font-medium">{categoryLabel || category || 'Hair Salon · Madrid'}</span>
         </div>
@@ -85,16 +89,16 @@ export default function Hero({
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <a
-            href={bookingHref ?? '#contact'}
+            href={bookingHref ?? whatsappHref ?? '#contact'}
             onClick={(e) => {
-              if (!bookingHref) return
+              if (!bookingHref && !whatsappHref) return
               e.preventDefault()
-              setLeadAction({ label: t.hero.bookNow, href: bookingHref, eventType: 'booking_click' })
+              setLeadAction(bookingHref ? { label: resolvedPrimaryLabel, href: bookingHref, eventType: 'booking_click' } : { label: 'WhatsApp', href: whatsappHref!, eventType: 'whatsapp_click' })
             }}
             className="inline-flex items-center justify-center gap-2 bg-gold text-navy px-8 py-4 rounded-full font-bold text-lg hover:bg-yellow-400 transition-all hover:scale-105 shadow-lg shadow-gold/30"
           >
             <CalendarDays className="w-5 h-5" />
-            {primaryCtaLabel || (isFood ? 'Reserve or order' : t.hero.bookNow)}
+            {resolvedPrimaryLabel}
           </a>
           {whatsappHref && (
             <a
@@ -113,8 +117,13 @@ export default function Hero({
             href={isFood ? '#menu' : '#services'}
             className="inline-flex items-center justify-center bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-white/20 transition-all"
           >
-            {secondaryCtaLabel || (isFood ? 'View menu' : t.hero.seeServices)}
+            {resolvedSecondaryLabel}
           </a>
+        </div>
+        <div className="mt-8 flex flex-wrap justify-center gap-3 text-xs font-bold text-white/75">
+          {(isFood ? ['Menu visual', 'WhatsApp direto', 'Horários e localização'] : ['Serviços claros', 'Contato direto', 'Agendamento fácil']).map((item) => (
+            <span key={item} className="rounded-full border border-white/15 bg-white/10 px-4 py-2 backdrop-blur">{item}</span>
+          ))}
         </div>
       </div>
 

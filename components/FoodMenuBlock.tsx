@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import QRCode from 'qrcode'
 import { ExternalLink, MessageCircle, QrCode, Utensils } from 'lucide-react'
 import { safeBookingHref, whatsAppHref } from '@/lib/utils'
 import type { Language } from '@/lib/translations'
@@ -125,12 +126,14 @@ export default function FoodMenuBlock({
   const text = copy[lang] ?? copy.en
   const menuItems: MenuItem[] = services && services.length > 0 ? services : text.defaultMenu
   const [activeIndex, setActiveIndex] = useState(0)
+  const [menuQrDataUrl, setMenuQrDataUrl] = useState('')
   const highlightedItems = menuItems.slice(0, 5)
   const activeItem = highlightedItems[activeIndex] ?? highlightedItems[0]
   const firstDishPhoto = activeItem?.photo || menuItems.find((item) => item.photo)?.photo
   const menuPhoto = firstDishPhoto || menuImageUrl || photos?.[1] || photos?.[0]
   const bookingHref = bookingUrl ? safeBookingHref(bookingUrl) : null
   const whatsappHref = whatsappNumber ? whatsAppHref(whatsappNumber, whatsappMessage ?? undefined) : null
+  const hasCompleteMenu = Boolean(menuUrl || menuImageUrl)
 
   useEffect(() => {
     if (highlightedItems.length <= 1) return
@@ -139,6 +142,18 @@ export default function FoodMenuBlock({
     }, 3600)
     return () => window.clearInterval(interval)
   }, [highlightedItems.length])
+
+  useEffect(() => {
+    if (!hasCompleteMenu) {
+      setMenuQrDataUrl('')
+      return
+    }
+
+    const targetUrl = menuUrl || `${window.location.href.split('#')[0]}#full-menu`
+    QRCode.toDataURL(targetUrl, { width: 160, margin: 1, color: { dark: '#0B1226', light: '#FFFFFF' } })
+      .then(setMenuQrDataUrl)
+      .catch(() => setMenuQrDataUrl(''))
+  }, [hasCompleteMenu, menuImageUrl, menuUrl])
 
   return (
     <section id="menu" className="py-24 bg-[#fffaf0] text-navy overflow-hidden relative">
@@ -255,15 +270,22 @@ export default function FoodMenuBlock({
                   )})}
                 </div>
 
-                <div className="mt-5 rounded-2xl bg-navy text-white p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
-                    <QrCode className="w-5 h-5" />
+                {hasCompleteMenu && (
+                  <div className="mt-5 rounded-2xl bg-navy text-white p-4 flex items-center gap-4">
+                    <div className="h-20 w-20 rounded-xl bg-white p-1.5 flex items-center justify-center flex-shrink-0">
+                      {menuQrDataUrl ? (
+                        <Image src={menuQrDataUrl} alt={text.qrTitle} width={72} height={72} unoptimized />
+                      ) : (
+                        <QrCode className="w-8 h-8 text-navy" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-black text-sm">{text.qrTitle}</p>
+                      <p className="mt-1 text-xs text-gray-300">{text.qrText}</p>
+                      <a href={menuUrl || '#full-menu'} target={menuUrl ? '_blank' : undefined} rel={menuUrl ? 'noopener noreferrer' : undefined} className="mt-2 inline-flex text-xs font-black text-gold hover:text-yellow-300">{text.fullMenu}</a>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-black text-sm">{text.qrTitle}</p>
-                      <p className="text-xs text-gray-300">{text.qrText}</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
               {menuImageUrl && (

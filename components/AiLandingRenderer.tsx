@@ -18,6 +18,7 @@ import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
 import FoodMenuBlock from '@/components/FoodMenuBlock'
 import PreviewWatermark from '@/components/PreviewWatermark'
+import ProfessionalLandingTemplate from '@/components/ProfessionalLandingTemplate'
 import { inferBusinessTemplate } from '@/lib/business-categories'
 
 export interface AiBusinessData {
@@ -406,6 +407,22 @@ export default function AiLandingRenderer({
   const pageTemplate = aiConfig?.template === 'food' || aiConfig?.template === 'technical' || aiConfig?.template === 'service'
     ? aiConfig.template
     : inferBusinessTemplate(business.category, business.description)
+
+  if (pageTemplate === 'technical') {
+    return (
+      <ProfessionalLandingTemplate
+        business={business}
+        aiConfig={aiConfig}
+        lang={lang}
+        setLang={setLang}
+        previewMode={previewMode}
+        showWatermark={showWatermark}
+        businessId={businessId}
+        via={via}
+      />
+    )
+  }
+
   const contactMethods = business.contactMethods?.length ? business.contactMethods : ['whatsapp', 'booking', 'email']
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')
@@ -430,8 +447,11 @@ export default function AiLandingRenderer({
   const aiSections = previewSections
     .filter((section) => ALLOWED_PREVIEW_SECTIONS.includes(section))
     .filter((section) => !(pageTemplate === 'food' && section === 'services' && previewSections.includes('menu')))
+    .filter((section) => !(pageTemplate === 'food' && ['about', 'benefits', 'hours'].includes(section)))
     .filter((section, index, all) => all.indexOf(section) === index)
-  const orderedSections = aiSections.length ? aiSections : pageTemplate === 'food' ? ['about', 'menu', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact'] : ['about', 'benefits', 'services', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact']
+  const orderedSections = pageTemplate === 'food'
+    ? ['menu', ...(aiSections.length ? aiSections : ['gallery', 'reviews', 'location', 'faq', 'contact']).filter((section) => !['menu', 'services', 'about', 'benefits', 'hours'].includes(section))]
+    : aiSections.length ? aiSections : ['about', 'benefits', 'services', 'gallery', 'reviews', 'hours', 'location', 'faq', 'contact']
   const publicEmail = showEmail ? business.email : undefined
   const contactSection = ((showBooking && business.bookingUrl) || (showWhatsapp && business.whatsappNumber)) ? (
     <ContactActions
@@ -463,7 +483,7 @@ export default function AiLandingRenderer({
       case 'hours':
         return <Hours key="hours" t={t} hours={business.hours} businessName={business.businessName} />
       case 'location':
-        return <LocationMap key="location" address={business.address} mapUrl={business.mapUrl} businessName={business.businessName} />
+        return <LocationMap key="location" address={business.address} mapUrl={business.mapUrl} businessName={business.businessName} hours={pageTemplate === 'food' ? business.hours : undefined} t={t} />
       case 'faq':
         return <FAQ key="faq" items={business.faqs as any} />
       case 'contact':

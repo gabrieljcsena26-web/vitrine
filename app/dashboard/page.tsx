@@ -2,7 +2,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X, QrCode } from 'lucide-react'
 import { CATEGORY_LABELS_PT, DEFAULT_SERVICE_PRESETS, getCategoriesByTemplate, inferBusinessTemplate, type BusinessTemplate } from '@/lib/business-categories'
 
 interface Service {
@@ -258,6 +258,24 @@ export default function DashboardPage() {
   const steps = t.stepLabels
   const selectedTemplateDetails = TEMPLATE_COPY[lang][selectedTemplate]
   const categoryLabel = (value: string) => (lang === 'pt' ? CATEGORY_LABELS_PT[value] ?? value : value)
+  const serviceTypeOptions = selectedTemplate === 'food'
+    ? [
+        { name: lang === 'pt' ? 'Prato principal' : 'Main dish', description: lang === 'pt' ? 'Item forte para aparecer primeiro no menu.' : 'Strong item to feature first in the menu.' },
+        { name: lang === 'pt' ? 'Bebida' : 'Drink', description: lang === 'pt' ? 'Café, sumo, cocktail ou bebida assinatura.' : 'Coffee, juice, cocktail or signature drink.' },
+        { name: lang === 'pt' ? 'Sobremesa' : 'Dessert', description: lang === 'pt' ? 'Final doce para aumentar o ticket.' : 'Sweet finish to increase the order value.' },
+        { name: lang === 'pt' ? 'Combo' : 'Combo', description: lang === 'pt' ? 'Oferta pronta para almoço, jantar ou take-away.' : 'Ready offer for lunch, dinner or takeaway.' },
+      ]
+    : selectedTemplate === 'technical'
+    ? [
+        { name: lang === 'pt' ? 'Orçamento' : 'Quote request', description: lang === 'pt' ? 'Pedido rápido para avaliar preço e disponibilidade.' : 'Quick request to evaluate price and availability.' },
+        { name: lang === 'pt' ? 'Reparação' : 'Repair', description: lang === 'pt' ? 'Serviço prático com chamada direta.' : 'Practical service with direct contact.' },
+        { name: lang === 'pt' ? 'Instalação' : 'Installation', description: lang === 'pt' ? 'Trabalho técnico com explicação simples.' : 'Technical work with a simple explanation.' },
+      ]
+    : [
+        { name: lang === 'pt' ? 'Serviço principal' : 'Main service', description: lang === 'pt' ? 'O serviço mais vendido ou mais importante.' : 'The most important or most requested service.' },
+        { name: lang === 'pt' ? 'Pacote' : 'Package', description: lang === 'pt' ? 'Oferta combinada para facilitar a decisão.' : 'Bundled offer to make decisions easier.' },
+        { name: lang === 'pt' ? 'Consulta' : 'Consultation', description: lang === 'pt' ? 'Primeiro contacto, avaliação ou marcação.' : 'First contact, evaluation or appointment.' },
+      ]
   const contactMethodSelected = (method: ContactMethod) => contactMethods.includes(method)
   const toggleContactMethod = (method: ContactMethod) => {
     setContactMethods((items) => {
@@ -849,9 +867,9 @@ export default function DashboardPage() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       {[
                         { icon: Upload, title: lang === 'pt' ? 'Foto principal + nome' : 'Hero photo + name', text: lang === 'pt' ? 'Primeira dobra da landing, com CTA principal.' : 'First screen of the landing, with the main CTA.' },
-                        { icon: Info, title: lang === 'pt' ? 'Descrição + proposta' : 'Description + positioning', text: lang === 'pt' ? 'Bloco sobre o negócio e motivo para confiar.' : 'About block and reason to trust the business.' },
-                        { icon: selectedTemplate === 'food' ? Utensils : CalendarDays, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu e destaques' : 'Menu and highlights') : (lang === 'pt' ? 'Serviços e preços' : 'Services and prices'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Itens do menu viram cards clicáveis e área de decisão.' : 'Menu items become clickable cards and decision blocks.') : (lang === 'pt' ? 'Itens aparecem em cards de oferta claros.' : 'Items appear as clear offer cards.') },
-                        { icon: MessageCircle, title: lang === 'pt' ? 'Contato e conversão' : 'Contact and conversion', text: lang === 'pt' ? 'WhatsApp, reserva, email, horários e localização.' : 'WhatsApp, booking, email, hours and location.' },
+                        { icon: selectedTemplate === 'food' ? Utensils : Info, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Experiência de menu' : 'Menu experience') : (lang === 'pt' ? 'Descrição + proposta' : 'Description + positioning'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Depois do hero, a página vai direto para os itens clicáveis do menu.' : 'After the hero, the page goes straight into clickable menu items.') : (lang === 'pt' ? 'Bloco sobre o negócio e motivo para confiar.' : 'About block and reason to trust the business.') },
+                        { icon: selectedTemplate === 'food' ? QrCode : CalendarDays, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu completo + QR' : 'Full menu + QR') : (lang === 'pt' ? 'Serviços e preços' : 'Services and prices'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Link ou foto do cardápio vira botão, imagem completa e QR Code.' : 'A full menu link or photo becomes a button, full image and QR Code.') : (lang === 'pt' ? 'Itens aparecem em cards de oferta claros.' : 'Items appear as clear offer cards.') },
+                        { icon: MessageCircle, title: lang === 'pt' ? 'Contato, horários e localização' : 'Contact, hours and location', text: lang === 'pt' ? 'WhatsApp, reserva, morada e horários ficam juntos para decisão rápida.' : 'WhatsApp, booking, address and hours stay together for quick decisions.' },
                       ].map((item) => {
                         const Icon = item.icon
                         return (
@@ -1080,11 +1098,28 @@ export default function DashboardPage() {
               </h2>
               <p className="text-sm text-gray-500 mb-6">
                 {selectedTemplate === 'food'
-                  ? t.foodServicesText
+                  ? (lang === 'pt' ? 'Escolha os tipos de itens que oferece e complete nome, preço, descrição e foto. Estes itens aparecem como a primeira experiência depois do hero.' : t.foodServicesText)
                   : selectedTemplate === 'technical'
                   ? t.technicalServicesText
                   : t.servicesText}
               </p>
+
+              <div className="mb-6 rounded-[1.75rem] border border-gold/20 bg-gold/5 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Escolha o tipo' : 'Choose the type'}</p>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {serviceTypeOptions.map((option) => (
+                    <button
+                      key={option.name}
+                      type="button"
+                      onClick={() => setServices([...services, selectedTemplate === 'food' ? { name: option.name, price: '', description: option.description, photo: '' } : { name: option.name, price: '', description: option.description }])}
+                      className="rounded-2xl border border-white bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10"
+                    >
+                      <p className="font-black text-navy">{option.name}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-gray-500">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Services */}
               <div className="mb-8">

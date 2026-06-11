@@ -300,7 +300,7 @@ export default function FoodMenuBlock({
 
                 {visibleCarouselItems.length > 0 ? (
                   <div className="border-t border-[color:var(--line)] bg-white px-4 py-4">
-                    <div className="flex gap-3 pb-1">
+                    <div className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
                       {visibleCarouselItems.map((item) => {
                         const itemIndex = highlightedItems.findIndex((candidate) => candidate === item)
                         const active = itemIndex === activeIndex
@@ -309,11 +309,11 @@ export default function FoodMenuBlock({
                             key={`${item.name}-${itemIndex}-photo`}
                             type="button"
                             onClick={() => setActiveIndex(itemIndex)}
-                            className={`group relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-2xl border transition-all ${active ? 'border-[color:var(--accent)] shadow-lg ring-2 ring-[color:var(--accent)]/30 -translate-y-1' : 'border-stone-200 hover:border-[color:var(--accent)]/40 hover:-translate-y-0.5'}`}
+                            className={`group relative h-28 w-28 flex-shrink-0 overflow-hidden rounded-2xl border transition-all ${active ? 'border-[color:var(--accent)] shadow-lg ring-2 ring-[color:var(--accent)]/30 -translate-y-1' : 'border-stone-200 hover:border-[color:var(--accent)]/40 hover:-translate-y-0.5'}`}
                           >
                             {item.photo ? <Image src={item.photo} alt={item.name || text.itemAlt} fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized={item.photo.startsWith('data:')} /> : null}
-                            <div className={`absolute inset-0 ${active ? 'bg-black/10' : 'bg-black/20 group-hover:bg-black/10'}`} />
-                            <span className="absolute inset-x-2 bottom-2 line-clamp-2 text-left text-[10px] font-black uppercase tracking-[0.12em] text-white drop-shadow">{item.name || text.itemAlt}</span>
+                            <div className={`absolute inset-0 ${active ? 'bg-black/10' : 'bg-black/25 group-hover:bg-black/15'}`} />
+                            <span className="absolute inset-x-2 bottom-2 line-clamp-2 text-left text-[11px] font-black uppercase tracking-[0.12em] text-white drop-shadow">{item.name || text.itemAlt}</span>
                           </button>
                         )
                       })}
@@ -322,7 +322,7 @@ export default function FoodMenuBlock({
                 ) : null}
               </div>
 
-              <div className="p-6">
+              <div className="p-6 sm:p-7">
                 <div className="flex items-center justify-between gap-3 mb-5">
                   <div>
                     <p className="text-xs text-[color:var(--accent-strong)] font-black uppercase tracking-wider">{text.highlights}</p>
@@ -342,15 +342,24 @@ export default function FoodMenuBlock({
                   {resolvedHighlightedItems.map((item, index) => {
                     const active = index === activeIndex
                     return (
-                    <button key={`${item.name}-${index}`} type="button" onClick={() => setActiveIndex(index)} className={`flex w-full items-center justify-between gap-4 rounded-2xl border p-3 text-left transition-all ${active ? 'border-[color:var(--accent)]/50 bg-[var(--accent-soft)] shadow-sm' : 'border-stone-100 bg-stone-50 hover:border-[color:var(--accent)]/30 hover:bg-white'}`}>
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${active ? 'bg-[var(--accent)]' : 'bg-stone-300'}`} />
-                        <div className="min-w-0">
-                          <p className="font-black text-navy truncate">{item.name || text.itemAlt}</p>
-                          <p className="text-xs text-gray-400 line-clamp-2">{item.description || text.itemFallback}</p>
-                        </div>
+                    <button key={`${item.name}-${index}`} type="button" onClick={() => setActiveIndex(index)} className={`flex w-full items-center gap-4 rounded-2xl border p-3.5 text-left transition-all ${active ? 'border-[color:var(--accent)]/60 bg-[var(--accent-soft)] shadow-md -translate-y-0.5' : 'border-stone-100 bg-stone-50 hover:border-[color:var(--accent)]/30 hover:bg-white hover:-translate-y-0.5'}`}>
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-[color:var(--line)] bg-stone-100">
+                        {item.photo ? (
+                          <Image src={item.photo} alt={item.name || text.itemAlt} fill className="object-cover" unoptimized={item.photo.startsWith('data:')} />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[color:var(--accent-strong)]">
+                            <Utensils className="h-6 w-6 opacity-60" />
+                          </div>
+                        )}
+                        {active ? <div className="absolute inset-0 ring-2 ring-inset ring-[color:var(--accent)]" /> : null}
                       </div>
-                      {item.price && <span className="text-[color:var(--accent-strong)] font-black whitespace-nowrap">{item.price}€</span>}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="text-base font-black text-navy leading-tight line-clamp-1">{item.name || text.itemAlt}</p>
+                          {item.price && <span className="text-base font-black whitespace-nowrap text-[color:var(--accent-strong)]">{item.price}€</span>}
+                        </div>
+                        <p className="mt-1 text-sm leading-snug text-slate-500 line-clamp-2">{item.description || text.itemFallback}</p>
+                      </div>
                     </button>
                   )})}
                 </div>

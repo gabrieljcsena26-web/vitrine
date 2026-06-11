@@ -32,6 +32,14 @@ export async function POST(req: NextRequest) {
 
     const ext = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg'
     const path = `uploads/${Date.now()}-${crypto.randomUUID()}.${ext}`
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'Image upload storage is not configured in this local environment.' },
+        { status: 503 }
+      )
+    }
+
     const db = createServiceClient()
     const bytes = Buffer.from(await file.arrayBuffer())
 

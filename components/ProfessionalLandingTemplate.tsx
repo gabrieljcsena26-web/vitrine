@@ -1,21 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
-import { Calendar, CheckCircle2, HeartPulse, MapPin, Menu, MessageCircle, Quote, ShieldCheck, Sparkles, Star, X } from 'lucide-react'
+import { ArrowUpRight, Calendar, CheckCircle2, Clock3, Heart, Mail, Menu, MessageCircle, Quote, Sparkles, X } from 'lucide-react'
 import type { Language, Translations } from '@/lib/translations'
 import { translations } from '@/lib/translations'
 import ChatbotWidget from '@/components/ChatbotWidget'
-import ContactActions from '@/components/ContactActions'
-import ContactForm from '@/components/ContactForm'
 import FAQ from '@/components/FAQ'
-import Testimonials from '@/components/Testimonials'
+import Footer from '@/components/Footer'
+import { getLandingTheme } from '@/lib/landing-themes'
 import PreviewWatermark from '@/components/PreviewWatermark'
+import Testimonials from '@/components/Testimonials'
+import { professionalDemo } from '@/lib/vitrine-demo-data'
+import type { ProfessionalConfig } from '@/lib/vitrine-types'
 import { safeBookingHref, whatsAppHref } from '@/lib/utils'
 
 interface ProfessionalBusinessData {
   id?: string
   businessName: string
+  subtitle?: string
   category: string
   description: string
   address: string
@@ -26,6 +29,7 @@ interface ProfessionalBusinessData {
   whatsappMessage?: string
   contactMethods?: ('whatsapp' | 'booking' | 'email')[]
   lang: string
+  themeId?: string
   services: { name: string; price: string; description?: string; photo?: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
@@ -36,10 +40,14 @@ interface ProfessionalBusinessData {
 }
 
 interface ProfessionalPageConfig {
+  sections?: string[]
+  focusSection?: string | null
+  focusLabel?: string
   style?: {
     mood?: string
     primaryColor?: string
     accentColor?: string
+    themeId?: string
   }
   copy?: {
     headline?: string
@@ -59,6 +67,120 @@ interface Props {
   businessId?: string
   via?: string
 }
+
+const navCopy = {
+  pt: [
+    { label: 'Serviços', href: '#servicos' },
+    { label: 'Contacto', href: '#contacto' },
+  ],
+  en: [
+    { label: 'Services', href: '#servicos' },
+    { label: 'Contact', href: '#contacto' },
+  ],
+  es: [
+    { label: 'Servicios', href: '#servicos' },
+    { label: 'Contacto', href: '#contacto' },
+  ],
+  fr: [
+    { label: 'Services', href: '#servicos' },
+    { label: 'Contact', href: '#contacto' },
+  ],
+} as const
+
+const copy = {
+  pt: {
+    areas: 'Áreas de atuação',
+    approach: 'A minha abordagem',
+    approachFallback: 'Criamos uma experiência clara e acolhedora para que o visitante entenda rapidamente o serviço, sinta confiança e consiga tomar o próximo passo sem fricção.',
+    servicesTitle: 'Serviços',
+    servicesSubtitle: 'Como posso ajudá-lo(a)',
+    prioritiesTitle: 'Formação, prioridades e confiança',
+    prioritiesSubtitle: 'Os pontos mais importantes para ajudar o cliente a decidir com clareza.',
+    credentialsTitle: 'Credenciais e especialidades',
+    credentialsSubtitle: 'O que sustenta a confiança logo nos primeiros segundos.',
+    testimonialsTitle: 'O que dizem os meus clientes',
+    testimonialsSubtitle: 'A sua confiança é o meu maior ativo',
+    finalTitle: 'Pronto(a) para dar o primeiro passo?',
+    finalText: 'A primeira conversa é o momento ideal para perceber prioridades, esclarecer dúvidas e definir o melhor próximo passo.',
+    book: 'Marcar consulta',
+    bookFirst: 'Agendar primeira consulta',
+    whatsapp: 'Fale comigo',
+    whatsappHelp: 'Esclarecer dúvidas',
+    emailCta: 'Enviar email',
+    mapCta: 'Abrir no mapa',
+    hoursTitle: 'Horário',
+    priorities: 'Prioridades',
+  },
+  en: {
+    areas: 'Practice areas',
+    approach: 'My approach',
+    approachFallback: 'We create a clear and welcoming experience so visitors understand the service quickly, feel trust and can take the next step without friction.',
+    servicesTitle: 'Services',
+    servicesSubtitle: 'How I can help',
+    prioritiesTitle: 'Credentials, priorities and trust',
+    prioritiesSubtitle: 'The most important signals to help customers decide clearly.',
+    credentialsTitle: 'Credentials and specialities',
+    credentialsSubtitle: 'The signals that build trust in the first few seconds.',
+    testimonialsTitle: 'What my clients say',
+    testimonialsSubtitle: 'Your trust is my biggest asset',
+    finalTitle: 'Ready to take the first step?',
+    finalText: 'The first conversation is the right moment to understand priorities, answer questions and define the next step.',
+    book: 'Book consultation',
+    bookFirst: 'Book first consultation',
+    whatsapp: 'Message me',
+    whatsappHelp: 'Ask questions',
+    emailCta: 'Send email',
+    mapCta: 'Open map',
+    hoursTitle: 'Hours',
+    priorities: 'Priorities',
+  },
+  es: {
+    areas: 'Áreas de actuación',
+    approach: 'Mi enfoque',
+    approachFallback: 'Creamos una experiencia clara y cercana para que el visitante entienda el servicio, sienta confianza y avance sin fricción.',
+    servicesTitle: 'Servicios',
+    servicesSubtitle: 'Cómo puedo ayudar',
+    prioritiesTitle: 'Formación, prioridades y confianza',
+    prioritiesSubtitle: 'Las señales más importantes para ayudar al cliente a decidir con claridad.',
+    credentialsTitle: 'Credenciales y especialidades',
+    credentialsSubtitle: 'Las señales que construyen confianza en los primeros segundos.',
+    testimonialsTitle: 'Lo que dicen mis clientes',
+    testimonialsSubtitle: 'Su confianza es mi mayor activo',
+    finalTitle: '¿Listo para dar el primer paso?',
+    finalText: 'La primera conversación es el mejor momento para entender prioridades, aclarar dudas y definir el siguiente paso.',
+    book: 'Reservar consulta',
+    bookFirst: 'Agendar primera consulta',
+    whatsapp: 'Hablar conmigo',
+    whatsappHelp: 'Aclarar dudas',
+    emailCta: 'Enviar email',
+    mapCta: 'Abrir en el mapa',
+    hoursTitle: 'Horario',
+    priorities: 'Prioridades',
+  },
+  fr: {
+    areas: 'Domaines d’intervention',
+    approach: 'Mon approche',
+    approachFallback: 'Nous créons une expérience claire et rassurante pour que le visiteur comprenne le service, se sente en confiance et passe à l’étape suivante sans friction.',
+    servicesTitle: 'Services',
+    servicesSubtitle: 'Comment je peux aider',
+    prioritiesTitle: 'Qualifications, priorités et confiance',
+    prioritiesSubtitle: 'Les signaux les plus importants pour aider le client à décider clairement.',
+    credentialsTitle: 'Qualifications et spécialités',
+    credentialsSubtitle: 'Les signaux qui inspirent confiance dès les premières secondes.',
+    testimonialsTitle: 'Ce que disent mes clients',
+    testimonialsSubtitle: 'Votre confiance est mon plus grand atout',
+    finalTitle: 'Prêt(e) à faire le premier pas ?',
+    finalText: 'Le premier échange est le bon moment pour comprendre les priorités, répondre aux questions et définir la suite.',
+    book: 'Réserver une consultation',
+    bookFirst: 'Réserver la première consultation',
+    whatsapp: 'Écrire sur WhatsApp',
+    whatsappHelp: 'Poser des questions',
+    emailCta: 'Envoyer un email',
+    mapCta: 'Ouvrir la carte',
+    hoursTitle: 'Horaires',
+    priorities: 'Priorités',
+  },
+} as const
 
 function ConsultationIcon({ className }: { className?: string }) {
   return (
@@ -80,108 +202,6 @@ function WhatsAppPremiumIcon({ className }: { className?: string }) {
   )
 }
 
-const navCopy = {
-  pt: [
-    { label: 'Sobre', href: '#sobre' },
-    { label: 'Serviços', href: '#servicos' },
-    { label: 'Confiança', href: '#confianca' },
-    { label: 'Contacto', href: '#contacto' },
-  ],
-  en: [
-    { label: 'About', href: '#sobre' },
-    { label: 'Services', href: '#servicos' },
-    { label: 'Trust', href: '#confianca' },
-    { label: 'Contact', href: '#contacto' },
-  ],
-  es: [
-    { label: 'Sobre', href: '#sobre' },
-    { label: 'Servicios', href: '#servicos' },
-    { label: 'Confianza', href: '#confianca' },
-    { label: 'Contacto', href: '#contacto' },
-  ],
-  fr: [
-    { label: 'À propos', href: '#sobre' },
-    { label: 'Services', href: '#servicos' },
-    { label: 'Confiance', href: '#confianca' },
-    { label: 'Contact', href: '#contacto' },
-  ],
-} as const
-
-const copy = {
-  pt: {
-    badge: 'Atendimento profissional',
-    areas: 'Áreas de atuação',
-    book: 'Marcar consulta',
-    whatsapp: 'Falar no WhatsApp',
-    approach: 'A nossa abordagem',
-    approachText: 'Criamos uma experiência clara, segura e humana para que cada visitante entenda rapidamente como o serviço funciona e consiga tomar o próximo passo com confiança.',
-    servicesTitle: 'Serviços',
-    servicesSubtitle: 'Como podemos ajudar',
-    trustTitle: 'Formação, confiança e clareza',
-    trustSubtitle: 'Sinais de credibilidade que ajudam o cliente a decidir sem fricção.',
-    finalTitle: 'Pronto para dar o primeiro passo?',
-    finalText: 'Use o botão de agendamento do negócio ou fale diretamente no WhatsApp para esclarecer dúvidas antes de avançar.',
-    location: 'Localização',
-    hours: 'Horário',
-    closed: 'Fechado',
-    footer: 'Todos os direitos reservados.',
-  },
-  en: {
-    badge: 'Professional care',
-    areas: 'Practice areas',
-    book: 'Book consultation',
-    whatsapp: 'Message on WhatsApp',
-    approach: 'Our approach',
-    approachText: 'We create a clear, safe and human experience so each visitor quickly understands the service and can take the next step with confidence.',
-    servicesTitle: 'Services',
-    servicesSubtitle: 'How we can help',
-    trustTitle: 'Credentials, trust and clarity',
-    trustSubtitle: 'Credibility signals that help customers decide with less friction.',
-    finalTitle: 'Ready to take the first step?',
-    finalText: 'Use the business booking link or message directly on WhatsApp to ask questions before moving forward.',
-    location: 'Location',
-    hours: 'Hours',
-    closed: 'Closed',
-    footer: 'All rights reserved.',
-  },
-  es: {
-    badge: 'Atención profesional',
-    areas: 'Áreas de actuación',
-    book: 'Reservar consulta',
-    whatsapp: 'Hablar por WhatsApp',
-    approach: 'Nuestro enfoque',
-    approachText: 'Creamos una experiencia clara, segura y humana para que cada visitante entienda el servicio y avance con confianza.',
-    servicesTitle: 'Servicios',
-    servicesSubtitle: 'Cómo podemos ayudar',
-    trustTitle: 'Formación, confianza y claridad',
-    trustSubtitle: 'Señales de credibilidad que ayudan al cliente a decidir sin fricción.',
-    finalTitle: '¿Listo para dar el primer paso?',
-    finalText: 'Usa el enlace de reserva del negocio o escribe por WhatsApp para aclarar dudas antes de avanzar.',
-    location: 'Ubicación',
-    hours: 'Horario',
-    closed: 'Cerrado',
-    footer: 'Todos los derechos reservados.',
-  },
-  fr: {
-    badge: 'Accompagnement professionnel',
-    areas: 'Domaines d’intervention',
-    book: 'Réserver une consultation',
-    whatsapp: 'Écrire sur WhatsApp',
-    approach: 'Notre approche',
-    approachText: 'Nous créons une expérience claire, sûre et humaine pour que chaque visiteur comprenne le service et passe à l’étape suivante avec confiance.',
-    servicesTitle: 'Services',
-    servicesSubtitle: 'Comment nous pouvons aider',
-    trustTitle: 'Qualifications, confiance et clarté',
-    trustSubtitle: 'Des signaux de crédibilité qui aident le client à décider sans friction.',
-    finalTitle: 'Prêt à faire le premier pas ?',
-    finalText: 'Utilisez le lien de réservation ou écrivez sur WhatsApp pour poser vos questions avant d’avancer.',
-    location: 'Localisation',
-    hours: 'Horaires',
-    closed: 'Fermé',
-    footer: 'Tous droits réservés.',
-  },
-} as const
-
 function trackClick(businessId: string | undefined, via: string | undefined, eventType: 'booking_click' | 'whatsapp_click') {
   if (!businessId) return
   fetch('/api/track-visit', {
@@ -198,7 +218,19 @@ function formatPrice(price?: string) {
   return `${price}€`
 }
 
-function ProfessionalHeader({ businessName, logo, lang, setLang, bookingHref, whatsappHref, t, businessId, via }: { businessName: string; logo?: string; lang: Language; setLang: (lang: Language) => void; bookingHref: string | null; whatsappHref: string | null; t: (typeof copy)[Language]; businessId?: string; via?: string }) {
+function getMapEmbedUrl(address?: string, mapUrl?: string | null) {
+  if (mapUrl?.startsWith('https://www.google.com/maps/embed')) return mapUrl
+  if (address) return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
+  return null
+}
+
+function getDirectionsUrl(address?: string, mapUrl?: string | null) {
+  if (mapUrl?.startsWith('http')) return mapUrl
+  if (address) return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+  return null
+}
+
+function ProfessionalHeader({ businessName, logo, lang, setLang, bookingHref, whatsappHref, text, businessId, via }: { businessName: string; logo?: string; lang: Language; setLang: (lang: Language) => void; bookingHref: string | null; whatsappHref: string | null; text: (typeof copy)[Language]; businessId?: string; via?: string }) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const navItems = navCopy[lang] ?? navCopy.en
@@ -211,321 +243,346 @@ function ProfessionalHeader({ businessName, logo, lang, setLang, bookingHref, wh
   }, [])
 
   return (
-    <header className={`fixed left-0 right-0 top-0 z-40 transition-all duration-300 ${isScrolled ? 'border-b border-emerald-900/10 bg-white/92 shadow-sm backdrop-blur-xl' : 'bg-white/80 backdrop-blur-xl'}`}>
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <a href="#top" className="flex items-center gap-3">
+    <header className={`fixed left-0 right-0 top-0 z-40 transition-all duration-300 ${isScrolled ? 'bg-white/95 shadow-sm backdrop-blur-sm' : 'bg-white/90'}`}>
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+        <a href="#top" className="flex items-center gap-2">
           {logo ? (
-            <Image src={logo} alt={businessName} width={42} height={42} className="rounded-2xl object-cover" unoptimized={logo.startsWith('data:')} />
+            <Image src={logo} alt={businessName} width={40} height={40} className="rounded-full object-cover" unoptimized={logo.startsWith('data:')} />
           ) : (
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-900 text-emerald-100 shadow-lg shadow-emerald-900/15">
-              <HeartPulse className="h-5 w-5" />
-            </span>
+            <Heart className="h-8 w-8 text-sky-700" />
           )}
-          <span className="text-lg font-black tracking-tight text-emerald-950">{businessName}</span>
+          <span className="text-xl font-semibold text-slate-900">{businessName}</span>
         </a>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-8 md:flex">
           {navItems.map((item) => (
-            <a key={item.href} href={item.href} className="text-sm font-bold text-slate-500 transition-colors hover:text-emerald-950">
+            <a key={item.href} href={item.href} className="text-sm text-slate-500 transition-colors hover:text-slate-900">
               {item.label}
             </a>
           ))}
-          <select value={lang} onChange={(event) => setLang(event.target.value as Language)} className="rounded-full border border-emerald-900/10 bg-white px-3 py-2 text-xs font-black text-emerald-950 outline-none">
+          <select value={lang} onChange={(event) => setLang(event.target.value as Language)} className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-900 outline-none">
             <option value="pt">PT</option>
             <option value="en">EN</option>
             <option value="es">ES</option>
             <option value="fr">FR</option>
           </select>
           {bookingHref ? (
-            <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="inline-flex items-center gap-2 rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-900/20 transition-all hover:-translate-y-0.5 hover:bg-emerald-800">
+            <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="inline-flex items-center gap-2 rounded-full bg-sky-700 px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-sky-700/20 transition-all hover:-translate-y-0.5 hover:bg-sky-800">
               <ConsultationIcon className="h-4 w-4" />
-              {t.book}
+              {text.book}
             </a>
           ) : whatsappHref ? (
             <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'whatsapp_click')} className="inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-green-500/20 transition-all hover:-translate-y-0.5">
               <WhatsAppPremiumIcon className="h-4 w-4" />
-              {t.whatsapp}
+              {text.whatsapp}
             </a>
           ) : null}
         </nav>
 
-        <button className="rounded-full border border-emerald-900/10 p-2 md:hidden" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Menu">
+        <button type="button" className="md:hidden" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Menu">
           {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {mobileMenuOpen && (
-        <div className="border-t border-emerald-900/10 bg-white px-4 py-4 md:hidden">
+      {mobileMenuOpen ? (
+        <div className="border-t bg-white px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-4">
             {navItems.map((item) => (
-              <a key={item.href} href={item.href} className="font-bold text-slate-600" onClick={() => setMobileMenuOpen(false)}>
+              <a key={item.href} href={item.href} className="text-slate-600 transition-colors hover:text-slate-900" onClick={() => setMobileMenuOpen(false)}>
                 {item.label}
               </a>
             ))}
-            {bookingHref && (
-              <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-900 px-5 py-3 font-black text-white">
-                <ConsultationIcon className="h-4 w-4" />
-                {t.book}
-              </a>
-            )}
           </nav>
         </div>
-      )}
+      ) : null}
     </header>
-  )
-}
-
-function ProfessionalContactSummary({ business, text }: { business: ProfessionalBusinessData; text: (typeof copy)[Language] }) {
-  const schedule = business.hours?.filter(Boolean).slice(0, 7) ?? []
-
-  return (
-    <section id="contacto" className="bg-emerald-950 py-20 text-white">
-      <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-        <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.06] p-7">
-          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-300 text-emerald-950">
-            <MapPin className="h-6 w-6" />
-          </div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">{text.location}</p>
-          <h3 className="mt-3 text-2xl font-black">{business.businessName}</h3>
-          {business.address && <p className="mt-4 text-lg leading-relaxed text-emerald-50/80">{business.address}</p>}
-          {business.email && <p className="mt-3 text-sm font-semibold text-emerald-200">{business.email}</p>}
-        </div>
-
-        {schedule.length > 0 && (
-          <div className="overflow-hidden rounded-[1.75rem] border border-white/10 bg-white text-emerald-950 shadow-2xl shadow-emerald-950/20">
-            <div className="flex items-center gap-3 bg-emerald-900 px-6 py-5 text-white">
-              <Calendar className="h-5 w-5 text-emerald-200" />
-              <p className="font-black">{text.hours}</p>
-            </div>
-            <div className="divide-y divide-emerald-50">
-              {schedule.map((item) => (
-                <div key={item.day} className="flex items-center justify-between gap-4 px-6 py-3 text-sm">
-                  <span className="font-black">{item.day}</span>
-                  <span className={item.open ? 'font-semibold text-slate-500' : 'font-semibold text-red-400'}>{item.open ? `${item.from} - ${item.to}` : text.closed}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
   )
 }
 
 export default function ProfessionalLandingTemplate({ business, aiConfig, lang, setLang, previewMode = false, showWatermark = previewMode, businessId, via }: Props) {
   const t: Translations = translations[lang]
   const text = copy[lang] ?? copy.en
+  const strictLivePreview = via === 'dashboard-live-preview'
+  const activeSections = aiConfig?.sections ?? []
+  const focusedSection = aiConfig?.focusSection ?? null
+  const showSection = (section: string) => !strictLivePreview || activeSections.includes(section)
+  const sectionState = (sections: string[]) => {
+    if (!strictLivePreview) return ''
+    const isFocused = focusedSection ? sections.includes(focusedSection) : false
+    const isActive = sections.some((section) => activeSections.includes(section))
+    return `transition-all duration-500 ${isFocused ? 'ring-2 ring-sky-300/95 shadow-[0_14px_36px_rgba(56,189,248,0.12)]' : isActive ? 'ring-1 ring-sky-200/90 shadow-[0_10px_30px_rgba(56,189,248,0.08)]' : 'opacity-90 saturate-[0.98]'}`
+  }
   const contactMethods = business.contactMethods?.length ? business.contactMethods : ['whatsapp', 'booking', 'email']
   const showWhatsapp = contactMethods.includes('whatsapp')
   const showBooking = contactMethods.includes('booking')
   const showEmail = contactMethods.includes('email')
   const bookingHref = showBooking && business.bookingUrl ? safeBookingHref(business.bookingUrl) : null
   const whatsappHref = showWhatsapp && business.whatsappNumber ? whatsAppHref(business.whatsappNumber, business.whatsappMessage) : null
-  const heroPhoto = business.photos?.[0] || 'https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?w=1200&q=80'
-  const secondaryPhoto = business.photos?.[1] || heroPhoto
-  const headline = aiConfig?.copy?.headline?.trim() || business.businessName
-  const tagline = aiConfig?.copy?.subheadline?.trim() || business.description
-  const services = business.services?.filter((service) => service.name).slice(0, 6) ?? []
-  const areas = services.length ? services.slice(0, 4).map((service) => service.name) : [business.category]
-  const trustItems = (business.benefits?.filter(Boolean).slice(0, 4) ?? [])
-  const defaultTrust = [business.category, business.address ? text.location : text.trustTitle, bookingHref ? text.book : text.whatsapp].filter(Boolean)
-  const credentials = trustItems.length ? trustItems : defaultTrust
+  const professionalConfig: ProfessionalConfig = useMemo(() => {
+    const baseProfessional = strictLivePreview
+      ? {
+          ...professionalDemo,
+          businessName: '',
+          tagline: '',
+          heroImage: '',
+          consultationUrl: '',
+          areas: [],
+          hours: [],
+          services: [],
+          testimonials: [],
+          team: [],
+          contact: {
+            ...professionalDemo.contact,
+            phone: '',
+            whatsapp: '',
+            email: '',
+            address: '',
+            googleMapsUrl: '',
+          },
+        }
+      : professionalDemo
+    const hourItems = business.hours?.filter(Boolean).map((item) => ({
+      day: item.day,
+      hours: item.open ? `${item.from} - ${item.to}` : '',
+      closed: !item.open,
+    }))
+    const serviceItems = business.services?.filter((service) => service.name).slice(0, 6).map((service, index) => ({
+      id: String(index + 1),
+      name: service.name,
+      description: service.description,
+      price: service.price,
+      image: service.photo,
+    }))
+    const areaItems = serviceItems?.length ? serviceItems.slice(0, 5).map((item) => item.name) : undefined
+
+    return {
+      ...baseProfessional,
+      businessName: business.businessName || baseProfessional.businessName,
+      tagline: aiConfig?.copy?.subheadline?.trim() || business.description || baseProfessional.tagline,
+      heroImage: business.photos?.[0] || baseProfessional.heroImage,
+      consultationUrl: business.bookingUrl || baseProfessional.consultationUrl,
+      areas: areaItems?.length ? areaItems : baseProfessional.areas,
+      contact: {
+        ...baseProfessional.contact,
+        phone: business.phone || baseProfessional.contact.phone,
+        whatsapp: business.whatsappNumber || baseProfessional.contact.whatsapp,
+        email: business.email || baseProfessional.contact.email,
+        address: business.address || baseProfessional.contact.address,
+        googleMapsUrl: business.mapUrl || baseProfessional.contact.googleMapsUrl,
+      },
+      hours: hourItems?.length ? hourItems : baseProfessional.hours,
+      services: serviceItems?.length ? serviceItems : baseProfessional.services,
+      testimonials: business.testimonials?.length ? business.testimonials as any : baseProfessional.testimonials,
+    }
+  }, [aiConfig?.copy?.subheadline, business, strictLivePreview])
+  const heroPhoto = professionalConfig.heroImage || (strictLivePreview ? '' : 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=1200&q=80')
+  const logo = business.photos?.[2] || professionalConfig.team?.[0]?.image
+  const theme = getLandingTheme(aiConfig?.style?.themeId ?? aiConfig?.style?.mood ?? business.themeId)
+  const headline = aiConfig?.copy?.headline?.trim() || professionalConfig.businessName
+  const subtitle = business.subtitle?.trim() || aiConfig?.copy?.subheadline?.trim() || ''
+  const services = useMemo(
+    () => professionalConfig.services.map((service) => ({
+      name: service.name,
+      price: service.price || '',
+      description: service.description,
+      photo: service.image,
+    })),
+    [professionalConfig.services],
+  )
   const publicEmail = showEmail ? business.email : undefined
-  const contactSection = ((bookingHref && showBooking) || (whatsappHref && showWhatsapp)) ? (
-    <ContactActions
-      t={t}
-      bookingUrl={bookingHref ?? undefined}
-      whatsappNumber={showWhatsapp ? business.whatsappNumber : undefined}
-      whatsappMessage={showWhatsapp ? business.whatsappMessage : undefined}
-      businessId={businessId}
-      via={via}
-      showForm={showEmail}
-    />
-  ) : showEmail ? (
-    <ContactForm t={t} businessId={businessId} via={via} />
-  ) : null
+  const aboutText = business.description?.trim() || ''
+  const mapEmbedUrl = getMapEmbedUrl(professionalConfig.contact.address, professionalConfig.contact.googleMapsUrl)
+  const directionsUrl = getDirectionsUrl(professionalConfig.contact.address, professionalConfig.contact.googleMapsUrl)
+  const emailHref = publicEmail ? `mailto:${publicEmail}` : null
+  const shouldShowAbout = showSection('about') && Boolean(aboutText)
+  const shouldShowServices = showSection('services') && services.length > 0
+  const shouldShowContact = showSection('contact') && (Boolean(bookingHref) || Boolean(whatsappHref) || Boolean(emailHref) || professionalConfig.hours.length > 0 || Boolean(mapEmbedUrl))
 
   return (
-    <main id="top" className="min-h-screen bg-[#f3faf6] text-emerald-950">
-      {showWatermark && <PreviewWatermark lang={lang} businessName={business.businessName} />}
-      <ProfessionalHeader businessName={business.businessName} logo={business.photos?.[2]} lang={lang} setLang={setLang} bookingHref={bookingHref} whatsappHref={whatsappHref} t={text} businessId={businessId} via={via} />
+    <main id="top" className="min-h-screen text-slate-900" style={{ backgroundImage: theme.pageBackground }}>
+      {showWatermark ? <PreviewWatermark lang={lang} businessName={professionalConfig.businessName} /> : null}
+      <ProfessionalHeader businessName={professionalConfig.businessName} logo={logo} lang={lang} setLang={setLang} bookingHref={bookingHref} whatsappHref={whatsappHref} text={text} businessId={businessId} via={via} />
 
-      <section className="relative overflow-hidden pt-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.18),transparent_38%),linear-gradient(135deg,#f3faf6_0%,#ffffff_48%,#e8f7ef_100%)]" />
-        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:px-8 lg:py-28">
+      <section data-preview-section="hero" className={`relative overflow-hidden pt-20 ${sectionState(['hero'])}`}>
+        <div className="absolute inset-0" style={{ backgroundImage: theme.heroBackground }} />
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-32">
           <div className="flex flex-col justify-center">
-            <span className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-900/10 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
-              <Sparkles className="h-3.5 w-3.5" />
-              {areas[0] || text.badge}
+            <span className="mb-6 inline-flex w-fit items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+              <Sparkles className="h-3 w-3" />
+              {business.category}
             </span>
-            <h1 className="max-w-2xl text-4xl font-black tracking-tight text-emerald-950 md:text-6xl">
-              {headline}
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-              {tagline}
-            </p>
-
-            {areas.length > 0 && (
-              <div className="mt-8">
-                <p className="mb-3 text-sm font-black text-slate-500">{text.areas}:</p>
-                <div className="flex flex-wrap gap-2">
-                  {areas.map((area) => (
-                    <span key={area} className="rounded-full border border-emerald-900/10 bg-white px-4 py-2 text-sm font-bold text-emerald-800 shadow-sm">
-                      {area}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            <h1 className="text-balance text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">{headline}</h1>
+            {subtitle ? <p className="mt-4 text-sm font-bold uppercase tracking-[0.14em]" style={{ color: theme.accentStrong }}>{subtitle}</p> : null}
 
             <div className="mt-10 flex flex-wrap gap-4">
-              {bookingHref && (
-                <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="group inline-flex items-center gap-3 rounded-full bg-emerald-900 px-8 py-4 text-lg font-black text-white shadow-2xl shadow-emerald-900/25 transition-all hover:-translate-y-1 hover:bg-emerald-800">
+              {bookingHref ? (
+                <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="group inline-flex items-center gap-3 rounded-full bg-sky-700 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-sky-700/20 transition-all hover:scale-105">
                   <ConsultationIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
                   {aiConfig?.copy?.primaryCta || text.book}
                 </a>
-              )}
-              {whatsappHref && (
-                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'whatsapp_click')} className="group inline-flex items-center gap-3 rounded-full border-2 border-[#25D366] bg-[#25D366]/10 px-8 py-4 text-lg font-black text-[#168d46] transition-all hover:-translate-y-1 hover:bg-[#25D366] hover:text-white">
+              ) : null}
+              {whatsappHref ? (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'whatsapp_click')} className="group inline-flex items-center gap-3 rounded-full border-2 border-green-500 bg-green-500/10 px-8 py-4 text-lg font-semibold text-green-600 transition-all hover:scale-105 hover:bg-green-500 hover:text-white">
                   <WhatsAppPremiumIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
                   {text.whatsapp}
                 </a>
-              )}
+              ) : null}
             </div>
           </div>
 
           <div className="relative">
-            <div className="absolute -right-6 -top-6 h-44 w-44 rounded-full bg-emerald-300/30 blur-3xl" />
-            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-emerald-950 shadow-2xl shadow-emerald-950/25">
-              <Image src={heroPhoto} alt={business.businessName} fill className="object-cover" priority unoptimized={heroPhoto.startsWith('data:')} />
-              <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/55 via-transparent to-transparent" />
+            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl shadow-2xl">
+              {heroPhoto ? <Image src={heroPhoto} alt={professionalConfig.businessName} fill className="object-cover" priority unoptimized={heroPhoto.startsWith('data:')} /> : <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-stone-100" />}
             </div>
-            <div className="absolute -bottom-6 left-4 right-4 md:left-auto md:right-4 md:w-80">
-              <div className="rounded-3xl border border-white/70 bg-white/95 p-5 shadow-2xl shadow-emerald-950/15 backdrop-blur">
-                <p className="font-black text-emerald-950">{business.businessName}</p>
-                <p className="mt-1 text-sm font-bold text-emerald-700">{business.category}</p>
-                <div className="mt-3 flex items-center gap-1 text-amber-500">
-                  {[0, 1, 2, 3, 4].map((item) => <Star key={item} className="h-4 w-4 fill-current" />)}
-                </div>
-                <p className="mt-2 text-xs leading-relaxed text-slate-500">{credentials[0] || text.trustTitle}</p>
+            <div className="absolute -bottom-6 left-4 right-4 md:left-auto md:right-4 md:w-72">
+              <div className="rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur-sm">
+                <p className="font-semibold text-slate-900">{professionalConfig.businessName}</p>
+                <p className="text-sm text-sky-700">{business.category}</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="sobre" className="py-20">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-          <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-emerald-950 shadow-2xl shadow-emerald-950/15">
-            <Image src={secondaryPhoto} alt={`${business.businessName} practice`} fill className="object-cover opacity-85" unoptimized={secondaryPhoto.startsWith('data:')} />
-            <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/20 to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6 text-white">
-              <p className="inline-flex rounded-full bg-white/12 px-4 py-2 text-sm font-black backdrop-blur">{text.badge}</p>
+      {shouldShowAbout ? (
+      <section data-preview-section="about" id="sobre" className={`py-20 ${sectionState(['about'])}`}>
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl bg-slate-100/70 p-8 md:p-12">
+            <div className="flex items-start gap-4">
+              <Quote className="h-10 w-10 shrink-0 text-sky-700/30" />
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">{text.approach}</h2>
+                <p className="mt-4 text-pretty text-lg leading-relaxed text-slate-500">{aboutText}</p>
+              </div>
             </div>
-          </div>
-          <div className="rounded-[2rem] bg-white p-8 shadow-xl shadow-emerald-950/5 md:p-12">
-            <Quote className="h-10 w-10 text-emerald-700/30" />
-            <h2 className="mt-5 text-3xl font-black text-emerald-950 md:text-4xl">{text.approach}</h2>
-            <p className="mt-5 text-lg leading-relaxed text-slate-600">{business.description || text.approachText}</p>
-            <p className="mt-4 text-lg leading-relaxed text-slate-600">{text.approachText}</p>
           </div>
         </div>
       </section>
+      ) : null}
 
-      <section id="servicos" className="bg-white py-20">
+      {shouldShowServices ? (
+      <section data-preview-section="services" id="servicos" className={`py-20 ${sectionState(['services', 'benefits'])}`} style={{ backgroundImage: theme.softSectionBackground }}>
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">{text.servicesTitle}</p>
-            <h2 className="mt-3 text-4xl font-black text-emerald-950">{text.servicesSubtitle}</h2>
+            <h2 className="text-3xl font-bold text-slate-900 md:text-4xl">{text.servicesTitle}</h2>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {(services.length ? services : [{ name: business.category, price: '', description: business.description }]).map((service, index) => (
-              <div key={`${service.name}-${index}`} className="group rounded-[1.5rem] border border-emerald-900/10 bg-[#f7fbf8] p-6 transition-all hover:-translate-y-1 hover:bg-white hover:shadow-2xl hover:shadow-emerald-950/10">
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 transition-colors group-hover:bg-emerald-900 group-hover:text-white">
-                  <CheckCircle2 className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-black text-emerald-950">{service.name}</h3>
-                {service.description && <p className="mt-3 text-sm leading-relaxed text-slate-600">{service.description}</p>}
-                {formatPrice(service.price) && <p className="mt-5 text-lg font-black text-emerald-700">{formatPrice(service.price)}</p>}
+            {services.map((service, index) => (
+              <div key={`${service.name}-${index}`} className="group rounded-3xl bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-lg">
+                {service.photo ? (
+                  <div className="relative mb-5 aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-slate-100">
+                    <Image src={service.photo} alt={service.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={service.photo.startsWith('data:')} />
+                  </div>
+                ) : (
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-sky-700/10 transition-colors group-hover:bg-sky-700/20">
+                    <CheckCircle2 className="h-6 w-6 text-sky-700" />
+                  </div>
+                )}
+                <h3 className="mb-2 text-lg font-semibold text-slate-900">{service.name}</h3>
+                {service.description ? <p className="text-sm text-slate-500">{service.description}</p> : null}
+                {formatPrice(service.price) ? <p className="mt-4 text-lg font-semibold text-sky-700">{formatPrice(service.price)}</p> : null}
               </div>
             ))}
           </div>
+
         </div>
       </section>
+      ) : null}
 
-      <section id="confianca" className="py-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-10 text-center">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">{text.trustTitle}</p>
-            <h2 className="mt-3 text-4xl font-black text-emerald-950">{text.trustSubtitle}</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {credentials.slice(0, 4).map((item, index) => (
-              <div key={`${item}-${index}`} className="flex items-start gap-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-emerald-900/5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-                  <ShieldCheck className="h-5 w-5" />
+      <div className="h-px w-full bg-slate-200" />
+
+      {shouldShowContact ? (
+      <section data-preview-section="contact" id="contacto" className={`py-16 ${sectionState(['contact'])}`}>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-[1.18fr_0.82fr] lg:items-stretch">
+            <div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-xl shadow-slate-900/5 backdrop-blur-sm">
+              {mapEmbedUrl ? (
+                <>
+                  <iframe title={`${professionalConfig.businessName} map`} src={mapEmbedUrl} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="min-h-[420px] w-full border-0" />
+                  {directionsUrl ? (
+                    <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 border-t border-slate-200 px-5 py-4 text-sm font-black transition-colors hover:bg-slate-50" style={{ color: theme.accentStrong }}>
+                      <ArrowUpRight className="h-4 w-4" />
+                      {text.mapCta}
+                    </a>
+                  ) : null}
+                </>
+              ) : (
+                <div className="flex min-h-[420px] items-end bg-gradient-to-br from-slate-100 via-white to-sky-50 p-8">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: theme.accentStrong }}>{text.priorities}</p>
+                    <h3 className="mt-2 text-3xl font-bold text-slate-900">{professionalConfig.businessName}</h3>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-black text-emerald-950">{item}</p>
-                  <p className="mt-1 text-sm text-slate-500">{text.trustSubtitle}</p>
+              )}
+            </div>
+            <div className="flex flex-col gap-5">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-white/95 p-7 shadow-xl backdrop-blur-sm">
+                <p className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: theme.accentStrong }}>{text.finalTitle}</p>
+                <h3 className="mt-2 text-3xl font-bold text-slate-900">{professionalConfig.businessName}</h3>
+                <p className="mt-4 text-base leading-relaxed text-slate-600">{text.finalText}</p>
+                <div className="mt-6 grid gap-3">
+                  {bookingHref ? (
+                    <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="group inline-flex items-center justify-between gap-3 rounded-[1.25rem] px-5 py-4 text-left text-base font-bold text-white shadow-lg transition-all hover:-translate-y-0.5" style={{ backgroundColor: theme.accentStrong, boxShadow: `0 16px 40px ${theme.accentSoft}` }}>
+                      <span className="inline-flex items-center gap-3"><Calendar className="h-5 w-5 transition-transform group-hover:scale-110" />{text.book}</span>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                  {whatsappHref ? (
+                    <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'whatsapp_click')} className="group inline-flex items-center justify-between gap-3 rounded-[1.25rem] border border-[#25D366]/40 bg-[#25D366]/12 px-5 py-4 text-left text-base font-bold text-[#168d46] transition-all hover:-translate-y-0.5 hover:bg-[#25D366] hover:text-white">
+                      <span className="inline-flex items-center gap-3"><MessageCircle className="h-5 w-5 transition-transform group-hover:scale-110" />{text.whatsappHelp}</span>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                  {emailHref ? (
+                    <a href={emailHref} className="group inline-flex items-center justify-between gap-3 rounded-[1.25rem] border border-slate-200 bg-white px-5 py-4 text-left text-base font-bold text-slate-900 transition-all hover:-translate-y-0.5 hover:border-sky-200">
+                      <span className="inline-flex items-center gap-3"><Mail className="h-5 w-5 transition-transform group-hover:scale-110" style={{ color: theme.accentStrong }} />{text.emailCta}</span>
+                      <ArrowUpRight className="h-4 w-4" />
+                    </a>
+                  ) : null}
                 </div>
               </div>
-            ))}
+
+              {professionalConfig.hours.length > 0 ? (
+                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+                  <p className="text-sm font-black uppercase tracking-[0.18em]" style={{ color: theme.accentStrong }}>{text.hoursTitle}</p>
+                  <div className="mt-4 space-y-3 text-sm">
+                    {professionalConfig.hours.slice(0, 7).map((item) => (
+                      <div key={item.day} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm">
+                        <span className="inline-flex items-center gap-2 font-bold text-slate-900"><Clock3 className="h-4 w-4" style={{ color: theme.accentStrong }} />{item.day}</span>
+                        <span className={item.closed ? 'font-semibold text-red-400' : 'font-semibold text-slate-500'}>{item.closed ? t.hours.closed : item.hours}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </section>
+      ) : null}
 
-      {business.testimonials && business.testimonials.length > 0 && (
-        <div className="bg-white">
-          <Testimonials testimonials={business.testimonials as any} showDefaults={previewMode} />
-        </div>
-      )}
-
-      <section className="bg-white py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-black text-emerald-950 md:text-5xl">{text.finalTitle}</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-slate-600">{text.finalText}</p>
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
-            {bookingHref && (
-              <a href={bookingHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'booking_click')} className="group inline-flex items-center gap-3 rounded-full bg-emerald-900 px-8 py-4 text-lg font-black text-white shadow-2xl shadow-emerald-900/25 transition-all hover:-translate-y-1 hover:bg-emerald-800">
-                <ConsultationIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
-                {text.book}
-              </a>
-            )}
-            {whatsappHref && (
-              <a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackClick(businessId, via, 'whatsapp_click')} className="group inline-flex items-center gap-3 rounded-full border-2 border-[#25D366] bg-[#25D366]/10 px-8 py-4 text-lg font-black text-[#168d46] transition-all hover:-translate-y-1 hover:bg-[#25D366] hover:text-white">
-                <WhatsAppPremiumIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
-                {text.whatsapp}
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <ProfessionalContactSummary business={business} text={text} />
-      {contactSection ? <div>{contactSection}</div> : null}
-      <FAQ items={business.faqs as any} />
-      <ChatbotWidget
-        t={t}
-        businessInfo={{
-          name: business.businessName,
-          category: business.category,
-          description: business.description,
-          address: business.address,
-          email: publicEmail,
-          phone: business.phone,
-          hours: business.hours,
-          services: business.services,
-          bookingUrl: bookingHref ?? undefined,
-          whatsappNumber: showWhatsapp ? business.whatsappNumber : undefined,
-        }}
-      />
-      <footer className="border-t border-emerald-900/10 bg-white py-8">
-        <div className="mx-auto max-w-6xl px-4 text-center">
-          <p className="text-sm font-semibold text-slate-500">&copy; {new Date().getFullYear()} {business.businessName}. {text.footer}</p>
-        </div>
-      </footer>
+      {!strictLivePreview ? (
+        <>
+          <FAQ items={business.faqs as any} />
+          <ChatbotWidget
+            t={t}
+            businessInfo={{
+              name: business.businessName,
+              category: business.category,
+              description: business.description,
+              address: business.address,
+              email: publicEmail || professionalConfig.contact.email,
+              phone: business.phone || professionalConfig.contact.phone,
+              hours: business.hours,
+              services: services,
+              bookingUrl: bookingHref ?? undefined,
+              whatsappNumber: showWhatsapp ? business.whatsappNumber : undefined,
+            }}
+          />
+          <Footer t={t} businessName={professionalConfig.businessName} />
+        </>
+      ) : null}
     </main>
   )
 }

@@ -1,9 +1,13 @@
 'use client'
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X, QrCode } from 'lucide-react'
+import { ThumbsUp, Plus, Trash2, Upload, ArrowRight, Check, CalendarDays, Wrench, Utensils, Globe2, Info, Sparkles, Lock, MessageCircle, Mail, Link2, ShieldCheck, CreditCard, X, QrCode, Monitor, Smartphone, Eye, ChevronDown } from 'lucide-react'
 import { CATEGORY_LABELS_PT, DEFAULT_SERVICE_PRESETS, getCategoriesByTemplate, inferBusinessTemplate, type BusinessTemplate } from '@/lib/business-categories'
+import AiLandingRenderer, { type AiBusinessData } from '@/components/AiLandingRenderer'
+import { LANDING_THEME_OPTIONS, getLandingTheme, type LandingThemeId } from '@/lib/landing-themes'
+import type { Language } from '@/lib/translations'
 
 interface Service {
   name: string
@@ -16,6 +20,8 @@ type SetupLang = 'pt' | 'en' | 'es' | 'fr'
 type ContactMethod = 'whatsapp' | 'booking' | 'email'
 
 const AI_PREVIEW_STORAGE_KEY = 'vitrine_ai_page_config'
+const BUSINESS_DRAFT_STORAGE_KEY = 'vitrine_business_data'
+const TEMPLATE_DRAFT_STORAGE_KEY = 'vitrine_business_template_drafts'
 const AI_PREVIEW_HINTS = {
   pt: ['Categoria e posicionamento', 'Descricao e servicos', 'Fotos principais e galeria'],
   en: ['Category and positioning', 'Description and services', 'Hero and gallery photos'],
@@ -126,14 +132,12 @@ function isDefaultServiceList(items: Service[]) {
   return Object.values(DEFAULT_SERVICE_PRESETS).some((list) => list.map((item) => item.name).join('|') === names)
 }
 
-// Configuration
-const GENERATION_DURATION_MS = 2000 // Simulated page generation time
-const COPY_SUCCESS_DURATION_MS = 2000 // How long to show "Copied!" message
-const MAX_IMAGE_PX = 1000 // Max width/height for compressed photos
-const TARGET_IMAGE_BYTES = 200_000 // Target size for AI/web previews
+const GENERATION_DURATION_MS = 2000
+const COPY_SUCCESS_DURATION_MS = 2000
+const MAX_IMAGE_PX = 1000
+const TARGET_IMAGE_BYTES = 200_000
 const AI_PHOTO_LIMIT = 7
 
-// Compress an image file to a small data URL using canvas
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -188,23 +192,28 @@ async function uploadCompressedImage(dataUrl: string, filename = 'photo.jpg'): P
   }
 }
 
-// Helper function to generate URL-safe slug from business name
 function generateSlug(name: string): string {
   const slug = (name || 'my-business')
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .replace(/^-|-$/g, '') // Remove leading/trailing hyphens
-  
-  // Fallback to default if result is empty (e.g., input was all special characters)
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+
   return slug || 'my-business'
+}
+
+function buildAddressMapUrl(address: string) {
+  const trimmedAddress = address.trim()
+  if (!trimmedAddress) return null
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmedAddress)}`
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const [step, setStep] = useState(0)
   const [businessName, setBusinessName] = useState('')
+  const [subtitle, setSubtitle] = useState('')
   const [category, setCategory] = useState('Hair Salon')
   const [description, setDescription] = useState('')
   const [address, setAddress] = useState('')
@@ -221,6 +230,11 @@ export default function DashboardPage() {
   const [menuImageUrl, setMenuImageUrl] = useState('')
   const [plan, setPlan] = useState('starter')
   const [lang, setLang] = useState<SetupLang>('pt')
+  const [themeId, setThemeId] = useState<LandingThemeId>('golden-hour')
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'mobile'>('desktop')
+  const [previewFocusSection, setPreviewFocusSection] = useState<string | null>('hero')
+  const [previewFocusLabel, setPreviewFocusLabel] = useState<string>('Hero')
+  const [previewSpotlightOpen, setPreviewSpotlightOpen] = useState(false)
   const [nameError, setNameError] = useState('')
   const [generateError, setGenerateError] = useState('')
   const [services, setServices] = useState<Service[]>([
@@ -244,20 +258,45 @@ export default function DashboardPage() {
   const [billingError, setBillingError] = useState('')
   const [aiPreviewLoading, setAiPreviewLoading] = useState(false)
   const [aiPreviewError, setAiPreviewError] = useState('')
+  const [themePickerOpen, setThemePickerOpen] = useState(false)
   const generateTimeoutRef = useRef<NodeJS.Timeout>()
   const copySuccessTimeoutRef = useRef<NodeJS.Timeout>()
+  const categoryRef = useRef(category)
+  categoryRef.current = category
+  const draftRestoredRef = useRef(false)
   const heroInputRef = useRef<HTMLInputElement>(null)
   const aboutInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const menuImageInputRef = useRef<HTMLInputElement>(null)
+  const previewScrollRef = useRef<HTMLDivElement>(null)
 
-  // Generate page URL slug
   const pageSlug = useMemo(() => generateSlug(businessName), [businessName])
   const selectedTemplate = inferBusinessTemplate(category)
+  const selectedTheme = useMemo(() => getLandingTheme(themeId), [themeId])
   const t = setupCopy[lang]
   const steps = t.stepLabels
-  const selectedTemplateDetails = TEMPLATE_COPY[lang][selectedTemplate]
   const categoryLabel = (value: string) => (lang === 'pt' ? CATEGORY_LABELS_PT[value] ?? value : value)
+  const categoryGroupTitle = (template: BusinessTemplate) => (
+    lang === 'pt'
+      ? template === 'service'
+        ? 'Serviços e marcações'
+        : template === 'food'
+          ? 'Restauração, menu e pedidos'
+          : 'Serviços profissionais e confiança'
+      : lang === 'es'
+        ? template === 'service'
+          ? 'Servicios y reservas'
+          : template === 'food'
+            ? 'Comida, menú y pedidos'
+            : 'Servicios profesionales y confianza'
+        : lang === 'fr'
+          ? template === 'service'
+            ? 'Services et réservations'
+            : template === 'food'
+              ? 'Restauration, menu et commandes'
+              : 'Services professionnels et confiance'
+          : CATEGORY_GROUPS.find((group) => group.template === template)?.title ?? template
+  )
   const serviceTypeOptions = selectedTemplate === 'food'
     ? [
         { name: lang === 'pt' ? 'Prato principal' : 'Main dish', description: lang === 'pt' ? 'Item forte para aparecer primeiro no menu.' : 'Strong item to feature first in the menu.' },
@@ -266,17 +305,17 @@ export default function DashboardPage() {
         { name: lang === 'pt' ? 'Combo' : 'Combo', description: lang === 'pt' ? 'Oferta pronta para almoço, jantar ou take-away.' : 'Ready offer for lunch, dinner or takeaway.' },
       ]
     : selectedTemplate === 'technical'
-    ? [
-        { name: lang === 'pt' ? 'Orçamento' : 'Quote request', description: lang === 'pt' ? 'Pedido rápido para avaliar preço e disponibilidade.' : 'Quick request to evaluate price and availability.' },
-        { name: lang === 'pt' ? 'Reparação' : 'Repair', description: lang === 'pt' ? 'Serviço prático com chamada direta.' : 'Practical service with direct contact.' },
-        { name: lang === 'pt' ? 'Instalação' : 'Installation', description: lang === 'pt' ? 'Trabalho técnico com explicação simples.' : 'Technical work with a simple explanation.' },
-      ]
-    : [
-        { name: lang === 'pt' ? 'Serviço principal' : 'Main service', description: lang === 'pt' ? 'O serviço mais vendido ou mais importante.' : 'The most important or most requested service.' },
-        { name: lang === 'pt' ? 'Pacote' : 'Package', description: lang === 'pt' ? 'Oferta combinada para facilitar a decisão.' : 'Bundled offer to make decisions easier.' },
-        { name: lang === 'pt' ? 'Consulta' : 'Consultation', description: lang === 'pt' ? 'Primeiro contacto, avaliação ou marcação.' : 'First contact, evaluation or appointment.' },
-      ]
-  const contactMethodSelected = (method: ContactMethod) => contactMethods.includes(method)
+      ? [
+          { name: lang === 'pt' ? 'Orçamento' : 'Quote request', description: lang === 'pt' ? 'Pedido rápido para avaliar preço e disponibilidade.' : 'Quick request to evaluate price and availability.' },
+          { name: lang === 'pt' ? 'Reparação' : 'Repair', description: lang === 'pt' ? 'Serviço prático com chamada direta.' : 'Practical service with direct contact.' },
+          { name: lang === 'pt' ? 'Instalação' : 'Installation', description: lang === 'pt' ? 'Trabalho técnico com explicação simples.' : 'Technical work with a simple explanation.' },
+        ]
+      : [
+          { name: lang === 'pt' ? 'Serviço principal' : 'Main service', description: lang === 'pt' ? 'O serviço mais vendido ou mais importante.' : 'The most important or most requested service.' },
+          { name: lang === 'pt' ? 'Pacote' : 'Package', description: lang === 'pt' ? 'Oferta combinada para facilitar a decisão.' : 'Bundled offer to make decisions easier.' },
+          { name: lang === 'pt' ? 'Consulta' : 'Consultation', description: lang === 'pt' ? 'Primeiro contacto, avaliação ou marcação.' : 'First contact, evaluation or appointment.' },
+        ]
+  const contactMethodSelected = useCallback((method: ContactMethod) => contactMethods.includes(method), [contactMethods])
   const toggleContactMethod = (method: ContactMethod) => {
     setContactMethods((items) => {
       if (items.includes(method)) return items.length === 1 ? items : items.filter((item) => item !== method)
@@ -320,38 +359,67 @@ export default function DashboardPage() {
     return () => { active = false }
   }, [router])
 
+  const applyDraftData = useCallback((data: any, forcedCategory?: string) => {
+    if (!data || typeof data !== 'object') return
+
+    const nextCategory = forcedCategory ?? data.category
+    const nextTemplate = inferBusinessTemplate(typeof nextCategory === 'string' && nextCategory ? nextCategory : categoryRef.current)
+    if (typeof data.businessName === 'string') setBusinessName(data.businessName)
+    if (typeof data.subtitle === 'string') setSubtitle(data.subtitle)
+    if (typeof nextCategory === 'string' && nextCategory) setCategory(nextCategory)
+    if (typeof data.description === 'string') setDescription(data.description)
+    if (typeof data.address === 'string') setAddress(data.address)
+    if (typeof data.email === 'string') setEmail(data.email)
+    if (Array.isArray(data.contactMethods) && data.contactMethods.length) {
+      setContactMethods(data.contactMethods.filter((item: string) => ['whatsapp', 'booking', 'email'].includes(item)) as ContactMethod[])
+    } else {
+      setContactMethods(['whatsapp'])
+    }
+    setPhone(typeof data.phone === 'string' ? data.phone : '')
+    setBookingUrl(typeof data.bookingUrl === 'string' ? data.bookingUrl : '')
+    setWhatsappNumber(typeof data.whatsappNumber === 'string' ? data.whatsappNumber : '')
+    setWhatsappMessage(typeof data.whatsappMessage === 'string' ? data.whatsappMessage : '')
+    setMenuUrl(typeof data.menuUrl === 'string' ? data.menuUrl : '')
+    setMenuImageUrl(typeof data.menuImageUrl === 'string' ? data.menuImageUrl : '')
+    setPlan(typeof data.plan === 'string' ? data.plan : 'starter')
+    if (data.lang && ['pt', 'en', 'es', 'fr'].includes(data.lang)) setLang(data.lang as SetupLang)
+    if (data.themeId && LANDING_THEME_OPTIONS.some((theme) => theme.id === data.themeId)) setThemeId(data.themeId as LandingThemeId)
+    else setThemeId('golden-hour')
+    if (Array.isArray(data.services) && data.services.length) setServices(data.services)
+    else setServices(DEFAULT_SERVICE_PRESETS[nextTemplate])
+    if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
+    else setHours(DAYS.map((day) => ({ day, open: day !== 'Sunday', from: '09:00', to: '20:00' })))
+    if (Array.isArray(data.photos)) {
+      const nextPhotos = (data.photos as string[]).filter(Boolean)
+      setHeroPhoto(nextPhotos[0] || '')
+      if (nextTemplate === 'food') {
+        setAboutPhoto('')
+        setGalleryPhotos(nextPhotos.slice(1))
+      } else {
+        setAboutPhoto(nextPhotos[1] || '')
+        setGalleryPhotos(nextPhotos.slice(2))
+      }
+    } else {
+      setHeroPhoto('')
+      setAboutPhoto('')
+      setGalleryPhotos([])
+    }
+  }, [])
+
   // Restore previously saved data
   useEffect(() => {
+    if (draftRestoredRef.current) return
+    draftRestoredRef.current = true
     try {
       const params = new URLSearchParams(window.location.search)
       const startBlank = params.get('new') === '1'
-      const saved = startBlank ? null : localStorage.getItem('vitrine_business_data')
+      const saved = startBlank ? null : localStorage.getItem(BUSINESS_DRAFT_STORAGE_KEY)
       if (startBlank) {
-        localStorage.removeItem('vitrine_business_data')
+        localStorage.removeItem(BUSINESS_DRAFT_STORAGE_KEY)
+        localStorage.removeItem(TEMPLATE_DRAFT_STORAGE_KEY)
       }
       if (saved) {
-        const data = JSON.parse(saved)
-        if (data.businessName) setBusinessName(data.businessName)
-        if (data.category) setCategory(data.category)
-        if (data.description) setDescription(data.description)
-        if (data.address) setAddress(data.address)
-        if (data.email) setEmail(data.email)
-        if (Array.isArray(data.contactMethods) && data.contactMethods.length) setContactMethods(data.contactMethods.filter((item: string) => ['whatsapp', 'booking', 'email'].includes(item)) as ContactMethod[])
-        if (data.phone) setPhone(data.phone)
-        if (data.bookingUrl) setBookingUrl(data.bookingUrl)
-        if (data.whatsappNumber) setWhatsappNumber(data.whatsappNumber)
-        if (data.whatsappMessage) setWhatsappMessage(data.whatsappMessage)
-        if (data.menuUrl) setMenuUrl(data.menuUrl)
-        if (data.menuImageUrl) setMenuImageUrl(data.menuImageUrl)
-        if (data.plan) setPlan(data.plan)
-        if (data.lang && ['pt', 'en', 'es', 'fr'].includes(data.lang)) setLang(data.lang as SetupLang)
-        if (Array.isArray(data.services) && data.services.length) setServices(data.services)
-        if (Array.isArray(data.hours) && data.hours.length) setHours(data.hours)
-        if (Array.isArray(data.photos) && data.photos.length) {
-          setHeroPhoto((data.photos as string[])[0] || '')
-          setAboutPhoto((data.photos as string[])[1] || '')
-          setGalleryPhotos((data.photos as string[]).slice(2).filter(Boolean))
-        }
+        applyDraftData(JSON.parse(saved))
       }
 
       const ownerEmail = params.get('ownerEmail')
@@ -361,7 +429,7 @@ export default function DashboardPage() {
     } catch {
       // ignore corrupt saved data
     }
-  }, [])
+  }, [applyDraftData])
 
   const addService = () => setServices([...services, selectedTemplate === 'food'
     ? { name: '', price: '', description: '', photo: '' }
@@ -371,11 +439,48 @@ export default function DashboardPage() {
     setServices(services.map((s, idx) => (idx === i ? { ...s, [field]: val } : s)))
   }
   const handleCategoryChange = (nextCategory: string) => {
-    setCategory(nextCategory)
     const template = inferBusinessTemplate(nextCategory)
-    if (services.length === 0 || isDefaultServiceList(services)) {
-      setServices(DEFAULT_SERVICE_PRESETS[template])
+    try {
+      const currentDraft = {
+        businessName,
+        subtitle,
+        category,
+        description,
+        address,
+        email,
+        phone,
+        bookingUrl,
+        whatsappNumber,
+        whatsappMessage,
+        contactMethods,
+        menuUrl,
+        menuImageUrl,
+        plan,
+        lang,
+        themeId,
+        services,
+        hours,
+        photos: setupPhotos,
+      }
+      const storedDrafts = JSON.parse(localStorage.getItem(TEMPLATE_DRAFT_STORAGE_KEY) || '{}')
+      storedDrafts[selectedTemplate] = currentDraft
+      localStorage.setItem(TEMPLATE_DRAFT_STORAGE_KEY, JSON.stringify(storedDrafts))
+
+      if (storedDrafts[template]) {
+        applyDraftData({ ...storedDrafts[template], category: nextCategory }, nextCategory)
+        return
+      }
+    } catch {
+      // ignore draft restore issues and continue with a normal switch
     }
+
+    setCategory(nextCategory)
+    setServices(DEFAULT_SERVICE_PRESETS[template])
+    setMenuUrl('')
+    setMenuImageUrl('')
+    setHeroPhoto('')
+    setAboutPhoto('')
+    setGalleryPhotos([])
   }
   const toggleDay = (i: number) => {
     setHours(hours.map((h, idx) => (idx === i ? { ...h, open: !h.open } : h)))
@@ -406,7 +511,8 @@ export default function DashboardPage() {
 
   const handleGalleryFiles = (files: FileList | null) => {
     if (!files) return
-    const availableSlots = Math.max(0, AI_PHOTO_LIMIT - 2 - galleryPhotos.length)
+    const reservedSlots = selectedTemplate === 'food' ? 1 : 2
+    const availableSlots = Math.max(0, AI_PHOTO_LIMIT - reservedSlots - galleryPhotos.length)
     Array.from(files).slice(0, availableSlots).forEach((file) => {
       if (!file.type.startsWith('image/')) return
       compressImage(file)
@@ -422,10 +528,16 @@ export default function DashboardPage() {
     })
   }
 
-  const saveBusinessData = (): boolean => {
-    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].slice(0, AI_PHOTO_LIMIT)
+  const setupPhotos = useMemo(
+    () => (selectedTemplate === 'food' ? [heroPhoto, ...galleryPhotos] : [heroPhoto, aboutPhoto, ...galleryPhotos]).filter(Boolean).slice(0, AI_PHOTO_LIMIT),
+    [aboutPhoto, galleryPhotos, heroPhoto, selectedTemplate],
+  )
+
+  const saveBusinessData = useCallback((): boolean => {
+    const photos = setupPhotos
     const data = {
       businessName,
+      subtitle,
       category,
       description,
       address,
@@ -439,23 +551,36 @@ export default function DashboardPage() {
       menuImageUrl,
       plan,
       lang,
+      themeId,
       services,
       hours,
       photos,
+      mapUrl: buildAddressMapUrl(address),
     }
     try {
-      localStorage.setItem('vitrine_business_data', JSON.stringify(data))
+      localStorage.setItem(BUSINESS_DRAFT_STORAGE_KEY, JSON.stringify(data))
+      const storedDrafts = JSON.parse(localStorage.getItem(TEMPLATE_DRAFT_STORAGE_KEY) || '{}')
+      storedDrafts[selectedTemplate] = data
+      localStorage.setItem(TEMPLATE_DRAFT_STORAGE_KEY, JSON.stringify(storedDrafts))
       return true
     } catch {
       // Quota exceeded — retry without photos so at least the text data is saved
       try {
-        localStorage.setItem('vitrine_business_data', JSON.stringify({ ...data, photos: [] }))
+        const liteDraft = { ...data, photos: [] }
+        localStorage.setItem(BUSINESS_DRAFT_STORAGE_KEY, JSON.stringify(liteDraft))
+        const storedDrafts = JSON.parse(localStorage.getItem(TEMPLATE_DRAFT_STORAGE_KEY) || '{}')
+        storedDrafts[selectedTemplate] = liteDraft
+        localStorage.setItem(TEMPLATE_DRAFT_STORAGE_KEY, JSON.stringify(storedDrafts))
       } catch {
         // localStorage unavailable — ignore
       }
       return false
     }
-  }
+  }, [address, bookingUrl, businessName, category, contactMethods, description, email, hours, lang, menuImageUrl, menuUrl, phone, plan, selectedTemplate, services, setupPhotos, subtitle, themeId, whatsappMessage, whatsappNumber])
+
+  useEffect(() => {
+    saveBusinessData()
+  }, [saveBusinessData])
 
   const handleNext = () => {
     if (step === 0) {
@@ -491,10 +616,12 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessName,
+          subtitle,
           slug: pageSlug,
           category,
           description,
           address,
+          mapUrl: buildAddressMapUrl(address),
           email: contactMethodSelected('email') ? email.trim() || null : null,
           phone,
           whatsappNumber: contactMethodSelected('whatsapp') ? whatsappNumber.trim() || null : null,
@@ -505,9 +632,10 @@ export default function DashboardPage() {
           socialLinks: { contactMethods },
           plan,
           lang,
+          themeId,
           services,
           hours,
-          photos: [heroPhoto, aboutPhoto, ...galleryPhotos],
+          photos: setupPhotos,
           aiPageConfig,
         }),
       })
@@ -579,37 +707,32 @@ export default function DashboardPage() {
     }
   }
 
-  const buildAiPreviewConfig = () => {
+  const buildAiPreviewConfig = useCallback(() => {
     const template = selectedTemplate
-    const photos = [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean).slice(0, AI_PHOTO_LIMIT)
+    const photos = setupPhotos
     const hasMenu = template === 'food' && Boolean(menuUrl || menuImageUrl || services.length)
     const hasBooking = contactMethodSelected('booking') && Boolean(bookingUrl)
     const hasWhatsapp = contactMethodSelected('whatsapp') && Boolean(whatsappNumber)
     const primaryCta = hasBooking ? 'Book now' : hasWhatsapp ? 'Message on WhatsApp' : 'Contact us'
     const secondaryCta = hasMenu ? 'View menu' : 'View services'
-    const headline = template === 'food'
-      ? `${businessName || 'Your restaurant'} — menu, atmosphere and easy ordering`
-      : template === 'technical'
-      ? `${businessName || 'Your business'} — trust, clarity and direct contact`
-      : `${businessName || 'Your business'} — services, photos and booking in one page`
-    const subheadline = description.trim()
-      ? description.trim().slice(0, 220)
-      : template === 'food'
-      ? 'A warm, visual landing page built from your photos to help customers choose, order or reserve faster.'
-      : 'A professional landing page built from your setup and photos to turn visitors into real contacts.'
+    const headline = businessName.trim() || (template === 'food' ? 'Your restaurant' : 'Your business')
+    const subheadline = subtitle.trim()
+      ? subtitle.trim().slice(0, 120)
+      : ''
 
     return {
       generatedAt: new Date().toISOString(),
       source: 'setup_and_photos_preview',
       template,
       imageCount: photos.length,
-      style: template === 'food'
-        ? { primaryColor: '#1F2937', accentColor: '#D4AF37', mood: 'warm_premium' }
-        : template === 'technical'
-        ? { primaryColor: '#0F172A', accentColor: '#38BDF8', mood: 'clean_trust' }
-        : { primaryColor: '#0F172A', accentColor: '#D4AF37', mood: 'modern_local' },
+      style: {
+        primaryColor: selectedTheme.primaryColor,
+        accentColor: selectedTheme.accentColor,
+        mood: selectedTheme.id,
+        themeId: selectedTheme.id,
+      },
       sections: template === 'food'
-        ? ['hero', 'about', 'menu', 'gallery', 'hours', 'location', 'contact']
+        ? ['hero', 'menu', 'gallery', 'contact']
         : ['hero', 'about', 'benefits', 'services', 'gallery', 'hours', 'contact'],
       copy: {
         headline,
@@ -617,18 +740,24 @@ export default function DashboardPage() {
         primaryCta,
         secondaryCta,
       },
-      photoRoles: {
-        hero: photos[0] ? 'photo_1' : null,
-        about: photos[1] ? 'photo_2' : null,
-        gallery: photos.slice(2).map((_, index) => `photo_${index + 3}`),
-      },
+      photoRoles: template === 'food'
+        ? {
+            hero: photos[0] ? 'photo_1' : null,
+            about: null,
+            gallery: photos.slice(1).map((_, index) => `photo_${index + 2}`),
+          }
+        : {
+            hero: photos[0] ? 'photo_1' : null,
+            about: photos[1] ? 'photo_2' : null,
+            gallery: photos.slice(2).map((_, index) => `photo_${index + 3}`),
+          },
       recommendations: [
         photos.length >= 3 ? 'Use the strongest photo as the hero and keep the rest as visual proof.' : 'Add more real photos to make the landing feel more trustworthy.',
         hasWhatsapp ? 'Keep WhatsApp visible as the fastest conversion action.' : 'Add WhatsApp if you want faster customer conversations.',
         hasMenu ? 'Show menu highlights before the gallery so customers decide faster.' : 'Keep services clear and easy to scan before the contact section.',
       ],
     }
-  }
+  }, [bookingUrl, businessName, contactMethodSelected, menuImageUrl, menuUrl, selectedTemplate, selectedTheme, services, setupPhotos, subtitle, whatsappNumber])
 
   const handleAiPreview = async () => {
     saveBusinessData()
@@ -641,17 +770,20 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessName,
+          subtitle,
           category,
           description,
           address,
+          mapUrl: buildAddressMapUrl(address),
           lang,
+          themeId,
           contactMethods,
           bookingUrl: contactMethodSelected('booking') ? bookingUrl.trim() || null : null,
           whatsappNumber: contactMethodSelected('whatsapp') ? whatsappNumber.trim() || null : null,
           menuUrl: menuUrl.trim() || null,
           services,
           hours,
-          photos: [heroPhoto, aboutPhoto, ...galleryPhotos].filter(Boolean).slice(0, AI_PHOTO_LIMIT),
+          photos: setupPhotos,
           generationType: 'initial_preview',
         }),
       })
@@ -670,6 +802,137 @@ export default function DashboardPage() {
       setAiPreviewLoading(false)
     }
   }
+
+  const activatePreviewFocus = useCallback((section: string, label: string) => {
+    setPreviewFocusSection(section)
+    setPreviewFocusLabel(label)
+  }, [])
+  const openPreviewSpotlight = useCallback((section: string, label: string) => {
+    setPreviewFocusSection(section)
+    setPreviewFocusLabel(label)
+    setPreviewSpotlightOpen(true)
+  }, [])
+  const bindPreviewFocus = useCallback((section: string, label: string) => ({
+    onFocus: () => activatePreviewFocus(section, label),
+    onClick: () => activatePreviewFocus(section, label),
+  }), [activatePreviewFocus])
+  const previewJumpLabel = lang === 'pt' ? 'Mostrar' : lang === 'es' ? 'Mostrar' : lang === 'fr' ? 'Montrer' : 'Show'
+
+  const openFullLivePreview = () => {
+    saveBusinessData()
+    localStorage.setItem(AI_PREVIEW_STORAGE_KEY, JSON.stringify({ ...buildAiPreviewConfig(), source: 'dashboard_live_preview' }))
+    router.push('/preview')
+  }
+
+  const fullPreviewConfig = useMemo(() => buildAiPreviewConfig(), [buildAiPreviewConfig])
+  const livePreviewSections = useMemo(() => (
+    step === 0
+      ? (selectedTemplate === 'food' ? ['hero', 'menu', 'contact'] : ['hero', 'about', 'contact'])
+      : step === 1
+        ? ['hero', selectedTemplate === 'food' ? 'menu' : 'services', 'contact']
+        : step === 2
+          ? (selectedTemplate === 'food' ? ['hero', 'menu', 'gallery', 'contact'] : ['hero', 'about', 'gallery'])
+          : fullPreviewConfig.sections
+  ), [fullPreviewConfig.sections, selectedTemplate, step])
+  const livePreviewConfig = useMemo(() => ({
+    ...fullPreviewConfig,
+    sections: livePreviewSections,
+    focusSection: previewFocusSection,
+    focusLabel: previewFocusLabel,
+  }), [fullPreviewConfig, livePreviewSections, previewFocusLabel, previewFocusSection])
+  const spotlightPreviewConfig = useMemo(() => ({
+    ...fullPreviewConfig,
+    sections: fullPreviewConfig.sections,
+    focusSection: previewFocusSection,
+    focusLabel: previewFocusLabel,
+  }), [fullPreviewConfig, previewFocusLabel, previewFocusSection])
+  const previewShowsEmail = contactMethods.includes('email')
+  const previewShowsBooking = contactMethods.includes('booking')
+  const previewShowsWhatsapp = contactMethods.includes('whatsapp')
+  const previewPhotos = (step === 2 || step === 3)
+    ? setupPhotos
+    : (selectedTemplate === 'food' ? [heroPhoto].filter(Boolean) : [heroPhoto, aboutPhoto].filter(Boolean))
+
+  const livePreviewBusiness = useMemo<AiBusinessData>(() => ({
+    businessName: businessName.trim() || (lang === 'pt' ? 'Seu negócio' : lang === 'es' ? 'Tu negocio' : lang === 'fr' ? 'Votre entreprise' : 'Your business'),
+    subtitle: subtitle.trim(),
+    category,
+    description: description.trim(),
+    address,
+    mapUrl: buildAddressMapUrl(address),
+    email: previewShowsEmail ? email : undefined,
+    phone,
+    bookingUrl: previewShowsBooking ? bookingUrl : undefined,
+    whatsappNumber: previewShowsWhatsapp ? whatsappNumber : undefined,
+    whatsappMessage: previewShowsWhatsapp ? whatsappMessage : undefined,
+    contactMethods,
+    menuUrl,
+    menuImageUrl,
+    lang,
+    themeId,
+    services,
+    hours,
+    photos: previewPhotos,
+  }), [
+    businessName,
+    subtitle,
+    category,
+    description,
+    address,
+    email,
+    phone,
+    bookingUrl,
+    whatsappNumber,
+    whatsappMessage,
+    contactMethods,
+    previewShowsEmail,
+    previewShowsBooking,
+    previewShowsWhatsapp,
+    menuUrl,
+    menuImageUrl,
+    lang,
+    themeId,
+    services,
+    hours,
+    previewPhotos,
+  ])
+
+  useEffect(() => {
+    if (!previewFocusSection) return
+
+    const previewEl = previewScrollRef.current
+    if (!previewEl) return
+
+    const target = previewEl.querySelector<HTMLElement>(`[data-preview-section="${previewFocusSection}"]`)
+    if (!target) return
+
+    const previewRect = previewEl.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const offset = targetRect.top - previewRect.top + previewEl.scrollTop - 28
+
+    previewEl.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' })
+  }, [previewFocusSection, previewSpotlightOpen, previewViewport, step])
+
+  useEffect(() => {
+    const defaults = step === 0
+      ? { section: selectedTemplate === 'food' ? 'menu' : 'hero', label: selectedTemplate === 'food' ? (lang === 'pt' ? 'Hero e cardápio' : 'Hero and menu') : (lang === 'pt' ? 'Hero e identidade' : 'Hero and identity') }
+      : step === 1
+        ? { section: selectedTemplate === 'food' ? 'menu' : 'services', label: selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu e destaques' : 'Menu and highlights') : (lang === 'pt' ? 'Serviços em destaque' : 'Featured services') }
+        : step === 2
+          ? { section: selectedTemplate === 'food' ? 'menu' : 'gallery', label: selectedTemplate === 'food' ? (lang === 'pt' ? 'Fotos do hero, cardápio e galeria' : 'Hero, menu and gallery photos') : (lang === 'pt' ? 'Fotos e galeria' : 'Photos and gallery') }
+          : { section: 'contact', label: lang === 'pt' ? 'Prévia final' : 'Final preview' }
+
+    setPreviewFocusSection(defaults.section)
+    setPreviewFocusLabel(defaults.label)
+  }, [lang, selectedTemplate, step])
+
+  const livePreviewStage = step === 0
+    ? (lang === 'pt' ? 'Identidade, proposta e contacto começam a aparecer.' : lang === 'es' ? 'La identidad, propuesta y contacto ya empiezan a aparecer.' : lang === 'fr' ? 'L’identité, la proposition et le contact commencent déjà à apparaître.' : 'Identity, positioning and contact already start to appear.')
+    : step === 1
+    ? (lang === 'pt' ? 'Agora a oferta ganha cards, preço e ordem de leitura.' : lang === 'es' ? 'Ahora la oferta gana cards, precio y orden de lectura.' : lang === 'fr' ? 'L’offre gagne maintenant des cartes, un prix et un ordre de lecture.' : 'Now the offer gains cards, pricing and reading order.')
+    : step === 2
+    ? (lang === 'pt' ? 'As fotos entram nos blocos certos e mudam completamente a percepção.' : lang === 'es' ? 'Las fotos entran en los bloques correctos y cambian por completo la percepción.' : lang === 'fr' ? 'Les photos entrent dans les bons blocs et changent complètement la perception.' : 'Photos flow into the right blocks and completely change the feel.')
+    : (lang === 'pt' ? 'Aqui o cliente sente a landing quase pronta antes de publicar.' : lang === 'es' ? 'Aquí el cliente siente la landing casi lista antes de publicar.' : lang === 'fr' ? 'Ici le client ressent la landing presque prête avant publication.' : 'Here the client feels the landing nearly finished before publishing.')
 
   if (authLoading) {
     return (
@@ -722,7 +985,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-8">
         <div className="sm:hidden mb-5 flex items-center justify-between rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
           <span className="pl-2 text-xs font-black text-navy uppercase tracking-wider">{t.headerHint}</span>
           <div className="flex items-center gap-1">
@@ -769,506 +1032,487 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Step content */}
-        <div className="bg-white rounded-[2rem] shadow-xl shadow-stone-200/60 border border-stone-100 p-6 sm:p-8">
-          {step === 0 && (
-            <div>
-              <div className="rounded-[1.75rem] bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-6 text-white mb-6 overflow-hidden relative">
-                <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-gold/20 blur-3xl" />
-                <div className="relative flex flex-col md:flex-row md:items-center gap-5 justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-black text-gold uppercase tracking-wider mb-1">{t.welcome}</p>
-                      <h2 className="text-2xl sm:text-3xl font-black mb-2">{t.step0Title}</h2>
-                      <p className="text-sm text-gray-300 max-w-2xl leading-relaxed">{t.step0Text}</p>
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/10 p-4 min-w-[210px]">
-                    <div className="flex items-center gap-2 text-gold text-xs font-black uppercase tracking-wider mb-2">
-                      <Globe2 className="w-4 h-4" />
-                      {t.headerHint}
-                    </div>
-                    <p className="text-sm text-gray-300 leading-relaxed">{t.infoText}</p>
-                  </div>
+        <div className="mx-auto max-w-5xl">
+            {/* Step content */}
+            <div className="bg-white rounded-[2rem] shadow-xl shadow-stone-200/60 border border-stone-100 p-6 sm:p-8">
+              <div className="mb-6 flex flex-col gap-4 rounded-[1.5rem] border border-stone-200 bg-[radial-gradient(circle_at_top_left,_rgba(212,175,55,0.18),_transparent_45%),linear-gradient(180deg,_#fffdf8_0%,_#ffffff_100%)] p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Fluxo guiado por bloco' : lang === 'es' ? 'Flujo guiado por bloque' : lang === 'fr' ? 'Flux guidé par bloc' : 'Block-by-block flow'}</p>
+                  <p className="mt-1 text-sm text-gray-500">{lang === 'pt' ? 'Agora o setup fica limpo: um bloco de cada vez, com botão Mostrar para abrir a landing protagonista só quando fizer sentido.' : lang === 'es' ? 'Ahora el setup queda más limpio: un bloque por vez, con botón Mostrar para abrir la landing protagonista solo cuando haga sentido.' : lang === 'fr' ? 'Le setup reste maintenant plus clair : un bloc à la fois, avec un bouton Montrer pour ouvrir la landing en mode protagoniste seulement quand nécessaire.' : 'The setup now stays cleaner: one block at a time, with a Show button that opens the landing as the protagonist only when it matters.'}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-navy">
+                    <Eye className="h-3.5 w-3.5 text-gold" />
+                    {lang === 'pt' ? `Bloco ativo: ${previewFocusLabel}` : lang === 'es' ? `Bloque activo: ${previewFocusLabel}` : lang === 'fr' ? `Bloc actif : ${previewFocusLabel}` : `Active block: ${previewFocusLabel}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openPreviewSpotlight(previewFocusSection ?? 'hero', previewFocusLabel)}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-navy px-4 py-2 text-sm font-black text-white hover:bg-navy/90 transition-colors"
+                  >
+                    {lang === 'pt' ? 'Abrir landing protagonista' : lang === 'es' ? 'Abrir landing protagonista' : lang === 'fr' ? 'Ouvrir la landing protagoniste' : 'Open hero preview'}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-              <div className="space-y-5">
-                <div className="rounded-2xl border border-gold/20 bg-gold/5 p-4 flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gold text-navy flex items-center justify-center flex-shrink-0">
-                    <Info className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="font-black text-navy">{t.infoTitle}</p>
-                    <p className="text-sm text-gray-500 mt-1 leading-relaxed">{t.infoText}</p>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.businessName}</label>
-                  <input
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => { setBusinessName(e.target.value); if (e.target.value.trim()) setNameError('') }}
-                    placeholder={t.businessNamePlaceholder}
-                    className={`w-full border rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors ${nameError ? 'border-red-400' : 'border-gray-200'}`}
-                  />
-                  {nameError && <p className="text-red-500 text-xs mt-1">{nameError}</p>}
-                </div>
-                <div className="rounded-[1.75rem] border border-green-200 bg-green-50 p-5 flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-green-600 text-white flex items-center justify-center flex-shrink-0">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-navy">Secure account connected</h3>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      You are creating this page from {accountEmail}. Your dashboard stays protected by your login password.
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.category}</label>
-                  <select
-                    value={category}
-                    onChange={(e) => handleCategoryChange(e.target.value)}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                  >
-                    {CATEGORY_GROUPS.map((group) => (
-                      <optgroup key={group.template} label={group.title}>
-                        {getCategoriesByTemplate(group.template).map((c) => (
-                          <option key={c.value} value={c.value}>{categoryLabel(c.value)}</option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                  <div className="mt-3 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 to-white p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-navy text-gold flex items-center justify-center flex-shrink-0">
-                        {selectedTemplate === 'food' ? <Utensils className="w-5 h-5" /> : selectedTemplate === 'technical' ? <Wrench className="w-5 h-5" /> : <CalendarDays className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <span className="inline-flex rounded-full bg-gold/20 text-gold px-2.5 py-1 text-[10px] font-black uppercase tracking-wider mb-2">
-                          {selectedTemplateDetails.badge}
-                        </span>
-                        <p className="font-black text-navy">{selectedTemplateDetails.title}</p>
-                        <p className="text-sm text-gray-500 mt-1">{selectedTemplateDetails.description}</p>
-                      </div>
+              {step === 0 && (
+            <div className="space-y-6">
+                <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-6 text-white shadow-2xl shadow-navy/15">
+                  <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-gold/20 blur-3xl" />
+                  <div className="relative">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-white/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.2em] text-gold">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      {t.welcome}
                     </div>
-                  </div>
-                  <div className="mt-3 rounded-[1.75rem] border border-stone-200 bg-white p-4 shadow-sm">
-                    <div className="mb-3 flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Onde isso aparece' : 'Where this appears'}</p>
-                        <h3 className="mt-1 font-black text-navy">{lang === 'pt' ? 'Mapa da landing que a IA vai montar' : 'Landing map generated from your setup'}</h3>
-                      </div>
-                      <Sparkles className="h-5 w-5 flex-shrink-0 text-gold" />
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl">{t.step0Title}</h2>
+                    <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">{t.step0Text}</p>
+                    <div className="mt-6 grid gap-3 sm:grid-cols-3">
                       {[
-                        { icon: Upload, title: lang === 'pt' ? 'Foto principal + nome' : 'Hero photo + name', text: lang === 'pt' ? 'Primeira dobra da landing, com CTA principal.' : 'First screen of the landing, with the main CTA.' },
-                        { icon: selectedTemplate === 'food' ? Utensils : Info, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Experiência de menu' : 'Menu experience') : (lang === 'pt' ? 'Descrição + proposta' : 'Description + positioning'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Depois do hero, a página vai direto para os itens clicáveis do menu.' : 'After the hero, the page goes straight into clickable menu items.') : (lang === 'pt' ? 'Bloco sobre o negócio e motivo para confiar.' : 'About block and reason to trust the business.') },
-                        { icon: selectedTemplate === 'food' ? QrCode : CalendarDays, title: selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu completo + QR' : 'Full menu + QR') : (lang === 'pt' ? 'Serviços e preços' : 'Services and prices'), text: selectedTemplate === 'food' ? (lang === 'pt' ? 'Link ou foto do cardápio vira botão, imagem completa e QR Code.' : 'A full menu link or photo becomes a button, full image and QR Code.') : (lang === 'pt' ? 'Itens aparecem em cards de oferta claros.' : 'Items appear as clear offer cards.') },
-                        { icon: MessageCircle, title: lang === 'pt' ? 'Contato, horários e localização' : 'Contact, hours and location', text: lang === 'pt' ? 'WhatsApp, reserva, morada e horários ficam juntos para decisão rápida.' : 'WhatsApp, booking, address and hours stay together for quick decisions.' },
-                      ].map((item) => {
-                        const Icon = item.icon
+                        lang === 'pt' ? '1. Nome e categoria definem o hero da landing' : lang === 'es' ? '1. Nombre y categoría definen el hero de la landing' : lang === 'fr' ? '1. Le nom et la catégorie définissent le hero de la landing' : '1. Name and category define the landing hero',
+                        lang === 'pt' ? '2. Descrição organiza a proposta e o bloco sobre' : lang === 'es' ? '2. La descripción organiza la propuesta y el bloque sobre' : lang === 'fr' ? '2. La description organise la proposition et le bloc à propos' : '2. Description shapes the value proposition and about block',
+                        lang === 'pt' ? '3. Contacto entra depois, já com intenção clara de ação' : lang === 'es' ? '3. El contacto entra después, ya con intención clara de acción' : lang === 'fr' ? '3. Le contact vient ensuite, avec une intention d’action claire' : '3. Contact comes after that, with a clearer action intent',
+                      ].map((item) => (
+                        <div key={item} className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-slate-200">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div onFocusCapture={() => activatePreviewFocus('hero', lang === 'pt' ? 'Nome e categoria' : 'Name and category')} className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Base da landing' : lang === 'es' ? 'Base de la landing' : lang === 'fr' ? 'Base de la landing' : 'Landing foundation'}</p>
+                      <h3 className="mt-2 text-2xl font-black text-navy">{lang === 'pt' ? 'Primeiro: nome e categoria' : lang === 'es' ? 'Primero: nombre y categoría' : lang === 'fr' ? 'D’abord : nom et catégorie' : 'First: name and category'}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-gray-500">{lang === 'pt' ? 'Este bloco define o topo da landing, o tom da página e o template que será usado.' : lang === 'es' ? 'Este bloque define la parte superior de la landing, el tono de la página y el template que se usará.' : lang === 'fr' ? 'Ce bloc définit le haut de la landing, le ton de la page et le template utilisé.' : 'This block defines the top of the landing, the page tone and the template that will be used.'}</p>
+                    </div>
+                    <button type="button" onClick={() => openPreviewSpotlight('hero', lang === 'pt' ? 'Nome e categoria' : 'Name and category')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-black text-navy hover:bg-gold/20 transition-colors">{previewJumpLabel}</button>
+                  </div>
+
+                  <div className="mt-5">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">{t.businessName}</label>
+                        <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Vai para o hero, navegação e assinatura final da landing.' : lang === 'es' ? 'Va al hero, navegación y firma final de la landing.' : lang === 'fr' ? 'Va dans le hero, la navigation et la signature finale de la landing.' : 'Shows in the hero, navigation and final signature.'}</p>
+                        <input
+                          type="text"
+                          value={businessName}
+                          onChange={(e) => {
+                            setBusinessName(e.target.value)
+                            if (nameError) setNameError('')
+                          }}
+                          {...bindPreviewFocus('hero', lang === 'pt' ? 'Nome do negócio' : 'Business name')}
+                          placeholder={t.businessNamePlaceholder}
+                          className={`w-full rounded-2xl border px-4 py-3.5 focus:outline-none focus:border-gold transition-colors ${nameError ? 'border-red-300 bg-red-50/40' : 'border-gray-200'}`}
+                        />
+                        {nameError ? <p className="mt-2 text-xs font-semibold text-red-500">{nameError}</p> : null}
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">{lang === 'pt' ? 'Subtítulo rápido' : lang === 'es' ? 'Subtítulo rápido' : lang === 'fr' ? 'Sous-titre rapide' : 'Quick subtitle'}</label>
+                        <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Pequena linha logo abaixo do nome. Ex.: especialidade, zona ou promessa curta.' : lang === 'es' ? 'Pequeña línea justo debajo del nombre. Ej.: especialidad, zona o promesa corta.' : lang === 'fr' ? 'Petite ligne juste sous le nom. Ex. : spécialité, quartier ou promesse courte.' : 'Short line below the name. Example: specialty, neighborhood or quick promise.'}</p>
+                        <input
+                          type="text"
+                          value={subtitle}
+                          onChange={(e) => setSubtitle(e.target.value)}
+                          {...bindPreviewFocus('hero', lang === 'pt' ? 'Subtítulo do hero' : 'Hero subtitle')}
+                          maxLength={90}
+                          placeholder={lang === 'pt' ? 'Ex.: Coloração premium no centro do Porto' : lang === 'es' ? 'Ej.: Coloración premium en el centro' : lang === 'fr' ? 'Ex. : Coloration premium au centre-ville' : 'e.g. Premium studio in downtown'}
+                          className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-700">{t.category}</label>
+                        <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'A categoria escolhe a estrutura principal da landing antes de montar os próximos blocos.' : lang === 'es' ? 'La categoría elige la estructura principal de la landing antes de montar los siguientes bloques.' : lang === 'fr' ? 'La catégorie choisit la structure principale de la landing avant les prochains blocs.' : 'The category chooses the main landing structure before the next blocks are built.'}</p>
+                        <select
+                          value={category}
+                          onChange={(e) => handleCategoryChange(e.target.value)}
+                          {...bindPreviewFocus('hero', lang === 'pt' ? 'Categoria da landing' : 'Landing category')}
+                          className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
+                        >
+                          {CATEGORY_GROUPS.map((group) => (
+                            <optgroup key={group.template} label={categoryGroupTitle(group.template)}>
+                              {getCategoriesByTemplate(group.template).map((option) => (
+                                <option key={`${group.template}-${option.value}`} value={option.value}>{categoryLabel(option.value)}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div onFocusCapture={() => activatePreviewFocus('about', lang === 'pt' ? 'Proposta e descrição' : 'Positioning and description')} className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Bloco sobre o negócio' : lang === 'es' ? 'Bloque sobre el negocio' : lang === 'fr' ? 'Bloc à propos de l’entreprise' : 'About block'}</p>
+                      <h3 className="mt-2 text-2xl font-black text-navy">{lang === 'pt' ? 'Depois: proposta e contexto' : lang === 'es' ? 'Después: propuesta y contexto' : lang === 'fr' ? 'Ensuite : proposition et contexte' : 'Then: positioning and context'}</h3>
+                    </div>
+                    <button type="button" onClick={() => openPreviewSpotlight('about', lang === 'pt' ? 'Proposta e descrição' : 'Positioning and description')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-black text-navy hover:bg-gold/20 transition-colors">{previewJumpLabel}</button>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500">{lang === 'pt' ? 'Aqui o cliente entende o que você faz, para quem é e por que vale a pena continuar lendo.' : lang === 'es' ? 'Aquí el cliente entiende qué haces, para quién es y por qué vale la pena seguir leyendo.' : lang === 'fr' ? 'Ici le client comprend ce que vous faites, pour qui et pourquoi il vaut la peine de continuer.' : 'Here customers understand what you do, who it is for and why it is worth reading on.'}</p>
+
+                  <div className="mt-5">
+                    <label className="mb-1 block text-sm font-medium text-gray-700">{t.shortDescription}</label>
+                    <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Este texto aparece logo depois do hero, no bloco que sustenta a proposta da landing.' : lang === 'es' ? 'Este texto aparece justo después del hero, en el bloque que sostiene la propuesta de la landing.' : lang === 'fr' ? 'Ce texte apparaît juste après le hero, dans le bloc qui soutient la proposition de la landing.' : 'This text appears right after the hero, in the block that supports the landing proposition.'}</p>
+                    <textarea
+                      rows={4}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      {...bindPreviewFocus('about', lang === 'pt' ? 'Descrição da landing' : 'Landing description')}
+                      placeholder={t.descriptionPlaceholder}
+                      className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div onFocusCapture={() => activatePreviewFocus('contact', lang === 'pt' ? 'Contacto e decisão' : 'Contact and decision')} className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Decisão e contacto' : lang === 'es' ? 'Decisión y contacto' : lang === 'fr' ? 'Décision et contact' : 'Decision and contact'}</p>
+                      <h3 className="mt-2 text-2xl font-black text-navy">{lang === 'pt' ? 'Como o cliente vai agir no fim da página' : lang === 'es' ? 'Cómo actuará el cliente al final de la página' : lang === 'fr' ? 'Comment le client agira en fin de page' : 'How customers act at the end of the page'}</h3>
+                    </div>
+                    <button type="button" onClick={() => openPreviewSpotlight('contact', lang === 'pt' ? 'Contacto e decisão' : 'Contact and decision')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-black text-navy hover:bg-gold/20 transition-colors">{previewJumpLabel}</button>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500">{t.actionText}</p>
+
+                  <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">{t.address}</label>
+                      <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Vai para a área de contacto e localização da landing.' : lang === 'es' ? 'Va al área de contacto y ubicación de la landing.' : lang === 'fr' ? 'Va dans la zone contact et localisation de la landing.' : 'Shows in the contact and location area.'}</p>
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        {...bindPreviewFocus('contact', lang === 'pt' ? 'Morada e contacto' : 'Address and contact')}
+                        placeholder={t.addressPlaceholder}
+                        className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">{t.phone}</label>
+                      <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Reforça confiança e pode aparecer no rodapé ou contacto final.' : lang === 'es' ? 'Refuerza confianza y puede aparecer en el pie o contacto final.' : lang === 'fr' ? 'Renforce la confiance et peut apparaître dans le footer ou le contact final.' : 'Adds trust and may appear in the footer or final contact area.'}</p>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        {...bindPreviewFocus('contact', lang === 'pt' ? 'Telefone e contacto' : 'Phone and contact')}
+                        placeholder="+351 912 345 678"
+                        className="w-full rounded-2xl border border-gray-200 px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 rounded-[1.75rem] border border-gold/30 bg-gradient-to-br from-[#fffaf0] to-white p-5 shadow-sm">
+                    <p className="text-xs font-black text-gold uppercase tracking-wider mb-2">{t.actionEyebrow}</p>
+                    <h3 className="text-xl font-black text-navy mb-2">{t.actionTitle}</h3>
+                    <p className="mb-5 text-sm leading-relaxed text-gray-500">{t.actionText}</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                      {[
+                        { id: 'whatsapp' as ContactMethod, icon: MessageCircle, title: t.whatsapp, hint: t.whatsappHint },
+                        { id: 'booking' as ContactMethod, icon: Link2, title: t.booking, hint: t.bookingHint },
+                        { id: 'email' as ContactMethod, icon: Mail, title: t.emailContact, hint: t.emailHint },
+                      ].map((method) => {
+                        const Icon = method.icon
+                        const selected = contactMethodSelected(method.id)
                         return (
-                          <div key={item.title} className="rounded-2xl border border-stone-100 bg-stone-50 p-4">
-                            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-gold/10 text-gold">
-                              <Icon className="h-5 w-5" />
+                          <button
+                            key={method.id}
+                            type="button"
+                            onClick={() => { activatePreviewFocus('contact', lang === 'pt' ? 'Contacto e botões' : 'Contact and actions'); toggleContactMethod(method.id) }}
+                            className={`group rounded-2xl border p-4 text-left transition-all ${selected ? 'border-gold bg-gold/10 ring-2 ring-gold/20 shadow-lg shadow-gold/10' : 'border-stone-200 bg-white hover:border-gold/40 hover:-translate-y-0.5'}`}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${selected ? 'bg-gold text-navy' : 'bg-navy/5 text-navy group-hover:bg-gold/10'}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-black text-navy">{method.title}</p>
+                                  {selected ? <Check className="w-4 h-4 text-gold" /> : null}
+                                </div>
+                                <div className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-gray-500">
+                                  <Info className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
+                                  <span>{method.hint}</span>
+                                </div>
+                              </div>
                             </div>
-                            <p className="font-black text-navy">{item.title}</p>
-                            <p className="mt-1 text-sm leading-relaxed text-gray-500">{item.text}</p>
-                          </div>
+                          </button>
                         )
                       })}
                     </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{t.shortDescription}</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={4}
-                    placeholder={t.descriptionPlaceholder}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t.address}</label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder={t.addressPlaceholder}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t.phone}</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+351 912 345 678"
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors"
-                    />
-                  </div>
-                </div>
-                <div className="rounded-[1.75rem] border border-gold/30 bg-gradient-to-br from-[#fffaf0] to-white p-5 shadow-sm">
-                  <p className="text-xs font-black text-gold uppercase tracking-wider mb-2">
-                    {t.actionEyebrow}
-                  </p>
-                  <h3 className="font-black text-navy text-xl mb-2">{t.actionTitle}</h3>
-                  <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-                    {t.actionText}
-                  </p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                    {[
-                      { id: 'whatsapp' as ContactMethod, icon: MessageCircle, title: t.whatsapp, hint: t.whatsappHint },
-                      { id: 'booking' as ContactMethod, icon: Link2, title: t.booking, hint: t.bookingHint },
-                      { id: 'email' as ContactMethod, icon: Mail, title: t.emailContact, hint: t.emailHint },
-                    ].map((method) => {
-                      const Icon = method.icon
-                      const selected = contactMethodSelected(method.id)
-                      return (
-                        <button
-                          key={method.id}
-                          type="button"
-                          onClick={() => toggleContactMethod(method.id)}
-                          className={`group text-left rounded-2xl border p-4 transition-all ${
-                            selected
-                              ? 'border-gold bg-gold/10 ring-2 ring-gold/20 shadow-lg shadow-gold/10'
-                              : 'border-stone-200 bg-white hover:border-gold/40 hover:-translate-y-0.5'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${selected ? 'bg-gold text-navy' : 'bg-navy/5 text-navy group-hover:bg-gold/10'}`}>
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="font-black text-navy">{method.title}</p>
-                                {selected && <Check className="w-4 h-4 text-gold" />}
-                              </div>
-                              <div className="flex items-start gap-1.5 mt-2 text-xs text-gray-500 leading-relaxed">
-                                <Info className="w-3.5 h-3.5 text-gold flex-shrink-0 mt-0.5" />
-                                <span>{method.hint}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    {contactMethodSelected('whatsapp') && (
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsapp}</label>
-                        <input
-                          type="tel"
-                          value={whatsappNumber}
-                          onChange={(e) => setWhatsappNumber(e.target.value)}
-                          placeholder="+351 912 345 678"
-                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                        />
-                        <div className="mt-4 rounded-2xl bg-navy/5 p-4">
-                          <div className="flex items-start gap-2 mb-2">
-                            <Info className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-600 leading-relaxed">{t.whatsappMessageInfo}</p>
-                          </div>
-                          <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsappMessage}</label>
-                          <textarea
-                            rows={2}
-                            maxLength={500}
-                            value={whatsappMessage}
-                            onChange={(e) => setWhatsappMessage(e.target.value)}
-                            placeholder="Olá! Vim pela página e gostaria de saber mais."
-                            className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white resize-none"
+                    <div className="grid grid-cols-1 gap-4">
+                      {contactMethodSelected('whatsapp') ? (
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                          <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsapp}</label>
+                          <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Botão direto na hero, secção de contacto e CTA final.' : lang === 'es' ? 'Botón directo en el hero, contacto y CTA final.' : lang === 'fr' ? 'Bouton direct dans le hero, le contact et le CTA final.' : 'Direct button in the hero, contact section and final CTA.'}</p>
+                          <input
+                            type="tel"
+                            value={whatsappNumber}
+                            onChange={(e) => setWhatsappNumber(e.target.value)}
+                            {...bindPreviewFocus('contact', lang === 'pt' ? 'WhatsApp na landing' : 'WhatsApp on landing')}
+                            placeholder="+351 912 345 678"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
                           />
-                          <p className="text-right text-xs text-gray-400 mt-1">{whatsappMessage.length}/500</p>
+                          <div className="mt-4 rounded-2xl bg-navy/5 p-4">
+                            <div className="mb-2 flex items-start gap-2">
+                              <Info className="w-4 h-4 text-gold flex-shrink-0 mt-0.5" />
+                              <p className="text-sm leading-relaxed text-gray-600">{t.whatsappMessageInfo}</p>
+                            </div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">{t.whatsappMessage}</label>
+                            <textarea
+                              rows={2}
+                              maxLength={500}
+                              value={whatsappMessage}
+                              onChange={(e) => setWhatsappMessage(e.target.value)}
+                              {...bindPreviewFocus('contact', lang === 'pt' ? 'Mensagem do WhatsApp' : 'WhatsApp message')}
+                              placeholder="Olá! Vim pela página e gostaria de saber mais."
+                              className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                            />
+                            <p className="mt-1 text-right text-xs text-gray-400">{whatsappMessage.length}/500</p>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      ) : null}
 
-                    {contactMethodSelected('booking') && (
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.booking}</label>
-                        <input
-                          type="text"
-                          value={bookingUrl}
-                          onChange={(e) => setBookingUrl(e.target.value)}
-                          placeholder="https://calendly.com/yourname"
-                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                        />
-                      </div>
-                    )}
+                      {contactMethodSelected('booking') ? (
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                          <label className="block text-sm font-bold text-gray-700 mb-1">{t.booking}</label>
+                          <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Vira o CTA principal quando o objetivo é reserva, agendamento ou orçamento.' : lang === 'es' ? 'Se convierte en el CTA principal cuando el objetivo es reserva, cita o presupuesto.' : lang === 'fr' ? 'Devient le CTA principal quand l’objectif est une réservation, un rendez-vous ou un devis.' : 'Becomes the main CTA when the goal is booking, scheduling or requesting a quote.'}</p>
+                          <input
+                            type="text"
+                            value={bookingUrl}
+                            onChange={(e) => setBookingUrl(e.target.value)}
+                            {...bindPreviewFocus('contact', lang === 'pt' ? 'Botão principal de reserva' : 'Primary booking button')}
+                            placeholder="https://calendly.com/yourname"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                          />
+                        </div>
+                      ) : null}
 
-                    {contactMethodSelected('email') && (
-                      <div className="rounded-2xl border border-stone-200 bg-white p-4">
-                        <label className="block text-sm font-bold text-gray-700 mb-1">{t.emailContact}</label>
-                        <input
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="hello@yourbusiness.com"
-                          className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
-                        />
-                      </div>
-                    )}
+                      {contactMethodSelected('email') ? (
+                        <div className="rounded-2xl border border-stone-200 bg-white p-4">
+                          <label className="block text-sm font-bold text-gray-700 mb-1">{t.emailContact}</label>
+                          <p className="mb-2 text-xs text-gray-500">{lang === 'pt' ? 'Aparece como alternativa mais formal para quem não quer WhatsApp nem booking imediato.' : lang === 'es' ? 'Aparece como alternativa más formal para quien no quiere WhatsApp ni reserva inmediata.' : lang === 'fr' ? 'Apparaît comme alternative plus formelle pour ceux qui ne veulent ni WhatsApp ni réservation immédiate.' : 'Appears as a more formal alternative for customers who do not want WhatsApp or instant booking.'}</p>
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            {...bindPreviewFocus('contact', lang === 'pt' ? 'Email público' : 'Public email')}
+                            placeholder="hello@yourbusiness.com"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                          />
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
-                {selectedTemplate === 'food' && (
-                  <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5">
-                    <p className="text-xs font-bold text-gold uppercase tracking-wider mb-2">{t.menuEyebrow}</p>
-                    <h3 className="font-bold text-navy mb-2">{t.menuTitle}</h3>
-                    <p className="text-sm text-gray-500 mb-4">
-                      {t.menuText}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-start">
+
+                {selectedTemplate === 'food' ? (
+                  <div onFocusCapture={() => activatePreviewFocus('menu', lang === 'pt' ? 'Menu completo' : 'Full menu')} className="rounded-[2rem] border border-orange-200 bg-orange-50/60 p-6 shadow-xl shadow-orange-100/40">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{t.menuEyebrow}</p>
+                    <h3 className="mt-2 text-2xl font-black text-navy">{t.menuTitle}</h3>
+                    <p className="mt-2 text-sm text-gray-500">{t.menuText}</p>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-start">
                       <input
                         type="text"
                         value={menuUrl}
                         onChange={(e) => setMenuUrl(e.target.value)}
+                        {...bindPreviewFocus('menu', lang === 'pt' ? 'Link do menu' : 'Menu link')}
                         placeholder="https://your-business.com/menu or delivery menu link"
-                        className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-gold transition-colors bg-white"
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-3.5 focus:outline-none focus:border-gold transition-colors"
                       />
                       <button
                         type="button"
-                        onClick={() => menuImageInputRef.current?.click()}
-                        className="inline-flex items-center justify-center gap-2 bg-white border border-gold/30 text-navy px-4 py-3 rounded-xl font-bold hover:bg-gold/10 transition-colors"
+                        onFocus={() => activatePreviewFocus('menu', lang === 'pt' ? 'Imagem do menu' : 'Menu image')}
+                        onClick={() => {
+                          activatePreviewFocus('menu', lang === 'pt' ? 'Imagem do menu' : 'Menu image')
+                          menuImageInputRef.current?.click()
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-gold/30 bg-white px-4 py-3.5 font-bold text-navy hover:bg-gold/10 transition-colors"
                       >
                         <Upload className="w-4 h-4 text-gold" />
                         {t.uploadMenu}
                       </button>
                     </div>
                     <input ref={menuImageInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setMenuImageUrl)} />
-                    {menuImageUrl && (
-                      <div className="mt-4 rounded-2xl overflow-hidden border border-orange-100 bg-white p-2 max-w-xs">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={menuImageUrl} alt="Full menu preview" className="w-full h-40 object-cover rounded-xl" />
-                        <button type="button" onClick={() => setMenuImageUrl('')} className="mt-2 text-xs text-red-500 font-bold hover:underline">{t.removeMenu}</button>
+                    {menuImageUrl ? (
+                      <div className="mt-4 max-w-xs rounded-2xl overflow-hidden border border-orange-100 bg-white p-2">
+                        <div className="relative h-40 w-full overflow-hidden rounded-xl">
+                          <Image src={menuImageUrl} alt="Full menu preview" fill className="object-cover" unoptimized={menuImageUrl.startsWith('data:')} sizes="320px" />
+                        </div>
+                        <button type="button" onClick={() => setMenuImageUrl('')} className="mt-2 text-xs font-bold text-red-500 hover:underline">{t.removeMenu}</button>
                       </div>
-                    )}
+                    ) : null}
                   </div>
-                )}
-                <div>
-                  <div className="flex items-center justify-between gap-3 mb-2">
-                    <label className="block text-sm font-medium text-gray-700">{t.plan}</label>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 text-navy px-3 py-1 text-[11px] font-black">
-                      <Lock className="w-3 h-3" />
-                      {lang === 'pt' ? 'Prévia protegida' : lang === 'es' ? 'Vista previa protegida' : lang === 'fr' ? 'Aperçu protégé' : 'Protected preview'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {PLANS.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setPlan(p.id)}
-                        className={`text-left rounded-2xl border p-4 transition-all ${
-                          plan === p.id
-                            ? 'border-gold bg-gold/10 ring-2 ring-gold/20'
-                            : 'border-gray-200 hover:border-gold/40'
-                        }`}
-                      >
-                        <p className="font-bold text-navy">{p.name}</p>
-                        <p className="text-sm font-semibold text-gold mt-1">{p.pages}</p>
-                        <p className="text-xs text-gray-400 mt-1">{p.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-3 rounded-2xl border border-dashed border-gold/40 bg-gold/5 p-4 flex items-start gap-3">
-                    <Info className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-gray-500 leading-relaxed">{t.planNote}</p>
-                  </div>
-                </div>
-              </div>
+                ) : null}
+
             </div>
           )}
 
           {step === 1 && (
-            <div>
-              <h2 className="text-2xl font-bold text-navy mb-2">
-                {selectedTemplate === 'food' ? t.foodServicesTitle : t.servicesTitle}
-              </h2>
-              <p className="text-sm text-gray-500 mb-6">
-                {selectedTemplate === 'food'
-                  ? (lang === 'pt' ? 'Escolha os tipos de itens que oferece e complete nome, preço, descrição e foto. Estes itens aparecem como a primeira experiência depois do hero.' : t.foodServicesText)
-                  : selectedTemplate === 'technical'
-                  ? t.technicalServicesText
-                  : t.servicesText}
-              </p>
+            <div className="space-y-6">
+                <div onFocusCapture={() => activatePreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', selectedTemplate === 'food' ? (lang === 'pt' ? 'Menu e destaque' : 'Menu and highlight') : (lang === 'pt' ? 'Serviços e oferta' : 'Services and offer'))} className="rounded-[2rem] bg-gradient-to-br from-navy via-slate-900 to-slate-800 p-6 text-white shadow-2xl shadow-navy/15">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{selectedTemplate === 'food' ? t.foodServicesTitle : t.servicesTitle}</p>
+                      <h2 className="mt-2 text-3xl font-black tracking-tight">{lang === 'pt' ? 'Monte a oferta que o cliente vai comparar' : lang === 'es' ? 'Monta la oferta que el cliente va a comparar' : lang === 'fr' ? 'Construisez l’offre que le client va comparer' : 'Build the offer customers will compare'}</h2>
+                    </div>
+                    <button type="button" onClick={() => openPreviewSpotlight(selectedTemplate === 'food' ? 'menu' : 'services', selectedTemplate === 'food' ? 'Menu' : 'Services')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-white/10 px-3 py-2 text-[11px] font-black text-white hover:bg-white/15 transition-colors">{previewJumpLabel}</button>
+                  </div>
+                  <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-300">
+                    {selectedTemplate === 'food'
+                      ? (lang === 'pt' ? 'Aqui você organiza os pratos ou itens que aparecem logo depois do hero. Nome, preço, descrição e foto precisam fazer sentido juntos.' : t.foodServicesText)
+                      : selectedTemplate === 'technical'
+                      ? t.technicalServicesText
+                      : t.servicesText}
+                  </p>
+                </div>
 
-              <div className="mb-6 rounded-[1.75rem] border border-gold/20 bg-gold/5 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Escolha o tipo' : 'Choose the type'}</p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {serviceTypeOptions.map((option) => (
-                    <button
-                      key={option.name}
-                      type="button"
-                      onClick={() => setServices([...services, selectedTemplate === 'food' ? { name: option.name, price: '', description: option.description, photo: '' } : { name: option.name, price: '', description: option.description }])}
-                      className="rounded-2xl border border-white bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10"
-                    >
-                      <p className="font-black text-navy">{option.name}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-gray-500">{option.description}</p>
+                <div onFocusCapture={() => activatePreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', selectedTemplate === 'food' ? (lang === 'pt' ? 'Cards do menu' : 'Menu cards') : (lang === 'pt' ? 'Cards de serviços' : 'Service cards'))} className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/50">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Cards da landing' : lang === 'es' ? 'Cards de la landing' : lang === 'fr' ? 'Cartes de la landing' : 'Landing cards'}</p>
+                      <h3 className="mt-1 text-2xl font-black text-navy">{selectedTemplate === 'food' ? t.menuHighlights : t.services}</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                    <button type="button" onClick={() => openPreviewSpotlight(selectedTemplate === 'food' ? 'menu' : 'services', selectedTemplate === 'food' ? 'Menu' : 'Services')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-black text-navy hover:bg-gold/20 transition-colors">{previewJumpLabel}</button>
+                    <button onClick={() => { activatePreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', selectedTemplate === 'food' ? (lang === 'pt' ? 'Novo item do menu' : 'New menu item') : (lang === 'pt' ? 'Novo serviço' : 'New service')); addService() }} className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-sm font-black text-navy hover:bg-gold/20 transition-colors">
+                      <Plus className="w-4 h-4" />
+                      {selectedTemplate === 'food' ? t.addMenuItem : t.addService}
                     </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Services */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-800">{selectedTemplate === 'food' ? t.menuHighlights : t.services}</h3>
-                  <button
-                    onClick={addService}
-                    className="flex items-center gap-1 text-gold text-sm font-medium hover:text-yellow-600 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" /> {selectedTemplate === 'food' ? t.addMenuItem : t.addService}
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {services.map((svc, i) => (
-                    <div key={i} className="rounded-2xl border border-gray-200 p-4 hover:border-gold/40 transition-colors bg-white">
-                      <div className="grid grid-cols-1 lg:grid-cols-[96px_1fr_auto] gap-4 items-start">
-                        {selectedTemplate === 'food' && (
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {services.map((svc, i) => (
+                      <div key={i} className="rounded-[1.5rem] border border-gray-200 bg-gradient-to-br from-white via-white to-stone-50/80 p-5 transition-colors hover:border-gold/40">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <p className="text-xs font-black uppercase tracking-[0.16em] text-gray-400">{lang === 'pt' ? `Item ${i + 1}` : lang === 'es' ? `Item ${i + 1}` : lang === 'fr' ? `Élément ${i + 1}` : `Item ${i + 1}`}</p>
+                          <button onClick={() => removeService(i)} className="rounded-full p-2 text-gray-300 hover:text-red-400 transition-colors" aria-label="Remove item">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[112px_1fr] lg:items-start">
                           <div>
                             {svc.photo ? (
-                              <div className="relative w-24 h-24 rounded-2xl overflow-hidden group bg-stone-100">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={svc.photo} alt={svc.name || 'Menu item'} className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <label className="bg-white text-navy text-[11px] font-bold px-2.5 py-1 rounded-full cursor-pointer hover:bg-gold transition-colors">
-                                    Change
-                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleServicePhoto(i, e.target.files?.[0] ?? null)} />
-                                  </label>
-                                </div>
+                              <div className="relative h-28 w-28 overflow-hidden rounded-2xl bg-stone-100">
+                                <Image src={svc.photo} alt={svc.name || 'Service photo'} fill className="object-cover" unoptimized={svc.photo.startsWith('data:')} sizes="112px" />
+                                <label className="absolute inset-0 flex cursor-pointer items-center justify-center bg-black/0 opacity-0 transition-all hover:bg-black/35 hover:opacity-100">
+                                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-navy">Change</span>
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleServicePhoto(i, e.target.files?.[0] ?? null)} />
+                                </label>
                               </div>
                             ) : (
-                              <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-gold/30 bg-gold/5 hover:bg-gold/10 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors text-center">
+                              <label className="flex h-28 w-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-gold/30 bg-gold/5 px-2 text-center transition-colors hover:bg-gold/10">
                                 <Upload className="w-5 h-5 text-gold" />
-                                <span className="text-[11px] text-gold font-bold leading-tight">{t.dishPhoto}</span>
+                                <span className="text-[11px] font-bold leading-tight text-gold">{selectedTemplate === 'food' ? t.dishPhoto : (lang === 'pt' ? 'Foto do serviço' : lang === 'es' ? 'Foto del servicio' : lang === 'fr' ? 'Photo du service' : 'Service photo')}</span>
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleServicePhoto(i, e.target.files?.[0] ?? null)} />
                               </label>
                             )}
                           </div>
-                        )}
 
-                        <div className="space-y-3">
-                          <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px] gap-3">
-                            <input
-                              type="text"
-                              value={svc.name}
-                              onChange={(e) => updateService(i, 'name', e.target.value)}
-                              placeholder={selectedTemplate === 'food' ? t.menuItemName : t.serviceName}
-                              className="border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
-                            />
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_140px]">
                               <input
-                                type="number"
-                                value={svc.price}
-                                onChange={(e) => updateService(i, 'price', e.target.value)}
-                                placeholder="0"
-                                aria-label={t.price}
-                                className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
+                                type="text"
+                                value={svc.name}
+                                onChange={(e) => updateService(i, 'name', e.target.value)}
+                                {...bindPreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', lang === 'pt' ? `Card ${i + 1}` : `Card ${i + 1}`)}
+                                placeholder={selectedTemplate === 'food' ? t.menuItemName : t.serviceName}
+                                className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors"
                               />
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">€</span>
+                                <input
+                                  type="number"
+                                  value={svc.price}
+                                  onChange={(e) => updateService(i, 'price', e.target.value)}
+                                  {...bindPreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', lang === 'pt' ? `Preço do item ${i + 1}` : `Item ${i + 1} price`)}
+                                  placeholder="0"
+                                  aria-label={t.price}
+                                  className="w-full rounded-xl border border-gray-200 pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:border-gold transition-colors"
+                                />
+                              </div>
                             </div>
+                            <textarea
+                              rows={2}
+                              value={svc.description ?? ''}
+                              onChange={(e) => updateService(i, 'description', e.target.value)}
+                              {...bindPreviewFocus(selectedTemplate === 'food' ? 'menu' : 'services', lang === 'pt' ? `Descrição do item ${i + 1}` : `Item ${i + 1} description`)}
+                              placeholder={selectedTemplate === 'food' ? t.foodDescription : t.serviceDescription}
+                              className="w-full resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm leading-relaxed focus:outline-none focus:border-gold transition-colors"
+                            />
                           </div>
-                          <input
-                            type="text"
-                            value={svc.description ?? ''}
-                            onChange={(e) => updateService(i, 'description', e.target.value)}
-                            placeholder={selectedTemplate === 'food' ? t.foodDescription : t.serviceDescription}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-gold transition-colors text-sm"
-                          />
-                          {selectedTemplate === 'food' && (
-                            <p className="text-xs text-gray-400">{t.dishHint}</p>
-                          )}
                         </div>
-
-                        <button
-                          onClick={() => removeService(i)}
-                          className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 p-2"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Hours */}
-              <div>
-                <h3 className="font-semibold text-gray-800 mb-4">{t.hours}</h3>
-                <div className="space-y-2">
-                  {hours.map((h, i) => (
-                    <div key={i} className="flex items-center gap-4">
-                      <button
-                        onClick={() => toggleDay(i)}
-                        className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
-                          h.open ? 'bg-gold border-gold' : 'border-gray-300'
-                        }`}
-                      >
-                        {h.open && <Check className="w-3 h-3 text-navy" />}
-                      </button>
-                      <span className="w-28 text-sm font-medium text-gray-700">{h.day}</span>
-                      {h.open ? (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <input
-                            type="time"
-                            value={h.from}
-                            onChange={(e) =>
-                              setHours(hours.map((hh, idx) => (idx === i ? { ...hh, from: e.target.value } : hh)))
-                            }
-                            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-gold text-sm"
-                          />
-                          <span>–</span>
-                          <input
-                            type="time"
-                            value={h.to}
-                            onChange={(e) =>
-                              setHours(hours.map((hh, idx) => (idx === i ? { ...hh, to: e.target.value } : hh)))
-                            }
-                            className="border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:border-gold text-sm"
-                          />
+                <div onFocusCapture={() => activatePreviewFocus('contact', lang === 'pt' ? 'Horários e contacto' : 'Hours and contact')} className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/50">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Horários públicos' : lang === 'es' ? 'Horarios públicos' : lang === 'fr' ? 'Horaires publics' : 'Public hours'}</p>
+                  <h3 className="mt-1 text-2xl font-black text-navy">{lang === 'pt' ? 'O cliente também decide pelo horário' : lang === 'es' ? 'El cliente también decide por el horario' : lang === 'fr' ? 'Le client décide aussi selon les horaires' : 'Customers also decide based on opening hours'}</h3>
+                  <div className="mt-5 space-y-3">
+                    {hours.map((h, i) => (
+                      <div key={i} className="flex flex-col gap-3 rounded-2xl border border-stone-100 bg-stone-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-4">
+                          <button onClick={() => toggleDay(i)} className={`flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all ${h.open ? 'border-gold bg-gold' : 'border-gray-300 bg-white'}`}>
+                            {h.open ? <Check className="h-3 w-3 text-navy" /> : null}
+                          </button>
+                          <span className="w-28 text-sm font-medium text-gray-700">{h.day}</span>
                         </div>
-                      ) : (
-                        <span className="text-sm text-red-400">{t.closed}</span>
-                      )}
-                    </div>
-                  ))}
+                        {h.open ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <input
+                              type="time"
+                              value={h.from}
+                              onChange={(e) => setHours(hours.map((hh, idx) => (idx === i ? { ...hh, from: e.target.value } : hh)))}
+                              {...bindPreviewFocus('contact', lang === 'pt' ? `Horário de ${h.day}` : `${h.day} hours`)}
+                              className="rounded-lg border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:border-gold"
+                            />
+                            <span>–</span>
+                            <input
+                              type="time"
+                              value={h.to}
+                              onChange={(e) => setHours(hours.map((hh, idx) => (idx === i ? { ...hh, to: e.target.value } : hh)))}
+                              {...bindPreviewFocus('contact', lang === 'pt' ? `Horário de ${h.day}` : `${h.day} hours`)}
+                              className="rounded-lg border border-gray-200 px-2 py-1 text-sm focus:outline-none focus:border-gold"
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-sm text-red-400">{t.closed}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
             </div>
           )}
 
           {step === 2 && (
             <div>
-              <h2 className="text-2xl font-bold text-navy mb-2">
-                {selectedTemplate === 'food' ? t.foodPhotosTitle : t.photosTitle}
-              </h2>
-              <p className="text-gray-400 text-sm mb-8">
-                {selectedTemplate === 'food'
-                  ? t.foodPhotosText
-                  : t.photosText}
-              </p>
+                <div className="mb-2 flex items-start justify-between gap-4">
+                  <h2 className="text-2xl font-bold text-navy">
+                    {selectedTemplate === 'food' ? t.foodPhotosTitle : t.photosTitle}
+                  </h2>
+                  <button type="button" onClick={() => openPreviewSpotlight('gallery', lang === 'pt' ? 'Fotos e galeria' : 'Photos and gallery')} className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-2 text-[11px] font-black text-navy hover:bg-gold/20 transition-colors">{previewJumpLabel}</button>
+                </div>
+                <p className="text-gray-400 text-sm mb-8">
+                  {selectedTemplate === 'food' ? t.foodPhotosText : t.photosText}
+                </p>
 
-              {/* Hidden file inputs — one per slot */}
-              <input ref={heroInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setHeroPhoto)} />
-              <input ref={aboutInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setAboutPhoto)} />
-              <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleGalleryFiles(e.target.files)} />
+                {/* Hidden file inputs — one per slot */}
+                <input ref={heroInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setHeroPhoto)} />
+                <input ref={aboutInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleSlotFile(e.target.files[0], setAboutPhoto)} />
+                <input ref={galleryInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleGalleryFiles(e.target.files)} />
 
-              <div className="space-y-5">
+                <div className="space-y-5">
                 {/* ── Slot 1: Hero Photo ── */}
-                <div className="border border-gray-200 rounded-2xl p-5">
+                <div onFocusCapture={() => activatePreviewFocus('hero', lang === 'pt' ? 'Foto principal' : 'Hero photo')} className="border border-gray-200 rounded-2xl p-5">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-gold/10 rounded-xl flex items-center justify-center flex-shrink-0">
                       <span className="text-gold font-black text-sm">1</span>
@@ -1311,24 +1555,20 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* ── Slot 2: About Photo ── */}
-                <div className="border border-gray-200 rounded-2xl p-5">
+                {selectedTemplate !== 'food' ? (
+                <div onFocusCapture={() => activatePreviewFocus('about', lang === 'pt' ? 'Foto da secção sobre' : 'About photo')} className="border border-gray-200 rounded-2xl p-5">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-navy/5 rounded-xl flex items-center justify-center flex-shrink-0">
                       <span className="text-navy font-black text-sm">2</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
-                        <h3 className="font-bold text-navy">{selectedTemplate === 'food' ? t.foodAboutPhoto : t.aboutPhoto}</h3>
+                        <h3 className="font-bold text-navy">{t.aboutPhoto}</h3>
                         <span className="bg-navy text-gold text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          {selectedTemplate === 'food' ? t.foodAboutBadge : t.aboutBadge}
+                          {t.aboutBadge}
                         </span>
                       </div>
-                      <p className="text-gray-400 text-xs mb-4">
-                        {selectedTemplate === 'food'
-                          ? t.foodAboutHint
-                          : t.aboutHint}
-                      </p>
+                      <p className="text-gray-400 text-xs mb-4">{t.aboutHint}</p>
                       {aboutPhoto ? (
                         <div className="relative w-full h-36 rounded-xl overflow-hidden group">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1348,18 +1588,19 @@ export default function DashboardPage() {
                           className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl px-5 py-4 w-full hover:border-gold/50 hover:bg-gray-50 transition-all text-left"
                         >
                           <Upload className="w-5 h-5 text-gray-300 flex-shrink-0" />
-                          <span className="text-gray-400 text-sm">{selectedTemplate === 'food' ? t.uploadFoodAbout : t.uploadAbout}</span>
+                          <span className="text-gray-400 text-sm">{t.uploadAbout}</span>
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
+                ) : null}
 
                 {/* ── Slot 3+: Gallery Photos ── */}
-                <div className="border border-gray-200 rounded-2xl p-5">
+                <div onFocusCapture={() => activatePreviewFocus('gallery', lang === 'pt' ? 'Galeria ao vivo' : 'Live gallery')} className="border border-gray-200 rounded-2xl p-5">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <span className="text-gray-500 font-black text-xs">3+</span>
+                      <span className="text-gray-500 font-black text-xs">{selectedTemplate === 'food' ? '2+' : '3+'}</span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center flex-wrap gap-2 mb-1">
@@ -1417,15 +1658,15 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+                </div>
             </div>
           )}
 
           {step === 3 && (
-            <div className="text-center py-8">
+            <div className="py-8">
               {!isGenerated ? (
-                <>
-                  <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="mx-auto max-w-3xl text-center xl:text-left">
+                  <div className="w-20 h-20 bg-gold/10 rounded-full flex items-center justify-center mx-auto xl:mx-0 mb-6">
                     <Sparkles className="w-10 h-10 text-gold" />
                   </div>
                   <h2 className="text-2xl font-bold text-navy mb-3">
@@ -1434,6 +1675,36 @@ export default function DashboardPage() {
                   <p className="text-gray-500 mb-8">
                     {t.previewText}
                   </p>
+                  <div className="mb-8 rounded-[2rem] border border-stone-200 bg-white p-6 shadow-xl shadow-stone-200/40 text-left">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Publicação e retenção' : lang === 'es' ? 'Publicación y retención' : lang === 'fr' ? 'Publication et rétention' : 'Publishing and retention'}</p>
+                        <h3 className="mt-2 text-2xl font-black text-navy">{lang === 'pt' ? 'Plano e prévia protegida' : lang === 'es' ? 'Plan y vista previa protegida' : lang === 'fr' ? 'Plan et aperçu protégé' : 'Plan and protected preview'}</h3>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-3 py-1 text-[11px] font-black text-navy">
+                        <Lock className="w-3 h-3" />
+                        {lang === 'pt' ? 'Prévia protegida' : lang === 'es' ? 'Vista previa protegida' : lang === 'fr' ? 'Aperçu protégé' : 'Protected preview'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {PLANS.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setPlan(p.id)}
+                          className={`rounded-2xl border p-4 text-left transition-all ${plan === p.id ? 'border-gold bg-gold/10 ring-2 ring-gold/20' : 'border-gray-200 hover:border-gold/40'}`}
+                        >
+                          <p className="font-bold text-navy">{p.name}</p>
+                          <p className="mt-1 text-sm font-semibold text-gold">{p.pages}</p>
+                          <p className="mt-1 text-xs text-gray-400">{p.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-3 rounded-2xl border border-dashed border-gold/40 bg-gold/5 p-4 flex items-start gap-3">
+                      <Info className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                      <p className="text-sm leading-relaxed text-gray-500">{t.planNote}</p>
+                    </div>
+                  </div>
                   {generateError && (
                     <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 mb-6 text-sm max-w-md mx-auto">
                       {generateError}
@@ -1450,38 +1721,18 @@ export default function DashboardPage() {
                       /p/{pageSlug}
                     </p>
                   </div>
-                  <div className="mx-auto mb-8 max-w-2xl rounded-[1.75rem] border border-gold/20 bg-gradient-to-br from-gold/10 via-white to-stone-50 p-5 text-left shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-navy text-gold">
-                        <Sparkles className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-wider text-gold">{lang === 'pt' ? 'Motor da prévia IA' : lang === 'es' ? 'Motor de vista previa IA' : lang === 'fr' ? 'Moteur d’aperçu IA' : 'AI preview engine'}</p>
-                        <h3 className="mt-1 text-lg font-black text-navy">{lang === 'pt' ? 'A landing nasce do setup e das fotos' : lang === 'es' ? 'La landing nace del setup y de las fotos' : lang === 'fr' ? 'La landing nait du setup et des photos' : 'The landing is built from setup and photos'}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-gray-500">
-                          {lang === 'pt'
-                            ? 'Quando você clica em prévia IA, o sistema escolhe o estilo da landing, distribui hero, sobre e galeria e ajusta a mensagem principal antes da publicação.'
-                            : lang === 'es'
-                            ? 'Cuando haces clic en vista previa IA, el sistema elige el estilo de la landing, distribuye hero, about y galería y ajusta el mensaje principal antes de publicar.'
-                            : lang === 'fr'
-                            ? 'Quand vous cliquez sur aperçu IA, le système choisit le style de la landing, répartit hero, about et galerie et ajuste le message principal avant publication.'
-                            : 'When you click AI preview, the system chooses the landing style, distributes hero/about/gallery roles and adjusts the main message before publishing.'}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {AI_PREVIEW_HINTS[lang].map((item) => (
-                            <span key={item} className="rounded-full border border-navy/10 bg-white px-3 py-1 text-xs font-bold text-navy">
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                      onClick={openFullLivePreview}
+                      className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors"
+                    >
+                      {lang === 'pt' ? 'Ver página completa' : lang === 'es' ? 'Ver página completa' : lang === 'fr' ? 'Voir la page complète' : 'View full page'}
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={handleAiPreview}
                       disabled={aiPreviewLoading}
-                      className="flex items-center gap-2 justify-center bg-navy text-white px-8 py-3 rounded-full font-semibold hover:bg-navy/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 justify-center border border-navy/10 bg-white px-8 py-3 rounded-full font-semibold text-navy hover:bg-stone-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {aiPreviewLoading ? (
                         <>
@@ -1521,7 +1772,7 @@ export default function DashboardPage() {
                         : 'AI preview opens without sending you to login. To publish live, log in and publish.'}
                     </p>
                   )}
-                </>
+                </div>
               ) : (
                 <>
                   <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1585,27 +1836,170 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
-            <button
-              onClick={() => setStep(Math.max(0, step - 1))}
-              disabled={step === 0}
-              className="px-6 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:border-gray-300 transition-colors disabled:opacity-30"
-            >
-              {t.back}
-            </button>
-            {step < steps.length - 1 ? (
-              <button
-                onClick={handleNext}
-                className="px-6 py-2.5 bg-navy text-white rounded-xl font-medium hover:bg-navy/90 transition-colors flex items-center gap-2"
-              >
-                {t.continue}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            ) : null}
+              {/* Navigation */}
+              <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+                <button
+                  onClick={() => setStep(Math.max(0, step - 1))}
+                  disabled={step === 0}
+                  className="px-6 py-2.5 border border-gray-200 rounded-xl text-gray-600 font-medium hover:border-gray-300 transition-colors disabled:opacity-30"
+                >
+                  {t.back}
+                </button>
+                {step < steps.length - 1 ? (
+                  <button
+                    onClick={handleNext}
+                    className="px-6 py-2.5 bg-navy text-white rounded-xl font-medium hover:bg-navy/90 transition-colors flex items-center gap-2"
+                  >
+                    {t.continue}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+      {step !== 3 ? (
+        <div className="mx-auto mt-6 max-w-5xl px-4">
+          <div className="rounded-[2rem] border border-stone-200 bg-gradient-to-br from-[#f8f4eb] via-white to-[#f3ede2] p-5 shadow-lg shadow-stone-200/40">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Prévia sob demanda' : lang === 'es' ? 'Vista previa bajo demanda' : lang === 'fr' ? 'Aperçu à la demande' : 'On-demand preview'}</p>
+                <h3 className="mt-2 text-xl font-black text-navy">{lang === 'pt' ? 'Sem disputar espaço com o setup' : lang === 'es' ? 'Sin disputar espacio con el setup' : lang === 'fr' ? 'Sans partager l’espace avec le setup' : 'Without competing with the setup'}</h3>
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-stone-500">{livePreviewStage}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-white bg-white px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-navy">{lang === 'pt' ? `Agora: ${previewFocusLabel}` : lang === 'es' ? `Ahora: ${previewFocusLabel}` : lang === 'fr' ? `Maintenant : ${previewFocusLabel}` : `Now: ${previewFocusLabel}`}</span>
+                <button
+                  type="button"
+                  onClick={() => openPreviewSpotlight(previewFocusSection ?? 'hero', previewFocusLabel)}
+                  className="inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-sm font-black text-white hover:bg-navy/90 transition-colors"
+                >
+                  <Eye className="h-4 w-4" />
+                  {lang === 'pt' ? 'Mostrar este bloco' : lang === 'es' ? 'Mostrar este bloque' : lang === 'fr' ? 'Montrer ce bloc' : 'Show this block'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+      ) : null}
+
       </div>
+
+      {previewSpotlightOpen ? (
+        <div className="fixed inset-0 z-[85] bg-[#f6f1e8]/96 backdrop-blur-md">
+          <div className="absolute inset-x-0 top-0 border-b border-stone-200 bg-white/90 backdrop-blur-xl">
+            <div className="mx-auto flex max-w-[1700px] items-center justify-between gap-4 px-4 py-4 sm:px-6">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Modo mostrar' : lang === 'es' ? 'Modo mostrar' : lang === 'fr' ? 'Mode montrer' : 'Show mode'}</p>
+                <h3 className="mt-1 text-2xl font-black text-navy">{previewFocusLabel}</h3>
+                <p className="mt-1 text-sm text-stone-500">{lang === 'pt' ? 'A landing abre grande, já no bloco clicado, mas continua completa para o cliente poder rolar e revisar tudo.' : lang === 'es' ? 'La landing se abre grande, ya en el bloque pulsado, pero sigue completa para que el cliente pueda desplazarse y revisar todo.' : lang === 'fr' ? 'La landing s’ouvre en grand, déjà sur le bloc cliqué, mais reste complète pour pouvoir faire défiler et tout vérifier.' : 'The landing opens large on the clicked block, but stays complete so the user can scroll and review everything.'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport((current) => current === 'desktop' ? 'mobile' : 'desktop')}
+                  className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2 text-xs font-black text-navy hover:bg-stone-50 transition-colors"
+                >
+                  {previewViewport === 'desktop' ? <Smartphone className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+                  {previewViewport === 'desktop' ? 'Mobile' : 'Desk'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewSpotlightOpen(false)}
+                  className="inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-xs font-black text-white hover:bg-navy/90 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                  {lang === 'pt' ? 'Voltar ao setup' : lang === 'es' ? 'Volver al setup' : lang === 'fr' ? 'Retour au setup' : 'Back to setup'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto flex h-full max-w-[1700px] items-stretch gap-6 px-4 pb-6 pt-28 sm:px-6">
+            <div className="hidden xl:flex xl:w-[280px] xl:flex-col xl:justify-between rounded-[2rem] border border-stone-200 bg-white/80 p-6 shadow-xl shadow-stone-200/40">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-gold">{lang === 'pt' ? 'Bloco em edição' : lang === 'es' ? 'Bloque en edición' : lang === 'fr' ? 'Bloc en édition' : 'Editing block'}</p>
+                <h4 className="mt-3 text-2xl font-black text-navy">{previewFocusLabel}</h4>
+                <p className="mt-3 text-sm leading-relaxed text-stone-500">{lang === 'pt' ? 'O clique em Mostrar posiciona a landing no trecho certo, mas o scroll continua livre para inspecionar hero, serviços, fotos e contacto como uma página real.' : lang === 'es' ? 'El clic en Mostrar posiciona la landing en el tramo correcto, pero el scroll sigue libre para revisar hero, servicios, fotos y contacto como una página real.' : lang === 'fr' ? 'Le clic sur Montrer place la landing au bon endroit, mais le défilement reste libre pour vérifier hero, services, photos et contact comme une vraie page.' : 'Clicking Show positions the landing at the right block, but scrolling stays free so users can inspect hero, services, photos and contact like a real page.'}</p>
+              </div>
+              <div className="space-y-3">
+                <div className="rounded-[1.5rem] border border-gold/20 bg-gold/10 p-4 text-sm leading-relaxed text-navy">
+                  {lang === 'pt' ? 'Dica: em serviços e fotos, clique em Mostrar para cair direto no bloco certo; depois role livremente para ver a landing inteira se formando.' : lang === 'es' ? 'Consejo: en servicios y fotos, haz clic en Mostrar para caer directo en el bloque correcto; luego desplázate libremente para ver la landing completa.' : lang === 'fr' ? 'Astuce : dans services et photos, cliquez sur Montrer pour arriver directement au bon bloc ; ensuite faites défiler librement toute la landing.' : 'Tip: in services and photos, click Show to land on the right block first, then scroll freely through the full landing.'}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewSpotlightOpen(false)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-3 text-sm font-black text-navy hover:bg-stone-50 transition-colors"
+                >
+                  <ArrowRight className="h-4 w-4 rotate-180" />
+                  {lang === 'pt' ? 'Voltar e continuar preenchendo' : lang === 'es' ? 'Volver y seguir completando' : lang === 'fr' ? 'Revenir et continuer le setup' : 'Go back and keep editing'}
+                </button>
+              </div>
+            </div>
+
+            <div className="min-w-0 flex-1 overflow-hidden rounded-[2.25rem] border border-stone-200 bg-[#f8f4ec] shadow-[0_30px_120px_rgba(28,25,23,0.18)]">
+              <div ref={previewScrollRef} className="h-full overflow-auto p-4 sm:p-5">
+                <div className={`mx-auto transition-all duration-300 ${previewViewport === 'mobile' ? 'max-w-[430px]' : 'max-w-[1240px]'}`}>
+                  <div className="relative overflow-hidden rounded-[2rem] bg-white shadow-[0_24px_90px_rgba(15,23,42,0.16)]">
+                    <div className="absolute right-4 top-4 z-20">
+                      <div className="overflow-hidden rounded-[1.5rem] border border-stone-200 bg-white/92 shadow-xl backdrop-blur">
+                        <button
+                          type="button"
+                          onClick={() => setThemePickerOpen((current) => !current)}
+                          className="flex items-center gap-2 px-3 py-2 text-xs font-black text-navy transition-colors hover:bg-stone-50"
+                        >
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-stone-200" style={{ backgroundImage: selectedTheme.heroBackground }}>
+                            <Sparkles className="h-3.5 w-3.5 text-navy" />
+                          </span>
+                          <span className="hidden sm:block">{lang === 'pt' ? 'Tema da landing' : lang === 'es' ? 'Tema de la landing' : lang === 'fr' ? 'Thème de la landing' : 'Landing theme'}</span>
+                          <ChevronDown className={`h-4 w-4 transition-transform ${themePickerOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {themePickerOpen ? (
+                          <div className="border-t border-stone-200 bg-white p-2">
+                            <div className="grid gap-2 sm:min-w-[280px]">
+                              {LANDING_THEME_OPTIONS.map((theme) => {
+                                const isActive = theme.id === themeId
+                                return (
+                                  <button
+                                    key={theme.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setThemeId(theme.id)
+                                      activatePreviewFocus('hero', lang === 'pt' ? 'Tema visual' : 'Visual theme')
+                                    }}
+                                    className={`rounded-2xl border px-3 py-2 text-left transition-all ${isActive ? 'border-gold bg-gold/10 shadow-sm' : 'border-stone-200 bg-white hover:border-gold/40 hover:bg-stone-50'}`}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <span className="h-9 w-9 rounded-xl border border-stone-200" style={{ backgroundImage: theme.heroBackground }} />
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-black text-navy">{theme.label}</p>
+                                        <p className="text-xs text-stone-500">{theme.tip}</p>
+                                      </div>
+                                    </div>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                    <AiLandingRenderer
+                      business={livePreviewBusiness}
+                      aiConfig={spotlightPreviewConfig}
+                      lang={lang as Language}
+                      setLang={(nextLang) => setLang(nextLang as SetupLang)}
+                      previewMode={false}
+                      showWatermark={false}
+                      via="dashboard-live-preview"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showPlanModal && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-navy/70 px-4 py-6 backdrop-blur-sm">

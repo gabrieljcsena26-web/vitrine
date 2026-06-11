@@ -17,13 +17,16 @@ import ContactForm from '@/components/ContactForm'
 import ChatbotWidget from '@/components/ChatbotWidget'
 import Footer from '@/components/Footer'
 import FoodMenuBlock from '@/components/FoodMenuBlock'
+import FoodLandingTemplate from '@/components/FoodLandingTemplate'
 import PreviewWatermark from '@/components/PreviewWatermark'
+import BeautyLandingTemplate from '@/components/BeautyLandingTemplate'
 import ProfessionalLandingTemplate from '@/components/ProfessionalLandingTemplate'
 import { inferBusinessTemplate } from '@/lib/business-categories'
 
 export interface AiBusinessData {
   id?: string
   businessName: string
+  subtitle?: string
   category: string
   description: string
   address: string
@@ -36,6 +39,7 @@ export interface AiBusinessData {
   menuUrl?: string
   menuImageUrl?: string
   lang: string
+  themeId?: string
   services: { name: string; price: string; description?: string; photo?: string }[]
   hours: { day: string; open: boolean; from: string; to: string }[]
   photos: string[]
@@ -49,6 +53,8 @@ export interface AiPageConfig {
   template?: string
   imageCount?: number
   sections?: string[]
+  focusSection?: string | null
+  focusLabel?: string
   photoRoles?: {
     hero?: string | null
     about?: string | null
@@ -58,6 +64,7 @@ export interface AiPageConfig {
     mood?: string
     primaryColor?: string
     accentColor?: string
+    themeId?: string
   }
   copy?: {
     headline?: string
@@ -407,6 +414,36 @@ export default function AiLandingRenderer({
   const pageTemplate = aiConfig?.template === 'food' || aiConfig?.template === 'technical' || aiConfig?.template === 'service'
     ? aiConfig.template
     : inferBusinessTemplate(business.category, business.description)
+
+  if (pageTemplate === 'food') {
+    return (
+      <FoodLandingTemplate
+        business={business}
+        aiConfig={aiConfig}
+        lang={lang}
+        setLang={setLang}
+        previewMode={previewMode}
+        showWatermark={showWatermark}
+        businessId={businessId}
+        via={via}
+      />
+    )
+  }
+
+  if (pageTemplate === 'service') {
+    return (
+      <BeautyLandingTemplate
+        business={business}
+        aiConfig={aiConfig}
+        lang={lang}
+        setLang={setLang}
+        previewMode={previewMode}
+        showWatermark={showWatermark}
+        businessId={businessId}
+        via={via}
+      />
+    )
+  }
 
   if (pageTemplate === 'technical') {
     return (

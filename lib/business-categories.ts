@@ -18,7 +18,7 @@ export const CATEGORY_OPTIONS: CategoryOption[] = [
   { value: 'Barber Shop', ptLabel: 'Barbearia', template: 'service' },
   { value: 'Nail Salon', ptLabel: 'Unhas', template: 'service' },
   { value: 'Spa & Wellness', ptLabel: 'Spa e bem-estar', template: 'service' },
-  { value: 'Beauty Clinic', ptLabel: 'Clinica de estetica', template: 'technical' },
+  { value: 'Beauty Clinic', ptLabel: 'Clinica de estetica', template: 'service' },
   { value: 'Tattoo Studio', ptLabel: 'Estudio de tatuagem', template: 'service' },
   { value: 'Massage Therapy', ptLabel: 'Massagem terapeutica', template: 'service' },
   { value: 'Makeup Artist', ptLabel: 'Maquiagem', template: 'service' },
@@ -67,8 +67,8 @@ export const DEFAULT_SERVICE_PRESETS: Record<BusinessTemplate, ServicePreset[]> 
 
 const TEMPLATE_KEYWORDS: Record<BusinessTemplate, string[]> = {
   food: ['restaurant', 'restaurante', 'café', 'cafe', 'coffee', 'bar', 'food', 'food truck', 'bakery', 'bistro', 'lanchonete', 'confeitaria', 'padaria', 'menu', 'cardapio', 'cardápio'],
+  service: ['hair', 'salon', 'salao', 'salão', 'barber', 'barbearia', 'nail', 'unhas', 'spa', 'wellness', 'beauty', 'estetica', 'estética', 'tattoo', 'tatuagem', 'massage', 'massagem', 'makeup', 'maquiagem', 'lashes', 'sobrancelha'],
   technical: ['clinic', 'clinica', 'clínica', 'dental', 'veterinary', 'veterinaria', 'veterinária', 'law', 'advocacia', 'consulting', 'accounting', 'office', 'cleaning', 'limpeza', 'auto', 'mechanic', 'mecanico', 'mecânico', 'detailing', 'repair', 'reparo'],
-  service: [],
 }
 
 export function inferBusinessTemplate(category?: string | null, description?: string | null): BusinessTemplate {
@@ -78,6 +78,7 @@ export function inferBusinessTemplate(category?: string | null, description?: st
 
   const value = `${category ?? ''} ${description ?? ''}`.toLowerCase()
   if (TEMPLATE_KEYWORDS.food.some((keyword) => value.includes(keyword))) return 'food'
+  if (TEMPLATE_KEYWORDS.service.some((keyword) => value.includes(keyword))) return 'service'
   if (TEMPLATE_KEYWORDS.technical.some((keyword) => value.includes(keyword))) return 'technical'
   return 'service'
 }

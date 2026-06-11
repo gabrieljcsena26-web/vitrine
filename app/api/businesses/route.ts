@@ -54,6 +54,7 @@ function normalizeAiPageConfig(value: unknown) {
           primaryColor: typeof raw.style.primaryColor === 'string' ? raw.style.primaryColor : null,
           accentColor: typeof raw.style.accentColor === 'string' ? raw.style.accentColor : null,
           mood: typeof raw.style.mood === 'string' ? raw.style.mood : null,
+          themeId: typeof raw.style.themeId === 'string' ? raw.style.themeId : null,
         }
       : {},
     sections: Array.isArray(raw.sections)
